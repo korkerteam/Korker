@@ -1,17 +1,43 @@
 <script setup>
 import MenuPage from './views/MenuPage.vue'
 import HeaderKorker from './views/HeaderKorker.vue'
+import FilterPage from './views/FilterPage.vue'
 </script>
 
 <template>
-  <div>
-  <HeaderKorker/>
+  <div class="main-layout">
+    
+    <div class="Przyciski">
+      <div class="Korker">
+        <HeaderKorker/>
+      </div>
+      <MenuPage/>
+    </div>
+
+    <div class="Okienka">
+      <FilterPage/>
+    </div>
+
   </div>
-  <MenuPage/>
 </template>
 
 <style scoped>
-div {
+.main-layout {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 20px;             
+}
+
+.Korker {
   margin-bottom: 10px;
+}
+
+.Przyciski {
+
+}
+
+.Okienka {
+  flex-grow: 1; 
 }
 </style>
