@@ -2,7 +2,10 @@
 </script>
 <template>
     <button>Korker</button>
-    <button>Czaty</button>
     </template>
 <style scoped>
+button {
+    width: 800px;
+    height: 100px;
+}
 </style>
