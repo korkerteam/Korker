@@ -1,3 +1,4 @@
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 # korker
 
 This template should help get you started developing with Vue 3 in Vite.
