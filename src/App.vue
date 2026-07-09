@@ -1,38 +1,17 @@
 <script setup>
 import MenuPage from './views/MenuPage.vue'
-import KorkerChat from './views/KorkerChat.vue'
+import HeaderKorker from './views/HeaderKorker.vue'
 </script>
 
 <template>
+  <div>
+  <HeaderKorker/>
+  </div>
   <MenuPage/>
-  <KorkerChat/>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+div {
+  margin-bottom: 10px;
 }
 </style>
