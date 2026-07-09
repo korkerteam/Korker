@@ -4,8 +4,8 @@ import KorkerChat from './views/KorkerChat.vue'
 </script>
 
 <template>
-  <MenuPage/>
-  <KorkerChat/>
+  <MenuPage />
+  <KorkerChat />
 </template>
 
 <style scoped>
