@@ -1,7 +1,7 @@
 <script setup>
 import MenuPage from './views/MenuPage.vue'
-import HeaderKorker from './views/HeaderKorker.vue'
-import FilterPage from './views/FilterPage.vue'
+import HeaderKorker from './components/HeaderKorker.vue'
+import FilterPage from './components/FilterPage.vue'
 import SearchBar from './views/SearchBar.vue'
 import ProfilePage from './views/ProfilePage.vue'
 </script>
