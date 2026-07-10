@@ -22,18 +22,18 @@
 
 <style scoped>
 .ranking-container {
-  background-color: #4f75c7; /* Niebieski kolor z projektu */
+  background-color: #4f75c7;
   color: white;
   padding: 30px;
   border-radius: 20px;
-  width: 500px; /* Szerokość okna z rankingiem */
+  width: 500px;
   font-family: sans-serif;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); /* Delikatny cień */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
 .białe-tło {
-  background-color: rgb(41, 130, 146);
-  color: rgb(54, 167, 26);
+  background-color: white;
+  color: black;
   padding: 20px;
   border-radius: 10px;
   margin-top: 20px;
@@ -45,10 +45,9 @@ h2 {
 }
 
 ol {
-  /* Kluczowe reguły dla wyświetlania numerków */
-  list-style-type: decimal; /* Wymusza standardowe cyfry 1, 2, 3... */
+  list-style-type: decimal;
   margin: 0;
-  padding-left: 20px; /* Przestrzeń na kropki i cyfry */
+  padding-left: 20px;
 }
 
 li {
