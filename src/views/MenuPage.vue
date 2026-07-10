@@ -1,9 +1,15 @@
-<script setup></script>
+<script setup>
+const emit = defineEmits(['toggleProfile'])
+
+function handleProfileClick() {
+  emit('toggleProfile')
+}
+</script>
 <template>
   <div class="MenuButtons">
     <button>Szukaj Korepetycji</button>
     <button>Filtry</button>
-    <button>Profil</button>
+    <button @click="handleProfileClick">Profil</button>
     <button>Ranking</button>
     <button>Moi Nauczyciele</button>
   </div>
