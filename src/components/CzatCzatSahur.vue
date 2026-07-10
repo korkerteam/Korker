@@ -52,7 +52,6 @@ export default {
   cursor: pointer;
   width: 50px;
   height: 235px;
-
 }
 .chat-window {
   position: fixed;

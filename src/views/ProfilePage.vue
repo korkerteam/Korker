@@ -1,20 +1,23 @@
-<script setup>
-    </script>
+<script setup></script>
 <template>
-<div class="profile-card">
-  <div class="header">
-    <img src="https://via.placeholder.com/80" alt="Zdjęcie profilowe" class="avatar">
-    <h2>Tomasz Guillemant</h2>
+  <div class="profile-card">
+    <div class="header">
+      <img
+        src="https://i1.sndcdn.com/avatars-000311175490-uowe73-t500x500.jpg"
+        alt="Zdjęcie profilowe"
+        class="avatar"
+      />
+      <h2>Tomasz Guillemant</h2>
+    </div>
+    <div class="details">
+      <p><strong>Typ konta:</strong> Uczeń</p>
+      <p><strong>Wiek:</strong> 17 lat</p>
+      <p><strong>Miejsce zamieszkania:</strong> Szczecin</p>
+      <p><strong>Płeć:</strong> Mężczyzna</p>
+    </div>
+    <button class="edit-btn">Edytuj</button>
   </div>
-  <div class="details">
-    <p><strong>Typ konta:</strong> Uczeń</p>
-    <p><strong>Wiek:</strong> 17 lat</p>
-    <p><strong>Miejsce zamieszkania:</strong> Szczecin</p>
-    <p><strong>Płeć:</strong> Mężczyzna</p>
-  </div>
-  <button class="edit-btn">Edytuj</button>
-</div>
-    </template>
+</template>
 <style scoped>
 .profile-card {
   background-color: #4a76b8;
@@ -65,5 +68,5 @@
   border-radius: 5px;
   cursor: pointer;
   font-weight: bold;
-}   
+}
 </style>
