@@ -83,7 +83,9 @@ function toggleSelection(category, value) {
     </div>
 
     <div class="confirm-row">
-      <button class="confirm-button" type="button" @click="emit('confirm')">Potwierdź filtry</button>
+      <button class="confirm-button" type="button" @click="emit('confirm')">
+        Potwierdź filtry
+      </button>
     </div>
   </div>
 </template>
