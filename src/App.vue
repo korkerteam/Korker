@@ -12,15 +12,43 @@ import MapPage from './views/Map.vue'
 
 const showProfile = ref(false)
 const showRanks = ref(false)
+const showFilter = ref(false)
+const showTeachers = ref(false)
 
 function toggleProfile() {
   showProfile.value = !showProfile.value
-  if (showProfile.value) showRanks.value = false
+  if (showProfile.value) {
+    showRanks.value = false
+    showFilter.value = false
+    showTeachers.value = false
+  }
 }
 
 function toggleRank() {
   showRanks.value = !showRanks.value
-  if (showRanks.value) showProfile.value = false
+  if (showRanks.value) {
+    showProfile.value = false
+    showFilter.value = false
+    showTeachers.value = false
+  }
+}
+
+function toggleFilter() {
+  showFilter.value = !showFilter.value
+  if (showFilter.value) {
+    showProfile.value = false
+    showRanks.value = false
+    showTeachers.value = false
+  }
+}
+
+function toggleTeachers() {
+  showTeachers.value = !showTeachers.value
+  if (showTeachers.value) {
+    showProfile.value = false
+    showRanks.value = false
+    showFilter.value = false
+  }
 }
 </script>
 
@@ -43,13 +71,19 @@ function toggleRank() {
     <div class="ranks-block" v-show="showRanks">
       <Ranks />
     </div>
+    <div class="filter-block" v-show="showFilter">
+      <FilterPage />
+    </div>
+    <div class="teachers-block" v-show="showTeachers">
+      <MyTeachers />
+    </div>
     <div class="Czaty">
       <CzatCzatSahur />
     </div>
 
     <div class="content-row">
       <div class="Przyciski">
-        <MenuPage @toggleProfile="toggleProfile" @toggleRank="toggleRank" />
+        <MenuPage @toggleProfile="toggleProfile" @toggleRank="toggleRank" @toggleFilter="toggleFilter" @toggleTeachers="toggleTeachers" />
       </div>
     </div>
     <div class="Mapa">
@@ -93,7 +127,10 @@ function toggleRank() {
   margin-bottom: 10px;
 }
 
-.profile-block {
+.profile-block,
+.filter-block,
+.ranks-block,
+.teachers-block {
   position: absolute;
   top: 47%;
   right: 340px;
@@ -103,12 +140,7 @@ function toggleRank() {
 }
 
 .ranks-block {
-  position: absolute;
-  top: 47%;
   right: 350px;
-  transform: translateY(-50%);
-  display: flex;
-  justify-content: flex-end;
 }
 
 .content-row {
