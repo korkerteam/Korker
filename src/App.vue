@@ -138,7 +138,12 @@ function handleTeacherLike(teacher) {
 
     <div class="content-row" v-if="route.name !== 'korker-szukaj'">
       <div class="Przyciski">
-        <MenuPage @toggleProfile="toggleProfile" @toggleRank="toggleRank" @toggleFilter="toggleFilter" @toggleTeachers="toggleTeachers" @goToSearchPage="goToSearchPage" />
+        <MenuPage
+          @toggleProfile="toggleProfile"
+          @toggleRank="toggleRank"
+          @toggleFilter="toggleFilter"
+          @toggleTeachers="toggleTeachers"
+        />
       </div>
     </div>
     <div class="Mapa">

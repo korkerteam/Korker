@@ -37,11 +37,14 @@ function handleSearchClick() {
   gap: 20px;
 }
 button {
-  width: 700px;
+  width: 600px;
   height: 100px;
-  border-radius: 10px;
+  border-radius: 100px;
   background-color: #4f75c7;
   font-family: Horizon;
-  font-size: 30px
+  font-size: 30px;
+  border: 0;
+  border-radius: 0 100px 100px 0;
+  text-align: left;
 }
 </style>

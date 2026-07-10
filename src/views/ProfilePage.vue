@@ -1,16 +1,18 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
+import { fetchProfile, upsertProfile } from '@/services/profileService.js'
 
 const profile = reactive({
-  name: 'Tomasz Guillemant',
-  accountType: 'Uczeń',
-  age: '17 lat',
-  location: 'Szczecin',
-  gender: 'Mężczyzna',
+  name: '',
+  accountType: '',
+  age: '',
+  location: '',
+  gender: '',
   avatar: 'https://via.placeholder.com/80',
 })
 
 const isEditing = ref(false)
+const loading = ref(true)
 const draft = reactive({
   name: profile.name,
   accountType: profile.accountType,
@@ -19,13 +21,55 @@ const draft = reactive({
   gender: profile.gender,
 })
 
+function toDb() {
+  const parts = profile.name.trim().split(/\s+/)
+  return {
+    name: parts[0] || '',
+    surname: parts.slice(1).join(' ') || '',
+    age: parseInt(profile.age, 10) || 0,
+    additional: {
+      accountType: profile.accountType,
+      location: profile.location,
+      gender: profile.gender,
+      avatar: profile.avatar,
+    },
+  }
+}
+
+function fromDb(data) {
+  if (!data) return
+  profile.name = [data.name, data.surname].filter(Boolean).join(' ')
+  profile.age = String(data.age ?? '')
+  profile.accountType = data.additional?.accountType ?? ''
+  profile.location = data.additional?.location ?? ''
+  profile.gender = data.additional?.gender ?? ''
+  profile.avatar = data.additional?.avatar ?? 'https://via.placeholder.com/80'
+}
+
+onMounted(async () => {
+  try {
+    const data = await fetchProfile()
+    if (data) fromDb(data)
+  } catch (err) {
+    console.error('Failed to load profile:', err)
+  } finally {
+    loading.value = false
+  }
+})
+
 function startEdit() {
   Object.assign(draft, profile)
   isEditing.value = true
 }
 
-function saveProfile() {
+async function saveProfile() {
   Object.assign(profile, draft)
+  try {
+    const result = await upsertProfile(toDb())
+    if (result) fromDb(result)
+  } catch (err) {
+    console.error('Failed to save profile:', err)
+  }
   isEditing.value = false
 }
 

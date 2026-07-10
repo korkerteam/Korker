@@ -10,8 +10,9 @@
     "format": "prettier --write \"src/**/*.{js,ts,vue}\""
   },
   "dependencies": {
-    "vue": "^3.5.38",
+    "@supabase/supabase-js": "^2.110.2",
     "leaflet": "1.9.4",
+    "vue": "^3.5.38",
     "vue-router": "^4.3.6"
   },
   "devDependencies": {

@@ -29,32 +29,7 @@ const props = defineProps({
   height: 600px;
   margin-top: 110px;
   display: flex;
-  flex-direction: column;
-  border-radius: 16px;
-  background: #ffffff;
-  padding: 24px;
-  overflow: hidden;
-}
-
-.teacher-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  height: 100%;
-}
-
-.teacher-list {
-  display: grid;
-  gap: 10px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.teacher-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 12px 14px;
-  background: #f9fafb;
+  flex-direction: row;
 }
 
 .empty-state {

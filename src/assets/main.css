@@ -2,7 +2,26 @@
 @import './reset.css';
 @font-face {
    font-family: 'Horizon';
-   src: url('D:\Users\admin-1\Korker\src\assets\horizon.otf') format('opentype');
+   src: url('D:\Users\admin-1\Korker\src\assets\fonts\horizon.otf') format('opentype');
    font-weight: normal;
    font-style: normal;
 }
+body {
+    position: relative;
+    min-height: 100vh;
+    background-color: #fff;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url('./photos/tlo.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.3;
+    z-index: -1;
+    pointer-events: none;
+}
+
