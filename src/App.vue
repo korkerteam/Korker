@@ -6,6 +6,7 @@ import MyTeachers from './components/MyTeachers.vue'
 import SearchBar from './views/SearchBar.vue'
 import CzatCzatSahur from './components/CzatCzatSahur.vue'
 import ProfilePage from './views/ProfilePage.vue'
+import MapPage from './views/Map.vue'
 </script>
 
 <template>
@@ -32,6 +33,9 @@ import ProfilePage from './views/ProfilePage.vue'
       <div class="Przyciski">
         <MenuPage />
       </div>
+    </div>
+    <div class="Mapa">
+      <MapPage />
     </div>
   </div>
 </template>
@@ -93,5 +97,11 @@ import ProfilePage from './views/ProfilePage.vue'
   position: fixed;
   right: 0;
   bottom: 40%;
+}
+
+.Mapa {
+  position: fixed;
+  right: 12px;
+  bottom: 10%;
 }
 </style>
