@@ -46,5 +46,10 @@ button {
   border: 0;
   border-radius: 0 100px 100px 0;
   text-align: left;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.95;
 }
 </style>
