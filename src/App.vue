@@ -1,7 +1,9 @@
 <script setup>
 import MenuPage from './views/MenuPage.vue'
-import HeaderKorker from './views/HeaderKorker.vue'
-import FilterPage from './views/FilterPage.vue'
+import HeaderKorker from './components/HeaderKorker.vue'
+import FilterPage from './components/FilterPage.vue'
+import CzatCzatSahur from './components/CzatCzatSahur.vue'
+
 </script>
 
 <template>
@@ -16,6 +18,9 @@ import FilterPage from './views/FilterPage.vue'
 
     <div class="Okienka">
       <FilterPage/>
+    </div>
+    <div class="Czaty">
+      <CzatCzatSahur/>
     </div>
 
   </div>
@@ -34,7 +39,7 @@ import FilterPage from './views/FilterPage.vue'
 }
 
 .Przyciski {
-
+    
 }
 
 .Okienka {
