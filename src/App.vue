@@ -1,23 +1,21 @@
 <script setup>
 import MenuPage from './views/MenuPage.vue'
-import HeaderKorker from './views/HeaderKorker.vue'
+import HeaderKorker from './components/HeaderKorker.vue'
 import FilterPage from './views/FilterPage.vue'
 </script>
 
 <template>
   <div class="main-layout">
-    
     <div class="Przyciski">
       <div class="Korker">
-        <HeaderKorker/>
+        <HeaderKorker />
       </div>
-      <MenuPage/>
+      <MenuPage />
     </div>
 
     <div class="Okienka">
-      <FilterPage/>
+      <FilterPage />
     </div>
-
   </div>
 </template>
 
@@ -26,7 +24,7 @@ import FilterPage from './views/FilterPage.vue'
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  gap: 20px;             
+  gap: 20px;
 }
 
 .Korker {
@@ -34,10 +32,9 @@ import FilterPage from './views/FilterPage.vue'
 }
 
 .Przyciski {
-
 }
 
 .Okienka {
-  flex-grow: 1; 
+  flex-grow: 1;
 }
 </style>
