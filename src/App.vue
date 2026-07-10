@@ -62,6 +62,9 @@ import ProfilePage from './views/ProfilePage.vue'
 .search-block {
   display: flex;
   align-items: center;
+  margin-left: auto;
+  position: fixed;
+  right: 0;
 }
 
 .Korker {
@@ -85,5 +88,10 @@ import ProfilePage from './views/ProfilePage.vue'
 
 .Przyciski {
   flex-shrink: 0;
+}
+.Czaty {
+  position: fixed;
+  right: 0;
+  bottom: 40%;
 }
 </style>
