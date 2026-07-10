@@ -63,6 +63,10 @@ function updateFilters(filters) {
   selectedFilters.value = filters
 }
 
+function confirmFilters() {
+  showFilter.value = false
+}
+
 function goToSearchPage() {
   const hasSelection =
     selectedFilters.value.subjects.length > 0 ||
@@ -115,7 +119,7 @@ function handleTeacherLike(teacher) {
       <Ranks />
     </div>
     <div class="filter-block" v-show="showFilter && route.name !== 'korker-szukaj'">
-      <FilterPage :model-value="selectedFilters" @update:model-value="updateFilters" @confirm="goToSearchPage" />
+      <FilterPage :model-value="selectedFilters" @update:model-value="updateFilters" @confirm="confirmFilters" />
     </div>
     <div class="teachers-block" v-show="showTeachers && route.name !== 'korker-szukaj'">
       <MyTeachers :teachers="likedTeachers" />
@@ -143,6 +147,7 @@ function handleTeacherLike(teacher) {
           @toggleRank="toggleRank"
           @toggleFilter="toggleFilter"
           @toggleTeachers="toggleTeachers"
+          @goToSearchPage="goToSearchPage"
         />
       </div>
     </div>
