@@ -1,6 +1,6 @@
 <script setup>
 import MenuPage from './views/MenuPage.vue'
-import HeaderKorker from './views/HeaderKorker.vue'
+import HeaderKorker from './components/HeaderKorker.vue'
 import FilterPage from './views/FilterPage.vue'
 import SearchBar from './views/SearchBar.vue';
 </script>
@@ -10,7 +10,7 @@ import SearchBar from './views/SearchBar.vue';
     
       <DIV class="align-left">
       <div class="Korker">
-        <HeaderKorker/>
+        <HeaderKorker />
       </div>
       <div>
         <SearchBar/>
@@ -22,7 +22,6 @@ import SearchBar from './views/SearchBar.vue';
 
     <div class="Okienka">
     </div>
-
   </div>
 </template>
 
@@ -38,11 +37,10 @@ import SearchBar from './views/SearchBar.vue';
 }
 
 .Przyciski {
-
 }
 
 .Okienka {
-  flex-grow: 1; 
+  flex-grow: 1;
 }
 
 .align-left {
