@@ -1,213 +1,201 @@
 <script setup>
 import { ref, computed, nextTick, watch } from 'vue'
 
-let msgCounter = 0
-function msgId() {
-  msgCounter++
-  return `${Date.now().toString(36)}_${msgCounter}`
-}
-
-function seedMessages(msgs) {
-  return msgs.map((m) => ({ id: msgId(), edited: false, editedAt: null, ...m }))
-}
+let n = 0
+const id = () => `${Date.now().toString(36)}_${++n}`
+const seed = (a) => a.map((m) => ({ id: id(), edited: false, editedAt: null, ...m }))
 
 const showChat = ref(false)
 const activeId = ref(null)
-const newMessage = ref('')
-const editingId = ref(null)
-const editText = ref('')
-const confirmDeleteId = ref(null)
-const chatBody = ref(null)
+const newMsg = ref('')
+const editId = ref(null)
+const editTxt = ref('')
+const delId = ref(null)
+const body = ref(null)
 
-const contacts = ref([
-  {
-    id: 1,
-    name: 'Sarah Jenkins',
-    role: 'Matematyka',
-    color: '#4f75c7',
-    online: true,
-    lastSeen: 'teraz',
-    messages: seedMessages([
-      {
-        from: 'them',
-        text: 'Hej! Widzę, że szukasz pomocy z matmy? Jestem tu po to!',
-        time: '14:14',
-      },
-      { from: 'them', text: 'Który temat sprawia Ci najwięcej trudności?', time: '14:14' },
-      { from: 'me', text: 'Cześć! Szeregi Taylora kompletnie mnie rozwalają 😅', time: '14:18' },
-      {
-        from: 'them',
-        text: 'Spokojnie, ogarniemy to! Test ilorazowy to nasz kumpel.',
-        time: '14:19',
-      },
-    ]),
-  },
-  {
-    id: 2,
-    name: 'Michał Kowalski',
-    role: 'Fizyka',
-    color: '#e056fd',
-    online: false,
-    lastSeen: '2h temu',
-    messages: seedMessages([
-      { from: 'them', text: 'Cześć! Przygotowałem zadania z mechaniki dla Ciebie.', time: '11:00' },
-      { from: 'me', text: 'O, super! Dzięki wielkie 🙌', time: '11:05' },
-    ]),
-  },
-  {
-    id: 3,
-    name: 'Anna Nowak',
-    role: 'Angielski',
-    color: '#42b883',
-    online: true,
-    lastSeen: 'teraz',
-    messages: seedMessages([
-      { from: 'them', text: 'Hi! Ready for our next conversation practice? 📚', time: '09:30' },
-      { from: 'me', text: "Sure! Let's do it.", time: '09:32' },
-      { from: 'them', text: "Great! I'll prepare some topics about travel.", time: '09:33' },
-    ]),
-  },
-  {
-    id: 4,
-    name: 'Kasia Wiśniewska',
-    role: 'Chemia',
-    color: '#10b981',
-    online: true,
-    lastSeen: '5min temu',
-    messages: seedMessages([
-      { from: 'them', text: 'Hej! Ogarnijmy razem te równania redox 💪', time: '12:00' },
-      { from: 'me', text: 'Brzmi dobrze! Kiedy masz czas?', time: '12:02' },
-      { from: 'them', text: 'Jutro po 15?', time: '12:03' },
-      { from: 'me', text: 'Pasuje! 👍', time: '12:05' },
-    ]),
-  },
-])
+const contacts = ref(
+  [
+    {
+      id: 1,
+      name: 'Sarah Jenkins',
+      role: 'Matematyka',
+      color: '#4f75c7',
+      online: 1,
+      last: 'teraz',
+      msgs: seed([
+        {
+          from: 'them',
+          text: 'Hej! Widzę, że szukasz pomocy z matmy? Jestem tu po to!',
+          time: '14:14',
+        },
+        { from: 'them', text: 'Który temat sprawia Ci najwięcej trudności?', time: '14:14' },
+        { from: 'me', text: 'Cześć! Szeregi Taylora kompletnie mnie rozwalają 😅', time: '14:18' },
+        {
+          from: 'them',
+          text: 'Spokojnie, ogarniemy to! Test ilorazowy to nasz kumpel.',
+          time: '14:19',
+        },
+      ]),
+    },
+    {
+      id: 2,
+      name: 'Michał Kowalski',
+      role: 'Fizyka',
+      color: '#e056fd',
+      online: 0,
+      last: '2h temu',
+      msgs: seed([
+        {
+          from: 'them',
+          text: 'Cześć! Przygotowałem zadania z mechaniki dla Ciebie.',
+          time: '11:00',
+        },
+        { from: 'me', text: 'O, super! Dzięki wielkie', time: '11:05' },
+      ]),
+    },
+    {
+      id: 3,
+      name: 'Anna Nowak',
+      role: 'Angielski',
+      color: '#42b883',
+      online: 1,
+      last: 'teraz',
+      msgs: seed([
+        { from: 'them', text: 'Hi! Ready for our next conversation practice?', time: '09:30' },
+        { from: 'me', text: "Sure! Let's do it.", time: '09:32' },
+        { from: 'them', text: "Great! I'll prepare some topics about travel.", time: '09:33' },
+      ]),
+    },
+    {
+      id: 4,
+      name: 'Kasia Wiśniewska',
+      role: 'Chemia',
+      color: '#10b981',
+      online: 1,
+      last: '5min temu',
+      msgs: seed([
+        { from: 'them', text: 'Hej! Ogarnijmy razem te równania redox', time: '12:00' },
+        { from: 'me', text: 'Brzmi dobrze! Kiedy masz czas?', time: '12:02' },
+        { from: 'them', text: 'Jutro po 15?', time: '12:03' },
+        { from: 'me', text: 'Pasuje!', time: '12:05' },
+      ]),
+    },
+  ].map((c) => ({ ...c, messages: c.msgs, msgs: void 0 })),
+)
 
-const activeContact = computed(() => contacts.value.find((c) => c.id === activeId.value) || null)
+const cur = computed(() => contacts.value.find((c) => c.id === activeId.value) || null)
+const list = computed(() => !cur.value)
 
-const showList = computed(() => !activeContact.value)
-
+function down() {
+  nextTick(() => {
+    if (body.value) body.value.scrollTop = body.value.scrollHeight
+  })
+}
 function openChat(id) {
   activeId.value = id
-  scrollDown()
+  down()
 }
-
-function clearEditState() {
-  editingId.value = null
-  editText.value = ''
-  confirmDeleteId.value = null
+function clr() {
+  editId.value = null
+  editTxt.value = ''
+  delId.value = null
 }
-
-function goBack() {
+function back() {
   activeId.value = null
-  clearEditState()
+  clr()
 }
-
-function toggleChat() {
+function toggle() {
   showChat.value = !showChat.value
   if (!showChat.value) {
     activeId.value = null
-    clearEditState()
+    clr()
   }
 }
 
-function sendMessage() {
-  if (!newMessage.value.trim() || !activeContact.value) return
-  const contact = contacts.value.find((c) => c.id === activeId.value)
-  if (!contact) return
-  contact.messages.push({
-    id: msgId(),
+function send() {
+  if (!newMsg.value.trim() || !cur.value) return
+  const c = contacts.value.find((x) => x.id === activeId.value)
+  if (!c) return
+  c.messages.push({
+    id: id(),
     from: 'me',
-    text: newMessage.value,
+    text: newMsg.value,
     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     edited: false,
     editedAt: null,
   })
-  newMessage.value = ''
-  scrollDown()
+  newMsg.value = ''
+  down()
 }
-
-function handleKeydown(e) {
+function onkey(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
-    sendMessage()
+    send()
   }
 }
 
-function startEdit(msg) {
-  editingId.value = msg.id
-  editText.value = msg.text
+function startEdit(m) {
+  editId.value = m.id
+  editTxt.value = m.text
   nextTick(() => {
-    const el = document.querySelector('.edit-ta')
+    const el = document.querySelector('.et')
     if (el) {
       el.focus()
       el.setSelectionRange(el.value.length, el.value.length)
     }
   })
 }
-
 function cancelEdit() {
-  editingId.value = null
-  editText.value = ''
+  editId.value = null
+  editTxt.value = ''
 }
-
 function saveEdit(id) {
-  if (!editText.value.trim()) return
-  const contact = contacts.value.find((c) => c.id === activeId.value)
-  if (!contact) return
-  const msg = contact.messages.find((m) => m.id === id)
-  if (!msg) return
-  msg.text = editText.value
-  msg.edited = true
-  msg.editedAt = new Date().toISOString()
-  editingId.value = null
-  editText.value = ''
+  if (!editTxt.value.trim()) return
+  const c = contacts.value.find((x) => x.id === activeId.value)
+  if (!c) return
+  const m = c.messages.find((x) => x.id === id)
+  if (!m) return
+  m.text = editTxt.value
+  m.edited = true
+  m.editedAt = new Date().toISOString()
+  editId.value = null
+  editTxt.value = ''
 }
-
-function handleEditKeydown(e) {
+function onEditKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
-    saveEdit(editingId.value)
+    saveEdit(editId.value)
   }
   if (e.key === 'Escape') {
     e.preventDefault()
     cancelEdit()
-    cancelDelete()
+    delId.value = null
   }
 }
-
-function requestDelete(id) {
-  confirmDeleteId.value = id
+function reqDel(id) {
+  delId.value = id
 }
-
-function cancelDelete() {
-  confirmDeleteId.value = null
+function cancelDel() {
+  delId.value = null
 }
-
-function deleteMessage() {
-  const id = confirmDeleteId.value
+function delMsg() {
+  const id = delId.value
   if (!id) return
-  const contact = contacts.value.find((c) => c.id === activeId.value)
-  if (!contact) return
-  const idx = contact.messages.findIndex((m) => m.id === id)
-  if (idx === -1) return
-  contact.messages.splice(idx, 1)
-  if (editingId.value === id) cancelEdit()
-  confirmDeleteId.value = null
+  const c = contacts.value.find((x) => x.id === activeId.value)
+  if (!c) return
+  const i = c.messages.findIndex((x) => x.id === id)
+  if (i === -1) return
+  c.messages.splice(i, 1)
+  if (editId.value === id) cancelEdit()
+  delId.value = null
 }
 
-function scrollDown() {
-  nextTick(() => {
-    if (chatBody.value) chatBody.value.scrollTop = chatBody.value.scrollHeight
-  })
-}
-
-watch(activeId, scrollDown)
+watch(activeId, down)
 </script>
 
 <template>
-  <div class="chat-root">
-    <button v-if="!showChat" class="fab" @click="toggleChat" title="Czat">
+  <div class="r">
+    <button v-if="!showChat" class="fab" @click="toggle" title="Czat">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
         <path
           d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"
@@ -217,13 +205,11 @@ watch(activeId, scrollDown)
         <rect x="7" y="13" width="7" height="2" rx="1" fill="white" />
       </svg>
     </button>
-
-    <Transition name="slide">
-      <div v-if="showChat" class="drawer">
-        <!-- Header: contact list -->
-        <div v-if="showList" class="hdr">
-          <h2 class="hdr-title">Wiadomości</h2>
-          <button class="hdr-btn" @click="toggleChat" title="Zamknij">
+    <Transition name="s">
+      <div v-if="showChat" class="dr">
+        <div v-if="list" class="h">
+          <h2 class="ht">Wiadomości</h2>
+          <button class="hb" @click="toggle">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path
                 d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
@@ -232,10 +218,8 @@ watch(activeId, scrollDown)
             </svg>
           </button>
         </div>
-
-        <!-- Header: active chat -->
-        <div v-else class="hdr hdr-chat">
-          <button class="hdr-btn" @click="goBack" title="Wstecz">
+        <div v-else class="h hc">
+          <button class="hb" @click="back">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path
                 d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"
@@ -243,18 +227,16 @@ watch(activeId, scrollDown)
               />
             </svg>
           </button>
-          <div class="hdr-info">
-            <div class="hdr-av" :style="{ background: activeContact?.color }">
-              {{ activeContact?.name?.charAt(0) }}
-            </div>
-            <div class="hdr-meta">
-              <span class="hdr-name">{{ activeContact?.name }}</span>
-              <span class="hdr-status" :class="{ on: activeContact?.online }">
-                {{ activeContact?.online ? 'Online' : activeContact?.lastSeen }}
-              </span>
+          <div class="hi">
+            <div class="ha" :style="{ background: cur?.color }">{{ cur?.name?.charAt(0) }}</div>
+            <div class="hm">
+              <span class="hn">{{ cur?.name }}</span
+              ><span class="hs" :class="{ on: cur?.online }">{{
+                cur?.online ? 'Online' : cur?.last
+              }}</span>
             </div>
           </div>
-          <button class="hdr-btn" @click="toggleChat" title="Zamknij">
+          <button class="hb" @click="toggle">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path
                 d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
@@ -263,61 +245,47 @@ watch(activeId, scrollDown)
             </svg>
           </button>
         </div>
-
-        <!-- Contact list -->
-        <div v-if="showList" class="clist">
-          <button v-for="c in contacts" :key="c.id" class="citem" @click="openChat(c.id)">
-            <div class="citem-left">
-              <div class="citem-av" :style="{ background: c.color }">{{ c.name.charAt(0) }}</div>
-              <div class="citem-info">
-                <span class="citem-name">{{ c.name }}</span>
-                <span class="citem-role">{{ c.role }}</span>
-                <span v-if="c.messages.length" class="citem-last">{{
+        <div v-if="list" class="cl">
+          <button v-for="c in contacts" :key="c.id" class="ci" @click="openChat(c.id)">
+            <div class="cil">
+              <div class="cia" :style="{ background: c.color }">{{ c.name.charAt(0) }}</div>
+              <div class="cii">
+                <span class="cin">{{ c.name }}</span
+                ><span class="cir">{{ c.role }}</span
+                ><span v-if="c.messages.length" class="cila">{{
                   c.messages[c.messages.length - 1].text
                 }}</span>
               </div>
             </div>
-            <div class="citem-right">
-              <span v-if="c.online" class="citem-dot"></span>
-              <span v-else class="citem-ago">{{ c.lastSeen }}</span>
+            <div class="cir2">
+              <span v-if="c.online" class="cid"></span><span v-else class="cia2">{{ c.last }}</span>
             </div>
           </button>
         </div>
-
-        <!-- Chat messages -->
-        <div v-else ref="chatBody" class="msgs">
+        <div v-else ref="body" class="ms">
           <div
-            v-for="m in activeContact?.messages"
+            v-for="m in cur?.messages"
             :key="m.id"
-            class="mrow"
-            :class="m.from === 'me' ? 'mine' : 'theirs'"
+            class="mr"
+            :class="m.from === 'me' ? 'me' : 'th'"
           >
-            <div v-if="m.from === 'them'" class="mav" :style="{ background: activeContact?.color }">
-              {{ activeContact?.name?.charAt(0) }}
+            <div v-if="m.from === 'them'" class="ma" :style="{ background: cur?.color }">
+              {{ cur?.name?.charAt(0) }}
             </div>
-            <div class="mbody">
-              <div class="bub-wrap" :class="m.from === 'me' ? 'bw-me' : ''">
-                <!-- Edit mode -->
-                <div v-if="editingId === m.id && m.from === 'me'" class="edit-wrap">
-                  <textarea
-                    v-model="editText"
-                    class="edit-ta"
-                    rows="2"
-                    @keydown="handleEditKeydown"
-                  ></textarea>
-                  <div class="edit-acts">
-                    <button class="edit-save" @click="saveEdit(m.id)" :disabled="!editText.trim()">
-                      Zapisz
-                    </button>
-                    <button class="edit-cancel" @click="cancelEdit">Anuluj</button>
+            <div class="mb">
+              <div class="bw" :class="m.from === 'me' ? 'bwm' : ''">
+                <div v-if="editId === m.id && m.from === 'me'" class="ew">
+                  <textarea v-model="editTxt" class="et" rows="2" @keydown="onEditKey"></textarea>
+                  <div class="ea">
+                    <button class="es" @click="saveEdit(m.id)" :disabled="!editTxt.trim()">
+                      Zapisz</button
+                    ><button class="ec" @click="cancelEdit">Anuluj</button>
                   </div>
                 </div>
-                <!-- Display mode -->
-                <div v-else class="mbub" :class="m.from === 'me' ? 'b-me' : 'b-them'">
+                <div v-else class="bb" :class="m.from === 'me' ? 'bm' : 'bt'">
                   {{ m.text }}
-                  <!-- Action buttons on own messages -->
-                  <div v-if="m.from === 'me' && confirmDeleteId !== m.id" class="act-ov">
-                    <button class="act-btn" @click="startEdit(m)" title="Edytuj">
+                  <div v-if="m.from === 'me' && delId !== m.id" class="ao">
+                    <button class="ab" @click="startEdit(m)" title="Edytuj">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                         <path
                           d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
@@ -325,7 +293,7 @@ watch(activeId, scrollDown)
                         />
                       </svg>
                     </button>
-                    <button class="act-btn" @click="requestDelete(m.id)" title="Usuń">
+                    <button class="ab" @click="reqDel(m.id)" title="Usuń">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                         <path
                           d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
@@ -334,33 +302,28 @@ watch(activeId, scrollDown)
                       </svg>
                     </button>
                   </div>
-                  <!-- Delete confirmation -->
-                  <div v-if="m.from === 'me' && confirmDeleteId === m.id" class="del-confirm">
-                    <span class="del-label">Usunąć?</span>
-                    <button class="del-yes" @click="deleteMessage()">Usuń</button>
-                    <button class="del-no" @click="cancelDelete">Anuluj</button>
+                  <div v-if="m.from === 'me' && delId === m.id" class="dc">
+                    <span class="dl">Usunąć?</span><button class="dy" @click="delMsg()">Usuń</button
+                    ><button class="dn" @click="cancelDel">Anuluj</button>
                   </div>
                 </div>
               </div>
-              <span class="mtime" :class="m.from === 'me' ? 'tr' : ''">
-                {{ m.time }}
-                <span v-if="m.edited" class="ed">· edytowano</span>
-              </span>
+              <span class="mt" :class="m.from === 'me' ? 'mtr' : ''"
+                >{{ m.time }}<span v-if="m.edited" class="ed">. edytowano</span></span
+              >
             </div>
           </div>
         </div>
-
-        <!-- Input -->
-        <div v-if="!showList" class="iarea">
-          <div class="irow">
+        <div v-if="!list" class="ia">
+          <div class="ir">
             <textarea
-              v-model="newMessage"
-              class="ita"
+              v-model="newMsg"
+              class="it"
               placeholder="Napisz wiadomość..."
               rows="1"
-              @keydown="handleKeydown"
-            ></textarea>
-            <button class="isend" @click="sendMessage" :disabled="!newMessage.trim()">
+              @keydown="onkey"
+            ></textarea
+            ><button class="is" @click="send" :disabled="!newMsg.trim()">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor" />
               </svg>
@@ -373,11 +336,9 @@ watch(activeId, scrollDown)
 </template>
 
 <style scoped>
-.chat-root {
+.r {
   font-family: sans-serif;
 }
-
-/* FAB */
 .fab {
   position: fixed;
   bottom: 24px;
@@ -403,9 +364,7 @@ watch(activeId, scrollDown)
 .fab:active {
   transform: scale(0.93);
 }
-
-/* Drawer */
-.drawer {
+.dr {
   position: fixed;
   top: 0;
   right: 0;
@@ -420,13 +379,13 @@ watch(activeId, scrollDown)
   flex-direction: column;
   overflow: hidden;
 }
-.slide-enter-active {
-  animation: slid 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.s-enter-active {
+  animation: sl 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-.slide-leave-active {
-  animation: slid 0.22s cubic-bezier(0.16, 1, 0.3, 1) reverse;
+.s-leave-active {
+  animation: sl 0.22s cubic-bezier(0.16, 1, 0.3, 1) reverse;
 }
-@keyframes slid {
+@keyframes sl {
   from {
     transform: translateX(100%);
   }
@@ -435,29 +394,28 @@ watch(activeId, scrollDown)
   }
 }
 
-/* Header */
-.hdr {
+.h {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px;
+  padding: 16px 20px;
   background: #4f75c7;
   color: #fff;
   flex-shrink: 0;
   min-height: 64px;
 }
-.hdr-chat {
-  padding: 14px 16px;
-  min-height: 60px;
+.hc {
+  padding: 16px 20px;
+  min-height: 64px;
 }
-.hdr-title {
+.ht {
   font-family: 'Horizon', sans-serif;
   font-size: 20px;
   font-weight: 400;
   margin: 0;
   letter-spacing: 0.5px;
 }
-.hdr-btn {
+.hb {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -471,21 +429,21 @@ watch(activeId, scrollDown)
   flex-shrink: 0;
   transition: background 0.2s;
 }
-.hdr-btn:hover {
+.hb:hover {
   background: rgba(255, 255, 255, 0.35);
 }
-.hdr-btn:active {
+.hb:active {
   transform: scale(0.92);
 }
 
-.hdr-info {
+.hi {
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
   flex: 1;
 }
-.hdr-av {
+.ha {
   width: 38px;
   height: 38px;
   border-radius: 50%;
@@ -497,26 +455,26 @@ watch(activeId, scrollDown)
   font-weight: 700;
   flex-shrink: 0;
 }
-.hdr-meta {
+.hm {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
-.hdr-name {
+.hn {
   font-size: 17px;
   font-weight: 700;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.hdr-status {
+.hs {
   font-size: 12px;
   opacity: 0.8;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.hdr-status.on::before {
+.hs.on::before {
   content: '';
   display: inline-block;
   width: 7px;
@@ -527,26 +485,28 @@ watch(activeId, scrollDown)
   vertical-align: middle;
 }
 
-/* Contact list */
-.clist {
+.cl {
   flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   padding: 4px 0;
 }
-.clist::-webkit-scrollbar {
+.cl::-webkit-scrollbar,
+.ms::-webkit-scrollbar {
   width: 5px;
 }
-.clist::-webkit-scrollbar-track {
+.cl::-webkit-scrollbar-track,
+.ms::-webkit-scrollbar-track {
   background: transparent;
 }
-.clist::-webkit-scrollbar-thumb {
+.cl::-webkit-scrollbar-thumb,
+.ms::-webkit-scrollbar-thumb {
   background: #d1dcee;
   border-radius: 4px;
 }
 
-.citem {
+.ci {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -558,21 +518,20 @@ watch(activeId, scrollDown)
   transition: background 0.15s;
   border-bottom: 1px solid #e8edf5;
 }
-.citem:hover {
+.ci:hover {
   background: #e8edf5;
 }
-.citem:active {
+.ci:active {
   background: #d1dcee;
 }
-
-.citem-left {
+.cil {
   display: flex;
   align-items: center;
   gap: 14px;
   min-width: 0;
   flex: 1;
 }
-.citem-av {
+.cia {
   width: 46px;
   height: 46px;
   border-radius: 50%;
@@ -584,54 +543,53 @@ watch(activeId, scrollDown)
   font-weight: 700;
   flex-shrink: 0;
 }
-.citem-info {
+.cii {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
-.citem-name {
+.cin {
   font-size: 15px;
   font-weight: 600;
   color: #1a1a2e;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.citem-role {
+.cir {
   font-size: 12px;
   color: #6b7280;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.citem-last {
+.cila {
   font-size: 13px;
   color: #9ca3af;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
   margin-top: 1px;
 }
-.citem-right {
+.cir2 {
   flex-shrink: 0;
   margin-left: 10px;
   display: flex;
   align-items: center;
 }
-.citem-dot {
+.cid {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   background: #10b981;
 }
-.citem-ago {
+.cia2 {
   font-size: 11px;
   color: #9ca3af;
   white-space: nowrap;
 }
 
-/* Messages */
-.msgs {
+.ms {
   flex: 1;
   overflow-y: auto;
   padding: 16px 16px 8px;
@@ -639,31 +597,19 @@ watch(activeId, scrollDown)
   flex-direction: column;
   gap: 10px;
 }
-.msgs::-webkit-scrollbar {
-  width: 5px;
-}
-.msgs::-webkit-scrollbar-track {
-  background: transparent;
-}
-.msgs::-webkit-scrollbar-thumb {
-  background: #d1dcee;
-  border-radius: 4px;
-}
-
-.mrow {
+.mr {
   display: flex;
   gap: 8px;
   max-width: 88%;
 }
-.mrow.theirs {
+.mr.th {
   align-self: flex-start;
 }
-.mrow.mine {
+.mr.me {
   align-self: flex-end;
   flex-direction: row-reverse;
 }
-
-.mav {
+.ma {
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -676,22 +622,22 @@ watch(activeId, scrollDown)
   flex-shrink: 0;
   margin-top: 4px;
 }
-.mbody {
+.mb {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-.mine .mbody {
+.me .mb {
   align-items: flex-end;
 }
-
-/* Bubble wrapper — needed for action overlay positioning */
-.bub-wrap {
+.bw {
   position: relative;
 }
+.bwm:hover .ao {
+  display: flex;
+}
 
-/* Action buttons overlay (appear on hover) */
-.act-ov {
+.ao {
   position: absolute;
   top: -14px;
   right: 0;
@@ -699,10 +645,7 @@ watch(activeId, scrollDown)
   gap: 2px;
   z-index: 10;
 }
-.bw-me:hover .act-ov {
-  display: flex;
-}
-.act-btn {
+.ab {
   width: 26px;
   height: 26px;
   border-radius: 50%;
@@ -716,16 +659,15 @@ watch(activeId, scrollDown)
   transition: all 0.15s;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
-.act-btn:hover {
+.ab:hover {
   background: #d1dcee;
   color: #1a1a2e;
 }
-.act-btn:active {
+.ab:active {
   transform: scale(0.9);
 }
 
-/* Delete confirmation overlay */
-.del-confirm {
+.dc {
   position: absolute;
   top: -14px;
   right: 0;
@@ -739,13 +681,13 @@ watch(activeId, scrollDown)
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   white-space: nowrap;
 }
-.del-label {
+.dl {
   font-size: 11px;
   color: #6b7280;
   margin-right: 2px;
 }
-.del-yes,
-.del-no {
+.dy,
+.dn {
   padding: 3px 8px;
   border: none;
   border-radius: 5px;
@@ -754,22 +696,22 @@ watch(activeId, scrollDown)
   cursor: pointer;
   transition: all 0.15s;
 }
-.del-yes {
+.dy {
   background: #ef4444;
   color: #fff;
 }
-.del-yes:hover {
+.dy:hover {
   background: #dc2626;
 }
-.del-no {
+.dn {
   background: #e8edf5;
   color: #6b7280;
 }
-.del-no:hover {
+.dn:hover {
   background: #d1dcee;
 }
 
-.mbub {
+.bb {
   padding: 12px 16px;
   border-radius: 18px;
   font-size: 15px;
@@ -777,23 +719,23 @@ watch(activeId, scrollDown)
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
-.b-them {
+.bt {
   background: #e8edf5;
   color: #1a1a2e;
   border-bottom-left-radius: 5px;
 }
-.b-me {
+.bm {
   background: #4f75c7;
   color: #fff;
   border-bottom-right-radius: 5px;
 }
 
-.mtime {
+.mt {
   font-size: 11px;
   color: #9ca3af;
   padding: 0 4px;
 }
-.tr {
+.mtr {
   align-self: flex-end;
 }
 .ed {
@@ -801,15 +743,14 @@ watch(activeId, scrollDown)
   font-size: 11px;
 }
 
-/* Edit mode */
-.edit-wrap {
+.ew {
   background: #fff;
   border: 2px solid #4f75c7;
   border-radius: 14px;
   padding: 8px;
   min-width: 220px;
 }
-.edit-ta {
+.et {
   width: 100%;
   border: none;
   background: transparent;
@@ -821,14 +762,14 @@ watch(activeId, scrollDown)
   font-family: inherit;
   min-height: 40px;
 }
-.edit-acts {
+.ea {
   display: flex;
   justify-content: flex-end;
   gap: 6px;
   margin-top: 6px;
 }
-.edit-save,
-.edit-cancel {
+.es,
+.ec {
   padding: 5px 14px;
   border: none;
   border-radius: 8px;
@@ -837,33 +778,32 @@ watch(activeId, scrollDown)
   cursor: pointer;
   transition: all 0.15s;
 }
-.edit-save {
+.es {
   background: #4f75c7;
   color: #fff;
 }
-.edit-save:hover {
+.es:hover {
   background: #3d62ad;
 }
-.edit-save:disabled {
+.es:disabled {
   background: #d1dcee;
   cursor: default;
 }
-.edit-cancel {
+.ec {
   background: #e8edf5;
   color: #6b7280;
 }
-.edit-cancel:hover {
+.ec:hover {
   background: #d1dcee;
 }
 
-/* Input */
-.iarea {
+.ia {
   padding: 10px 14px 14px;
   border-top: 1px solid #e8edf5;
   background: #f5f7fa;
   flex-shrink: 0;
 }
-.irow {
+.ir {
   display: flex;
   align-items: flex-end;
   gap: 8px;
@@ -873,11 +813,10 @@ watch(activeId, scrollDown)
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   transition: box-shadow 0.2s;
 }
-.irow:focus-within {
+.ir:focus-within {
   box-shadow: 0 2px 12px rgba(79, 117, 199, 0.15);
 }
-
-.ita {
+.it {
   flex: 1;
   border: none;
   background: transparent;
@@ -891,11 +830,10 @@ watch(activeId, scrollDown)
   line-height: 1.5;
   font-family: inherit;
 }
-.ita::placeholder {
+.it::placeholder {
   color: #9ca3af;
 }
-
-.isend {
+.is {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -909,14 +847,14 @@ watch(activeId, scrollDown)
   flex-shrink: 0;
   transition: all 0.2s;
 }
-.isend:hover {
+.is:hover {
   background: #3d62ad;
   transform: scale(1.05);
 }
-.isend:active {
+.is:active {
   transform: scale(0.92);
 }
-.isend:disabled {
+.is:disabled {
   background: #d1dcee;
   cursor: default;
   transform: none;
