@@ -1,8 +1,9 @@
 <script setup>
 import MenuPage from './views/MenuPage.vue'
 import HeaderKorker from './components/HeaderKorker.vue'
-import FilterPage from './views/FilterPage.vue'
-import SearchBar from './views/SearchBar.vue';
+import FilterPage from './components/FilterPage.vue'
+import CzatCzatSahur from './components/CzatCzatSahur.vue'
+
 </script>
 
 <template>
@@ -22,6 +23,10 @@ import SearchBar from './views/SearchBar.vue';
 
     <div class="Okienka">
     </div>
+    <div class="Czaty">
+      <CzatCzatSahur/>
+    </div>
+
   </div>
 </template>
 
@@ -37,6 +42,7 @@ import SearchBar from './views/SearchBar.vue';
 }
 
 .Przyciski {
+    
 }
 
 .Okienka {
