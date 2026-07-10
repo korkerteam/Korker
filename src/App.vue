@@ -1,7 +1,8 @@
 <script setup>
 import MenuPage from './views/MenuPage.vue'
-import HeaderKorker from './views/HeaderKorker.vue'
-import FilterPage from './views/FilterPage.vue'
+import HeaderKorker from './components/HeaderKorker.vue'
+import FilterPage from './components/FilterPage.vue'
+import MyTeachers from './components/MyTeachers.vue'
 </script>
 
 <template>
@@ -15,7 +16,7 @@ import FilterPage from './views/FilterPage.vue'
     </div>
 
     <div class="Okienka">
-      <FilterPage/>
+      
     </div>
 
   </div>
@@ -32,11 +33,6 @@ import FilterPage from './views/FilterPage.vue'
 .Korker {
   margin-bottom: 10px;
 }
-
-.Przyciski {
-
-}
-
 .Okienka {
   flex-grow: 1; 
 }
