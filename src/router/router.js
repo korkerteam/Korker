@@ -7,14 +7,14 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: MenuPage
+      component: MenuPage,
     },
     {
-      path: '/test',
-      name: 'test',
-      component: About
-    }
-  ]
+      path: '/szukaj',
+      name: 'search',
+      component: MenuPage,
+    },
+  ],
 })
 
 export default router
