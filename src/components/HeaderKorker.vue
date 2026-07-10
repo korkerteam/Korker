@@ -9,7 +9,6 @@ button {
   font-size: 70px;
   font-family: Horizon;
   border-radius: 10px;
-  background-color: #4f75c7; 
+  background-color: #4f75c7;
 }
-
 </style>
