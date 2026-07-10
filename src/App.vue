@@ -4,6 +4,8 @@ import HeaderKorker from './components/HeaderKorker.vue'
 import FilterPage from './components/FilterPage.vue'
 import MyTeachers from './components/MyTeachers.vue'
 import SearchBar from './views/SearchBar.vue';
+import CzatCzatSahur from './components/CzatCzatSahur.vue'
+
 </script>
 
 <template>
@@ -24,6 +26,10 @@ import SearchBar from './views/SearchBar.vue';
     <div class="Okienka">
       
     </div>
+    <div class="Czaty">
+      <CzatCzatSahur/>
+    </div>
+
   </div>
 </template>
 

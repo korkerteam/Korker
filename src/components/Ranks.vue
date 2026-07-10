@@ -36,8 +36,8 @@
 }
 
 .białe-tło {
-  background-color: white;
-  color: black;
+  background-color: rgb(41, 130, 146);
+  color: rgb(54, 167, 26);
   padding: 20px;
   border-radius: 10px;
   margin-top: 20px;
