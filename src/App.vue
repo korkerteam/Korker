@@ -7,6 +7,7 @@ import MyTeachers from './components/MyTeachers.vue'
 import SearchBar from './views/SearchBar.vue'
 import CzatCzatSahur from './components/CzatCzatSahur.vue'
 import ProfilePage from './views/ProfilePage.vue'
+import MapPage from './views/Map.vue'
 
 const showProfile = ref(false)
 </script>
@@ -35,6 +36,9 @@ const showProfile = ref(false)
       <div class="Przyciski">
         <MenuPage @toggleProfile="showProfile = !showProfile" />
       </div>
+    </div>
+    <div class="Mapa">
+      <MapPage />
     </div>
   </div>
 </template>
@@ -96,5 +100,11 @@ const showProfile = ref(false)
   position: fixed;
   right: 0;
   bottom: 40%;
+}
+
+.Mapa {
+  position: fixed;
+  right: 12px;
+  bottom: 10%;
 }
 </style>
