@@ -9,15 +9,19 @@ import CzatCzatSahur from './components/CzatCzatSahur.vue'
 <template>
   <div class="main-layout">
     
-    <div class="Przyciski">
+      <DIV class="align-left">
       <div class="Korker">
-        <HeaderKorker/>
+        <HeaderKorker />
       </div>
+      <div>
+        <SearchBar/>
+      </div>
+      </DIV>
+          <div class="Przyciski">
       <MenuPage/>
     </div>
 
     <div class="Okienka">
-      <FilterPage/>
     </div>
     <div class="Czaty">
       <CzatCzatSahur/>
@@ -29,8 +33,7 @@ import CzatCzatSahur from './components/CzatCzatSahur.vue'
 <style scoped>
 .main-layout {
   display: flex;
-  flex-direction: row;
-  align-items: flex-start;
+  flex-direction: column;
   gap: 20px;             
 }
 
@@ -43,6 +46,12 @@ import CzatCzatSahur from './components/CzatCzatSahur.vue'
 }
 
 .Okienka {
-  flex-grow: 1; 
+  flex-grow: 1;
+}
+
+.align-left {
+  display: flex;
+  flex-direction: row;
+  gap: 830px;
 }
 </style>
