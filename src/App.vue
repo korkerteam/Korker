@@ -161,6 +161,7 @@ function toggleTeachers() {
   position: fixed;
   right: 0;
   bottom: 40%;
+  z-index: 200;
 }
 
 .ranks-block {
