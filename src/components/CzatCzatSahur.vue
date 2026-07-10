@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, nextTick, watch } from 'vue'
+import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
 
 let n = 0
 const id = () => `${Date.now().toString(36)}_${++n}`
@@ -12,6 +12,18 @@ const editId = ref(null)
 const editTxt = ref('')
 const delId = ref(null)
 const body = ref(null)
+const panel = ref(null)
+
+function onClickOutside(e) {
+  if (panel.value && !panel.value.contains(e.target) && !e.target.closest('.fab')) {
+    showChat.value = false
+    activeId.value = null
+    clr()
+  }
+}
+
+onMounted(() => document.addEventListener('click', onClickOutside))
+onUnmounted(() => document.removeEventListener('click', onClickOutside))
 
 const contacts = ref(
   [
@@ -206,7 +218,7 @@ watch(activeId, down)
       </svg>
     </button>
     <Transition name="s">
-      <div v-if="showChat" class="dr">
+      <div v-if="showChat" ref="panel" class="dr">
         <div v-if="list" class="h">
           <h2 class="ht">Wiadomości</h2>
           <button class="hb" @click="toggle">
