@@ -1,8 +1,12 @@
 <script setup>
-const emit = defineEmits(['toggleProfile'])
+const emit = defineEmits(['toggleProfile', 'toggleRank'])
 
 function handleProfileClick() {
   emit('toggleProfile')
+}
+
+function handleRankClick() {
+  emit('toggleRank')
 }
 </script>
 <template>
@@ -10,7 +14,7 @@ function handleProfileClick() {
     <button>Szukaj Korepetycji</button>
     <button>Filtry</button>
     <button @click="handleProfileClick">Profil</button>
-    <button>Ranking</button>
+    <button @click="handleRankClick">Ranking</button>
     <button>Moi Nauczyciele</button>
   </div>
 </template>

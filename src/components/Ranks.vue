@@ -22,10 +22,6 @@
 
 <style scoped>
 .ranking-container {
-  position: absolute;
-  top: 200px;
-  left: 900px;
-
   background-color: #4f75c7; /* Niebieski kolor z projektu */
   color: white;
   padding: 30px;

@@ -7,9 +7,21 @@ import MyTeachers from './components/MyTeachers.vue'
 import SearchBar from './views/SearchBar.vue'
 import CzatCzatSahur from './components/CzatCzatSahur.vue'
 import ProfilePage from './views/ProfilePage.vue'
+import Ranks from './components/Ranks.vue'
 import MapPage from './views/Map.vue'
 
 const showProfile = ref(false)
+const showRanks = ref(false)
+
+function toggleProfile() {
+  showProfile.value = !showProfile.value
+  if (showProfile.value) showRanks.value = false
+}
+
+function toggleRank() {
+  showRanks.value = !showRanks.value
+  if (showRanks.value) showProfile.value = false
+}
 </script>
 
 <template>
@@ -28,13 +40,16 @@ const showProfile = ref(false)
     <div class="profile-block" v-show="showProfile">
       <ProfilePage />
     </div>
+    <div class="ranks-block" v-show="showRanks">
+      <Ranks />
+    </div>
     <div class="Czaty">
       <CzatCzatSahur />
     </div>
 
     <div class="content-row">
       <div class="Przyciski">
-        <MenuPage @toggleProfile="showProfile = !showProfile" />
+        <MenuPage @toggleProfile="toggleProfile" @toggleRank="toggleRank" />
       </div>
     </div>
     <div class="Mapa">
@@ -80,8 +95,17 @@ const showProfile = ref(false)
 
 .profile-block {
   position: absolute;
-  top: 50%;
+  top: 47%;
   right: 340px;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ranks-block {
+  position: absolute;
+  top: 47%;
+  right: 350px;
   transform: translateY(-50%);
   display: flex;
   justify-content: flex-end;
@@ -100,6 +124,13 @@ const showProfile = ref(false)
   position: fixed;
   right: 0;
   bottom: 40%;
+}
+
+.ranks-block {
+  position: absolute;
+  top: 47%;
+  right: 350px;
+  transform: translateY(-50%);
 }
 
 .Mapa {
