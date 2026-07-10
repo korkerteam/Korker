@@ -7,7 +7,7 @@ const profile = reactive({
   age: '17 lat',
   location: 'Szczecin',
   gender: 'Mężczyzna',
-  avatar: 'https://via.placeholder.com/80'
+  avatar: 'https://via.placeholder.com/80',
 })
 
 const isEditing = ref(false)
@@ -16,7 +16,7 @@ const draft = reactive({
   accountType: profile.accountType,
   age: profile.age,
   location: profile.location,
-  gender: profile.gender
+  gender: profile.gender,
 })
 
 function startEdit() {
@@ -60,8 +60,14 @@ function onAvatarChange(event) {
         class="avatar"
         @click="isEditing ? triggerAvatarUpload() : null"
         :class="{ 'avatar-editable': isEditing }"
-      >
-      <input id="avatar-input" type="file" accept="image/*" class="avatar-input" @change="onAvatarChange" />
+      />
+      <input
+        id="avatar-input"
+        type="file"
+        accept="image/*"
+        class="avatar-input"
+        @change="onAvatarChange"
+      />
       <template v-if="isEditing">
         <input v-model="draft.name" class="name-input" placeholder="Imię i nazwisko" />
       </template>

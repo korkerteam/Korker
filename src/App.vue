@@ -3,7 +3,7 @@ import MenuPage from './views/MenuPage.vue'
 import HeaderKorker from './components/HeaderKorker.vue'
 import FilterPage from './components/FilterPage.vue'
 import MyTeachers from './components/MyTeachers.vue'
-import SearchBar from './views/SearchBar.vue';
+import SearchBar from './views/SearchBar.vue'
 import CzatCzatSahur from './components/CzatCzatSahur.vue'
 import ProfilePage from './views/ProfilePage.vue'
 </script>
@@ -25,7 +25,7 @@ import ProfilePage from './views/ProfilePage.vue'
       <ProfilePage />
     </div>
     <div class="Czaty">
-      <CzatCzatSahur/>
+      <CzatCzatSahur />
     </div>
 
     <div class="content-row">
