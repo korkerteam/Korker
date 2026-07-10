@@ -22,6 +22,9 @@ import ProfilePage from './views/ProfilePage.vue'
     <div class="profile-block">
       <ProfilePage />
     </div>
+    <div class="Czaty">
+      <CzatCzatSahur/>
+    </div>
 
     <div class="content-row">
       <div class="Przyciski">
