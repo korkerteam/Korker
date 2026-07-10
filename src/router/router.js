@@ -1,4 +1,5 @@
 import MenuPage from '@/views/MenuPage.vue'
+import FindKorks from '@/views/FindKorks.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -10,9 +11,13 @@ const router = createRouter({
       component: MenuPage,
     },
     {
+      path: '/korker-szukaj',
+      name: 'korker-szukaj',
+      component: FindKorks,
+    },
+    {
       path: '/szukaj',
-      name: 'search',
-      component: MenuPage,
+      redirect: { name: 'korker-szukaj' },
     },
   ],
 })

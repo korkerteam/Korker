@@ -1,5 +1,5 @@
 <script setup>
-const emit = defineEmits(['toggleProfile', 'toggleRank', 'toggleFilter', 'toggleTeachers'])
+const emit = defineEmits(['toggleProfile', 'toggleRank', 'toggleFilter', 'toggleTeachers', 'goToSearchPage'])
 
 function handleProfileClick() {
   emit('toggleProfile')
@@ -16,10 +16,14 @@ function handleFilterClick() {
 function handleTeachersClick() {
   emit('toggleTeachers')
 }
+
+function handleSearchClick() {
+  emit('goToSearchPage')
+}
 </script>
 <template>
   <div class="MenuButtons">
-    <button>Szukaj Korepetycji</button>
+    <button @click="handleSearchClick">Szukaj Korepetycji</button>
     <button @click="handleFilterClick">Filtry</button>
     <button @click="handleProfileClick">Profil</button>
     <button @click="handleRankClick">Ranking</button>

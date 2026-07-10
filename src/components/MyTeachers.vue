@@ -1,13 +1,30 @@
-<script setup></script>
+<script setup>
+const props = defineProps({
+  teachers: {
+    type: Array,
+    default: () => [],
+  },
+})
+</script>
+
 <template>
   <div class="TeacherPage">
-    <div class="Nauczyciele">Moi Nauczyciele</div>
-    <div class="Harmonogram">Harmonogram</div>
+    <div class="teacher-content">
+      <h3>Moi Nauczyciele</h3>
+      <div v-if="props.teachers.length" class="teacher-list">
+        <div v-for="teacher in props.teachers" :key="teacher.name" class="teacher-card">
+          <strong>{{ teacher.name }}</strong>
+          <p>{{ teacher.subject }} • {{ teacher.level }}</p>
+        </div>
+      </div>
+      <p v-else class="empty-state">Jeszcze nie zapisano żadnego nauczyciela.</p>
+    </div>
   </div>
 </template>
+
 <style scoped>
 .TeacherPage {
-  border: 1.5px black solid;
+  border: 1.5px solid #4f75c7;
   width: 700px;
   height: 600px;
   margin-top: 110px;
@@ -15,7 +32,7 @@
   flex-direction: row;
 }
 
-.Nauczyciele {
-  margin-right: auto;
+.empty-state {
+  color: #6b7280;
 }
 </style>

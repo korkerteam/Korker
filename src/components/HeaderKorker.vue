@@ -1,6 +1,15 @@
-<script setup></script>
+<script setup>
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+function goHome() {
+  router.push({ name: 'home' })
+}
+</script>
+
 <template>
-  <button>Korker</button>
+  <button @click="goHome" type="button">Korker</button>
 </template>
 <style scoped>
 button {
