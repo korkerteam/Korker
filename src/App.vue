@@ -3,15 +3,21 @@ import MenuPage from './views/MenuPage.vue'
 import HeaderKorker from './components/HeaderKorker.vue'
 import FilterPage from './components/FilterPage.vue'
 import MyTeachers from './components/MyTeachers.vue'
+import SearchBar from './views/SearchBar.vue';
 </script>
 
 <template>
   <div class="main-layout">
     
-    <div class="Przyciski">
+      <DIV class="align-left">
       <div class="Korker">
         <HeaderKorker/>
       </div>
+      <div>
+        <SearchBar/>
+      </div>
+      </DIV>
+          <div class="Przyciski">
       <MenuPage/>
     </div>
 
@@ -25,8 +31,7 @@ import MyTeachers from './components/MyTeachers.vue'
 <style scoped>
 .main-layout {
   display: flex;
-  flex-direction: row;
-  align-items: flex-start;
+  flex-direction: column;
   gap: 20px;             
 }
 
@@ -35,5 +40,11 @@ import MyTeachers from './components/MyTeachers.vue'
 }
 .Okienka {
   flex-grow: 1; 
+}
+
+.align-left {
+  display: flex;
+  flex-direction: row;
+  gap: 830px;
 }
 </style>
