@@ -471,7 +471,7 @@ function closePage() {
   border-radius: 999px;
   padding: 12px 18px;
   cursor: pointer;
-  background: #4f75c7;
+  background: var(--primary-color);
   color: white;
   font-weight: 700;
 }

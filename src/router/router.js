@@ -1,5 +1,5 @@
 import MenuPage from '@/views/MenuPage.vue'
-import FindKorks from '@/views/FindKorks.vue'
+import FindKorks from '@/views/menu/FindKorks.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -8,6 +8,16 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
+      component: MenuPage,
+    },
+    {
+      path: '/profil',
+      name: 'profil',
+      component: MenuPage,
+    },
+    {
+      path: '/nauczyciele',
+      name: 'nauczyciele',
       component: MenuPage,
     },
     {

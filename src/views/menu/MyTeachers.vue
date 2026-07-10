@@ -1,4 +1,7 @@
 <script setup>
+import { ref } from 'vue'
+import LoadingBox from '@/components/LoadingBox.vue'
+
 const emit = defineEmits(['show-teacher', 'remove-teacher'])
 const props = defineProps({
   teachers: {
@@ -6,6 +9,8 @@ const props = defineProps({
     default: () => [],
   },
 })
+
+const loading = ref(false)
 
 function onShow(teacher) {
   emit('show-teacher', teacher)
@@ -17,7 +22,8 @@ function onRemove(teacher) {
 </script>
 
 <template>
-  <div class="teacher-panel">
+  <LoadingBox v-if="loading" />
+  <div v-else class="teacher-panel">
     <div class="teacher-header">
       <div>
         <h3>Moi Nauczyciele</h3>
@@ -26,8 +32,8 @@ function onRemove(teacher) {
     </div>
 
     <div class="teacher-card-list">
-      <template v-if="props.teachers.length">
-        <div v-for="teacher in props.teachers" :key="teacher.name" class="teacher-row">
+      <template v-if="teachers.length">
+        <div v-for="teacher in teachers" :key="teacher.name" class="teacher-row">
           <div class="avatar">{{ teacher.name.charAt(0) }}</div>
           <div class="meta">
             <div class="name">{{ teacher.name }}</div>
@@ -51,7 +57,7 @@ function onRemove(teacher) {
   border-radius: 16px;
   padding: 18px;
   box-shadow: 0 18px 40px rgba(20, 40, 80, 0.08);
-  border: 1px solid rgba(79,117,199,0.08);
+  border: 1px solid rgba(79, 117, 199, 0.08);
   font-family: Inter, system-ui, sans-serif;
 }
 
@@ -68,13 +74,11 @@ function onRemove(teacher) {
 
 .teacher-card-list {
   margin-top: 14px;
-  /* limit visible rows to ~6 and enable scrolling when content overflows */
-  max-height: 420px; /* approx 6 rows * 68px each */
+  max-height: 420px;
   overflow-y: auto;
-  padding-right: 6px; /* room for scrollbar */
+  padding-right: 6px;
 }
 
-/* custom scrollbar */
 .teacher-card-list::-webkit-scrollbar {
   width: 10px;
 }
@@ -84,7 +88,7 @@ function onRemove(teacher) {
 }
 .teacher-card-list {
   scrollbar-width: thin;
-  scrollbar-color: rgba(16,32,54,0.2) transparent;
+  scrollbar-color: rgba(16, 32, 54, 0.2) transparent;
 }
 
 .teacher-row {
@@ -93,8 +97,8 @@ function onRemove(teacher) {
   gap: 12px;
   padding: 12px;
   border-radius: 12px;
-  background: linear-gradient(180deg, rgba(0,0,0,0.01), rgba(0,0,0,0.02));
-  border: 1px solid rgba(0,0,0,0.04);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.01), rgba(0, 0, 0, 0.02));
+  border: 1px solid rgba(0, 0, 0, 0.04);
   margin-bottom: 10px;
 }
 
@@ -137,7 +141,7 @@ function onRemove(teacher) {
 }
 .btn.ghost {
   background: transparent;
-  border: 1px solid rgba(17,24,39,0.06);
+  border: 1px solid rgba(17, 24, 39, 0.06);
   color: #203040;
 }
 
@@ -147,8 +151,15 @@ function onRemove(teacher) {
 }
 
 @media (max-width: 800px) {
-  .teacher-panel { width: 100%; }
-  .teacher-row { padding: 10px; }
-  .avatar { width: 40px; height: 40px; }
+  .teacher-panel {
+    width: 100%;
+  }
+  .teacher-row {
+    padding: 10px;
+  }
+  .avatar {
+    width: 40px;
+    height: 40px;
+  }
 }
 </style>
