@@ -38,6 +38,11 @@ button {
   border-radius: 10px;
   background-color: #4f75c7;
   font-family: Horizon;
-  font-size: 30px
+  font-size: 30px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.95;
 }
 </style>
