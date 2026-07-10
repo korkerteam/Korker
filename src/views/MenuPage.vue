@@ -1,5 +1,11 @@
 <script setup>
-const emit = defineEmits(['toggleProfile', 'toggleRank', 'toggleFilter', 'toggleTeachers', 'goToSearchPage'])
+const emit = defineEmits([
+  'toggleProfile',
+  'toggleRank',
+  'toggleFilter',
+  'toggleTeachers',
+  'goToSearchPage',
+])
 
 function handleProfileClick() {
   emit('toggleProfile')
@@ -47,8 +53,7 @@ button {
   border-radius: 0 100px 100px 0;
   text-align: left;
   cursor: pointer;
-    color: white;
-
+  color: white;
 }
 
 button:hover {

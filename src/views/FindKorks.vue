@@ -19,7 +19,8 @@ const tutors = [
     subject: 'Matematyka',
     level: 'Liceum',
     tags: ['Matura', 'Online'],
-    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=500&q=80',
+    image:
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=500&q=80',
     bio: 'Pomagam przygotować się do matury z matematyki w przyjazny sposób.',
   },
   {
@@ -27,7 +28,8 @@ const tutors = [
     subject: 'Fizyka',
     level: 'Studia',
     tags: ['Egzamin', 'Na miejscu'],
-    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80',
+    image:
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80',
     bio: 'Skupię się na zrozumieniu pojęć i praktycznych zadaniach.',
   },
   {
@@ -35,7 +37,8 @@ const tutors = [
     subject: 'Język polski',
     level: 'Szkoła podstawowa',
     tags: ['Online'],
-    image: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=500&q=80',
+    image:
+      'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=500&q=80',
     bio: 'Łączę naukę z ciekawymi ćwiczeniami i czytaniem lektur.',
   },
   {
@@ -43,7 +46,8 @@ const tutors = [
     subject: 'Angielski',
     level: 'Liceum',
     tags: ['Matura', 'Na miejscu'],
-    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=500&q=80',
+    image:
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=500&q=80',
     bio: 'Pomagam budować pewność siebie w mówieniu i rozumieniu tekstów.',
   },
   {
@@ -51,7 +55,8 @@ const tutors = [
     subject: 'Biologia',
     level: 'Liceum',
     tags: ['Online', 'Matura'],
-    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=500&q=80',
+    image:
+      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=500&q=80',
     bio: 'Przygotowuję do egzaminów i tłumaczę trudne tematy obrazowo.',
   },
   {
@@ -59,7 +64,8 @@ const tutors = [
     subject: 'Informatyka',
     level: 'Studia',
     tags: ['Programowanie', 'Online'],
-    image: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=500&q=80',
+    image:
+      'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=500&q=80',
     bio: 'Uczę logicznego myślenia i pracy z kodem od podstaw.',
   },
   {
@@ -67,7 +73,8 @@ const tutors = [
     subject: 'Chemia',
     level: 'Liceum',
     tags: ['Matura', 'Na miejscu'],
-    image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=500&q=80',
+    image:
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=500&q=80',
     bio: 'Wyjaśniam chemię krok po kroku i uczę skutecznie powtarzać materiał.',
   },
   {
@@ -75,7 +82,8 @@ const tutors = [
     subject: 'Historia',
     level: 'Szkoła podstawowa',
     tags: ['Online', 'Egzamin'],
-    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=500&q=80',
+    image:
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=500&q=80',
     bio: 'Przygotowuję do sprawdzianów i uczę historii w ciekawy sposób.',
   },
   {
@@ -83,7 +91,8 @@ const tutors = [
     subject: 'Geografia',
     level: 'Liceum',
     tags: ['Matura', 'Online'],
-    image: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=500&q=80',
+    image:
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=500&q=80',
     bio: 'Pomagam zapamiętywać mapy, pojęcia i schematy bez stresu.',
   },
   {
@@ -252,7 +261,10 @@ function closePage() {
         Poniżej pokazujemy korepetytorów dopasowanych do wybranych filtrów.
       </p>
 
-      <div class="selected-filters" v-if="filters.subjects.length || filters.levels.length || filters.tags.length">
+      <div
+        class="selected-filters"
+        v-if="filters.subjects.length || filters.levels.length || filters.tags.length"
+      >
         <span v-if="filters.subjects.length">Przedmioty: {{ filters.subjects.join(', ') }}</span>
         <span v-if="filters.levels.length">Poziom: {{ filters.levels.join(', ') }}</span>
         <span v-if="filters.tags.length">Tagi: {{ filters.tags.join(', ') }}</span>
@@ -266,7 +278,12 @@ function closePage() {
             </div>
 
             <div v-if="currentTutor" class="card-body">
-              <img v-if="currentTutor.image" :src="currentTutor.image" :alt="currentTutor.name" class="teacher-photo" />
+              <img
+                v-if="currentTutor.image"
+                :src="currentTutor.image"
+                :alt="currentTutor.name"
+                class="teacher-photo"
+              />
               <h3>{{ currentTutor.name }}</h3>
               <p>{{ currentTutor.subject }} • {{ currentTutor.level }}</p>
               <p class="teacher-bio">{{ currentTutor.bio }}</p>
@@ -276,17 +293,16 @@ function closePage() {
             </div>
 
             <div class="actions">
-              <button class="dislike-button" @click="handleDecision(false)" type="button">Nie pasuje</button>
+              <button class="dislike-button" @click="handleDecision(false)" type="button">
+                Nie pasuje
+              </button>
               <button class="like-button" @click="handleDecision(true)" type="button">Lubię</button>
             </div>
           </div>
         </div>
-
       </div>
 
-      <div v-else class="empty-state">
-        Brak korepetytorów dla wybranych filtrów.
-      </div>
+      <div v-else class="empty-state">Brak korepetytorów dla wybranych filtrów.</div>
     </div>
   </div>
 </template>

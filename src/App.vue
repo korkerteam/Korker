@@ -136,7 +136,11 @@ function removeLikedTeacher(teacher) {
       <Ranks />
     </div>
     <div class="filter-block" v-show="showFilter && route.name !== 'korker-szukaj'">
-      <FilterPage :model-value="selectedFilters" @update:model-value="updateFilters" @confirm="confirmFilters" />
+      <FilterPage
+        :model-value="selectedFilters"
+        @update:model-value="updateFilters"
+        @confirm="confirmFilters"
+      />
     </div>
     <div class="teachers-block" v-show="showTeachers && route.name !== 'korker-szukaj'">
       <MyTeachers :teachers="likedTeachers" @show-teacher="showTeacherProfile" @remove-teacher="removeLikedTeacher" />
@@ -170,7 +174,11 @@ function removeLikedTeacher(teacher) {
     </div>
 
     <div v-if="route.name === 'korker-szukaj'" class="search-overlay">
-      <FindKorks :filters="selectedFilters" @close="closeSearchPage" @like-teacher="handleTeacherLike" />
+      <FindKorks
+        :filters="selectedFilters"
+        @close="closeSearchPage"
+        @like-teacher="handleTeacherLike"
+      />
     </div>
 
     <div class="content-row" v-if="route.name !== 'korker-szukaj'">
