@@ -4,13 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npm run format &&vite",
+    "dev": "npm install && npm run format &&vite",
     "build": "vite build",
     "preview": "vite preview",
     "format": "prettier --write \"src/**/*.{js,ts,vue}\""
   },
   "dependencies": {
-    "vue": "^3.5.38"
+    "vue": "^3.5.38",
+    "leaflet": "1.9.4",
+    "vue-router": "^4.3.6"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.7",
