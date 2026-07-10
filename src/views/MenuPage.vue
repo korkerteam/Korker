@@ -27,5 +27,9 @@ function handleRankClick() {
 button {
   width: 700px;
   height: 100px;
+  border-radius: 10px;
+  background-color: #4f75c7;
+  font-family: Horizon;
+  font-size: 30px
 }
 </style>

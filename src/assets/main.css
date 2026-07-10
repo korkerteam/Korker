@@ -1,2 +1,8 @@
 @import './normalize.css';
 @import './reset.css';
+@font-face {
+   font-family: 'Horizon';
+   src: url('D:\Users\admin-1\Korker\src\assets\horizon.otf') format('opentype');
+   font-weight: normal;
+   font-style: normal;
+}
