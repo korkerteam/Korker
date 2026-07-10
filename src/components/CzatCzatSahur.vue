@@ -50,11 +50,14 @@ export default {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  width: 50px;
+  height: 235px;
+
 }
 .chat-window {
   position: fixed;
-  right: 20px;
-  bottom: 20px;
+  right: 50px;
+  bottom: 40%;
   width: 320px;
   max-width: calc(100vw - 40px);
   border: 1px solid #ccc;
