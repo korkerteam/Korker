@@ -22,6 +22,8 @@ const showTeachers = ref(false)
 const showMissingFilterNotice = ref(false)
 const selectedFilters = ref({ subjects: [], levels: [], tags: [] })
 const likedTeachers = ref([])
+const currentTeacher = ref(null)
+const showTeacherOverlay = ref(false)
 
 function toggleProfile() {
   showProfile.value = !showProfile.value
@@ -93,6 +95,21 @@ function handleTeacherLike(teacher) {
     likedTeachers.value = [...likedTeachers.value, teacher]
   }
 }
+
+function showTeacherProfile(teacher) {
+  currentTeacher.value = teacher || null
+  showTeacherOverlay.value = !!teacher
+}
+
+function removeLikedTeacher(teacher) {
+  if (!teacher) return
+  likedTeachers.value = likedTeachers.value.filter((t) => t.name !== teacher.name)
+  // if currently viewing that teacher, close overlay
+  if (currentTeacher.value && currentTeacher.value.name === teacher.name) {
+    showTeacherOverlay.value = false
+    currentTeacher.value = null
+  }
+}
 </script>
 
 <template>
@@ -118,7 +135,7 @@ function handleTeacherLike(teacher) {
       <FilterPage :model-value="selectedFilters" @update:model-value="updateFilters" @confirm="goToSearchPage" />
     </div>
     <div class="teachers-block" v-show="showTeachers && route.name !== 'korker-szukaj'">
-      <MyTeachers :teachers="likedTeachers" />
+      <MyTeachers :teachers="likedTeachers" @show-teacher="showTeacherProfile" @remove-teacher="removeLikedTeacher" />
     </div>
     <div class="Czaty" v-if="route.name !== 'korker-szukaj'">
       <CzatCzatSahur />
@@ -129,6 +146,22 @@ function handleTeacherLike(teacher) {
         <h3>Wybierz filtry</h3>
         <p>Najpierw wybierz przynajmniej jeden filtr, a potem kliknij „Szukaj Korepetycji”.</p>
         <button @click="closeMissingFilterNotice">Rozumiem</button>
+      </div>
+    </div>
+
+    <div v-if="showTeacherOverlay" class="teacher-overlay" @click="showTeacherOverlay = false">
+      <div class="teacher-card-modal" @click.stop>
+        <button class="close-x" @click="showTeacherOverlay = false">×</button>
+        <div class="teacher-modal-header">
+          <div class="avatar-large">{{ currentTeacher?.name?.charAt(0) }}</div>
+          <div>
+            <h3>{{ currentTeacher?.name }}</h3>
+            <p class="muted">{{ currentTeacher?.subject }} • {{ currentTeacher?.level }}</p>
+          </div>
+        </div>
+        <div class="teacher-modal-body">
+          <p>Krótki opis nauczyciela może tu się znaleźć. (Placeholder)</p>
+        </div>
       </div>
     </div>
 
@@ -180,7 +213,7 @@ function handleTeacherLike(teacher) {
   align-items: center;
   margin-left: auto;
   position: fixed;
-  right: 0;
+  right: 24px;
 }
 
 .Korker {
@@ -201,6 +234,10 @@ function handleTeacherLike(teacher) {
 
 .ranks-block {
   right: 350px;
+}
+
+.teachers-block {
+  right: 460px;
 }
 
 .content-row {
@@ -274,4 +311,26 @@ function handleTeacherLike(teacher) {
   padding: 10px 14px;
   cursor: pointer;
 }
+
+.teacher-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(10, 20, 40, 0.4);
+}
+.teacher-card-modal {
+  background: #fff;
+  padding: 20px;
+  border-radius: 14px;
+  width: min(560px, 92vw);
+  box-shadow: 0 20px 50px rgba(16, 32, 64, 0.25);
+  position: relative;
+}
+.teacher-modal-header { display:flex; gap:12px; align-items:center; }
+.avatar-large { width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,#6b8ef0,#4f75c7); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:20px }
+.teacher-modal-body { margin-top:12px; color:#233; }
+.close-x { position:absolute; right:12px; top:8px; background:transparent; border:none; font-size:22px; cursor:pointer }
 </style>
