@@ -43,6 +43,10 @@ const initLeaflet = () => {
       .addTo(map)
   }
 }
+
+const toggleMap = () => {
+  isMapVisible.value = !isMapVisible.value
+}
 </script>
 
 <template>
@@ -53,10 +57,19 @@ const initLeaflet = () => {
       </Transition>
     </div>
 
-    <div class="button-container">
-      <button v-if="!isMapVisible" @click="showMap" class="btn btn-show">Show map</button>
-      <button v-else @click="hideMap" class="btn btn-hide">Hide map</button>
-    </div>
+    <button
+      class="map-fab"
+      @click="toggleMap"
+      :title="isMapVisible ? 'Hide map' : 'Show map'"
+      :aria-label="isMapVisible ? 'Hide map' : 'Show map'"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M12 2 4 5v15l8 3 8-3V5l-8-3Zm0 2.18 6 2.25v11.14l-6 2.25-6-2.25V6.43l6-2.25Zm0 3.12a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"
+          fill="currentColor"
+        />
+      </svg>
+    </button>
   </div>
 </template>
 
@@ -74,37 +87,37 @@ const initLeaflet = () => {
   height: 208px;
 }
 
-.button-container {
-  height: 44px;
+.map-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 96px;
+  z-index: 1200;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: #4f75c7;
+  color: #fff;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 6px 20px rgba(79, 117, 199, 0.35);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
 }
 
-.btn {
-  padding: 10px 20px;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.2s;
+.map-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 8px 28px rgba(79, 117, 199, 0.5);
 }
 
-.btn-show {
-  background-color: #42b883;
+.map-fab:active {
+  transform: scale(0.92);
 }
 
-.btn-show:hover {
-  background-color: #35495e;
-}
-
-.btn-hide {
-  background-color: #e056fd;
-}
-
-.btn-hide:hover {
-  background-color: #be2edd;
+.map-fab svg {
+  width: 22px;
+  height: 22px;
 }
 
 .ramka {
