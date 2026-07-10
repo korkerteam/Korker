@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from 'vue'
 import MenuPage from './views/MenuPage.vue'
 import HeaderKorker from './components/HeaderKorker.vue'
 import FilterPage from './components/FilterPage.vue'
@@ -7,6 +8,8 @@ import SearchBar from './views/SearchBar.vue'
 import CzatCzatSahur from './components/CzatCzatSahur.vue'
 import ProfilePage from './views/ProfilePage.vue'
 import MapPage from './views/Map.vue'
+
+const showProfile = ref(false)
 </script>
 
 <template>
@@ -22,7 +25,7 @@ import MapPage from './views/Map.vue'
       </div>
     </div>
 
-    <div class="profile-block">
+    <div class="profile-block" v-show="showProfile">
       <ProfilePage />
     </div>
     <div class="Czaty">
@@ -31,7 +34,7 @@ import MapPage from './views/Map.vue'
 
     <div class="content-row">
       <div class="Przyciski">
-        <MenuPage />
+        <MenuPage @toggleProfile="showProfile = !showProfile" />
       </div>
     </div>
     <div class="Mapa">
