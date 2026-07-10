@@ -2,27 +2,32 @@
 import MenuPage from './views/MenuPage.vue'
 import HeaderKorker from './views/HeaderKorker.vue'
 import FilterPage from './views/FilterPage.vue'
-import SearchBar from './views/SearchBar.vue';
+import SearchBar from './views/SearchBar.vue'
+import ProfilePage from './views/ProfilePage.vue'
 </script>
 
 <template>
   <div class="main-layout">
-    
-      <DIV class="align-left">
-      <div class="Korker">
-        <HeaderKorker/>
+    <div class="top-row">
+      <div class="align-left">
+        <div class="Korker">
+          <HeaderKorker />
+        </div>
+        <div class="search-block">
+          <SearchBar />
+        </div>
       </div>
-      <div>
-        <SearchBar/>
-      </div>
-      </DIV>
-          <div class="Przyciski">
-      <MenuPage/>
     </div>
 
-    <div class="Okienka">
+    <div class="profile-block">
+      <ProfilePage />
     </div>
 
+    <div class="content-row">
+      <div class="Przyciski">
+        <MenuPage />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -30,24 +35,50 @@ import SearchBar from './views/SearchBar.vue';
 .main-layout {
   display: flex;
   flex-direction: column;
-  gap: 20px;             
+  gap: 20px;
+  min-height: 100vh;
+  position: relative;
+}
+
+.top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.align-left {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+}
+
+.search-block {
+  display: flex;
+  align-items: center;
 }
 
 .Korker {
   margin-bottom: 10px;
 }
 
-.Przyciski {
-
-}
-
-.Okienka {
-  flex-grow: 1; 
-}
-
-.align-left {
+.profile-block {
+  position: absolute;
+  top: 50%;
+  right: 340px;
+  transform: translateY(-50%);
   display: flex;
-  flex-direction: row;
-  gap: 830px;
+  justify-content: flex-end;
+}
+
+.content-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.Przyciski {
+  flex-shrink: 0;
 }
 </style>
