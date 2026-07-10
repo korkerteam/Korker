@@ -13,7 +13,6 @@
   margin-top: 110px;
   display: flex;
   flex-direction: row;
-  
 }
 
 .Nauczyciele {

@@ -83,7 +83,12 @@ function toggleTeachers() {
 
     <div class="content-row">
       <div class="Przyciski">
-        <MenuPage @toggleProfile="toggleProfile" @toggleRank="toggleRank" @toggleFilter="toggleFilter" @toggleTeachers="toggleTeachers" />
+        <MenuPage
+          @toggleProfile="toggleProfile"
+          @toggleRank="toggleRank"
+          @toggleFilter="toggleFilter"
+          @toggleTeachers="toggleTeachers"
+        />
       </div>
     </div>
     <div class="Mapa">
