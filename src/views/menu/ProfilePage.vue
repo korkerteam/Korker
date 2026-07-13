@@ -291,6 +291,8 @@ function onAvatarChange(event) {
   width: 100%;
   max-width: 600px;
   padding: 32px;
+  margin: 100px 20px 0 260px;
+  align-self: flex-start;
   box-shadow: 0 8px 32px rgba(15, 23, 42, 0.15);
   font-family: Inter, system-ui, sans-serif;
   color: #1f2937;
