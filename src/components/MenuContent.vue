@@ -4,7 +4,7 @@ const emit = defineEmits([
   'toggleRank',
   'toggleFilter',
   'toggleTeachers',
-  'goToSearchPage',
+  'toggleSearch',
   'openAuth',
 ])
 
@@ -21,7 +21,7 @@ function handleTeachersClick() {
 }
 
 function handleSearchClick() {
-  emit('goToSearchPage')
+  emit('toggleSearch')
 }
 </script>
 <template>

@@ -1,6 +1,5 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
 
 const props = defineProps({
   filters: {
@@ -10,7 +9,6 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'like-teacher'])
-const router = useRouter()
 const currentIndex = ref(0)
 
 const tutors = [
@@ -238,104 +236,84 @@ function handleDecision(isLiked) {
   }
 }
 
-function confirmMatches() {
-  emit('close')
-  router.push({ name: 'home' })
-}
-
 function closePage() {
   emit('close')
-  router.push({ name: 'home' })
 }
 </script>
 
 <template>
-  <div class="find-korks-page">
-    <div class="find-korks-card">
-      <div class="find-korks-header">
-        <h2>Korker - Szukaj</h2>
-        <button class="close-button" @click="closePage" type="button">×</button>
+  <div class="find-korks-panel">
+    <div class="find-korks-header">
+      <div>
+        <h3>Szukaj Korepetytora</h3>
+        <p class="subtitle">Przeglądaj dostępnych nauczycieli</p>
       </div>
+      <button class="close-button" @click="closePage" type="button">×</button>
+    </div>
 
-      <p class="find-korks-description">
-        Poniżej pokazujemy korepetytorów dopasowanych do wybranych filtrów.
-      </p>
+    <div v-if="filteredTutors.length" class="tutors-content">
+      <div class="progress">{{ currentIndex + 1 }} / {{ filteredTutors.length }}</div>
 
-      <div
-        class="selected-filters"
-        v-if="filters.subjects.length || filters.levels.length || filters.tags.length"
-      >
-        <span v-if="filters.subjects.length">Przedmioty: {{ filters.subjects.join(', ') }}</span>
-        <span v-if="filters.levels.length">Poziom: {{ filters.levels.join(', ') }}</span>
-        <span v-if="filters.tags.length">Tagi: {{ filters.tags.join(', ') }}</span>
-      </div>
+      <div v-if="currentTutor" class="tutor-card">
+        <div class="card-image">
+          <img v-if="currentTutor.image" :src="currentTutor.image" :alt="currentTutor.name" />
+        </div>
 
-      <div v-if="filteredTutors.length">
-        <div class="tinder-card-wrap">
-          <div class="tinder-card">
-            <div class="tinder-card-header">
-              <span>{{ currentIndex + 1 }} / {{ filteredTutors.length }}</span>
-            </div>
+        <div class="card-info">
+          <h3 class="tutor-name">{{ currentTutor.name }}</h3>
+          <p class="tutor-meta">{{ currentTutor.subject }} • {{ currentTutor.level }}</p>
 
-            <div v-if="currentTutor" class="card-body">
-              <img
-                v-if="currentTutor.image"
-                :src="currentTutor.image"
-                :alt="currentTutor.name"
-                class="teacher-photo"
-              />
-              <h3>{{ currentTutor.name }}</h3>
-              <p>{{ currentTutor.subject }} • {{ currentTutor.level }}</p>
-              <p class="teacher-bio">{{ currentTutor.bio }}</p>
-              <div class="result-tags">
-                <span v-for="tag in currentTutor.tags" :key="tag">{{ tag }}</span>
-              </div>
-            </div>
+          <div class="tags-list">
+            <span v-for="tag in currentTutor.tags" :key="tag" class="tag">{{ tag }}</span>
+          </div>
 
-            <div class="actions">
-              <button class="dislike-button" @click="handleDecision(false)" type="button">
-                Nie pasuje
-              </button>
-              <button class="like-button" @click="handleDecision(true)" type="button">Lubię</button>
-            </div>
+          <div class="actions">
+            <button class="btn-dislike" @click="handleDecision(false)">Nie pasuje</button>
+            <button class="btn-like" @click="handleDecision(true)">Lubię</button>
           </div>
         </div>
       </div>
+    </div>
 
-      <div v-else class="empty-state">Brak korepetytorów dla wybranych filtrów.</div>
+    <div v-else class="empty-state">
+      <p>Brak korepetytorów dla wybranych filtrów.</p>
     </div>
   </div>
 </template>
 
 <style scoped>
-.find-korks-page {
-  width: 100%;
+.find-korks-panel {
+  border: 1.5px solid var(--primary-color);
+  width: 700px;
+  max-height: 700px;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 16px 0;
-}
-
-.find-korks-card {
-  width: min(900px, 92vw);
-  background: rgba(255, 255, 255, 0.94);
-  border-radius: 24px;
-  padding: 24px;
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
-  backdrop-filter: blur(6px);
+  flex-direction: column;
+  gap: 0;
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 .find-korks-header {
+  padding: 24px;
+  border-bottom: 2px solid rgba(79, 117, 199, 0.1);
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
+  align-items: flex-start;
+  flex-shrink: 0;
 }
 
-.find-korks-header h2 {
+.find-korks-header h3 {
   margin: 0;
-  font-size: 28px;
+  font-size: 22px;
+  font-weight: 700;
   color: #1f2937;
+}
+
+.subtitle {
+  margin: 8px 0 0;
+  color: #4b5563;
+  font-size: 13px;
 }
 
 .close-button {
@@ -343,143 +321,172 @@ function closePage() {
   background: transparent;
   font-size: 28px;
   cursor: pointer;
-  color: #4b5563;
-}
-
-.find-korks-description {
-  margin: 0 0 12px;
-  color: #4b5563;
-  font-size: 16px;
-}
-
-.selected-filters {
+  color: #9ca3af;
+  width: 32px;
+  height: 32px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
-.selected-filters span {
-  background: #eef2ff;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 13px;
+.close-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #1f2937;
 }
 
-.tinder-card-wrap {
+.tutors-content {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.progress {
+  text-align: right;
+  font-size: 12px;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.tutor-card {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(248, 251, 255, 0.98) 0%, rgba(238, 242, 255, 0.95) 100%);
+  border: 1px solid rgba(79, 117, 199, 0.12);
+  border-radius: 12px;
+  padding: 12px;
+  align-items: start;
+  flex: 1;
+}
+
+.card-image {
   display: flex;
   justify-content: center;
 }
 
-.tinder-card {
-  width: min(100%, 620px);
-  border: 1px solid rgba(229, 231, 235, 0.9);
-  border-radius: 24px;
-  padding: 20px;
-  background: linear-gradient(135deg, rgba(248, 251, 255, 0.98) 0%, rgba(238, 242, 255, 0.95) 100%);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
-  user-select: none;
+.card-image img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid rgba(79, 117, 199, 0.1);
 }
 
-.tinder-card-header {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 12px;
-  color: #4b5563;
-  font-size: 14px;
-}
-
-.card-body {
+.card-info {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  gap: 8px;
+  min-width: 0;
 }
 
-.teacher-photo {
-  width: 100%;
-  max-width: 320px;
-  height: 220px;
-  object-fit: cover;
-  border-radius: 18px;
-  margin-bottom: 14px;
+.tutor-name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
 }
 
-.card-body h3 {
-  margin: 0 0 6px;
-  font-size: 24px;
-}
-
-.card-body p {
-  margin: 0 0 8px;
+.tutor-meta {
+  margin: 0;
+  font-size: 13px;
   color: #4b5563;
+  font-weight: 500;
 }
 
-.teacher-bio {
-  margin-bottom: 12px !important;
+.bio-box {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(79, 117, 199, 0.1);
+  border-left: 3px solid #4f75c7;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.bio-box p {
+  margin: 0;
+  font-size: 13px;
   line-height: 1.5;
   color: #374151;
 }
 
-.result-tags {
+.tags-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
-.result-tags span {
-  background: #dbeafe;
-  padding: 4px 8px;
-  border-radius: 999px;
-  font-size: 12px;
+.tag {
+  display: inline-block;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #0c4a6e;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid rgba(79, 117, 199, 0.2);
 }
 
 .actions {
   display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 16px;
+  gap: 8px;
+  margin-top: 4px;
 }
 
-.actions button {
-  min-width: 140px;
+.btn-like,
+.btn-dislike {
+  flex: 1;
   border: none;
-  border-radius: 999px;
-  padding: 10px 16px;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 12px;
   cursor: pointer;
-  font-weight: 700;
+  transition: all 0.2s ease;
 }
 
-.like-button {
-  background: #22c55e;
+.btn-like {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   color: white;
+  border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
-.dislike-button {
-  background: #ef4444;
+.btn-like:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(34, 197, 94, 0.2);
+}
+
+.btn-dislike {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-.confirm-row {
-  display: flex;
-  justify-content: center;
-  margin-top: 18px;
-}
-
-.confirm-button {
-  border: none;
-  border-radius: 999px;
-  padding: 12px 18px;
-  cursor: pointer;
-  background: var(--primary-color);
-  color: white;
-  font-weight: 700;
+.btn-dislike:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
 }
 
 .empty-state {
-  padding: 16px;
-  background: #fef2f2;
-  color: #b91c1c;
-  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+/* Legacy styles kept for compatibility */
+.find-korks-page {
+  display: none;
+}
+
+.find-korks-card {
+  display: none;
 }
 </style>
