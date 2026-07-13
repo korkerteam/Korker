@@ -29,9 +29,9 @@ watch(
   () => scrollDown(),
 )
 
-function handleSend() {
-  if (!newMsg.value.trim()) return
-  emit('send', newMsg.value)
+function handleSend(text, files) {
+  if (!text?.trim() && (!files || files.length === 0)) return
+  emit('send', text, files)
   newMsg.value = ''
 }
 

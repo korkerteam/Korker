@@ -2,6 +2,8 @@ import { ref, computed } from 'vue'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from './useAuth.js'
 
+const ATTACHMENT_BUCKET = 'profile_pictures'
+
 const conversations = ref([])
 const messages = ref([])
 const loadingMessages = ref(false)
@@ -13,6 +15,15 @@ const currentContact = ref(null)
 let realtimeChannel = null
 
 const profileCache = new Map()
+
+function isImageFile(type) {
+  return type?.startsWith('image/')
+}
+
+function getAttachmentUrl(path) {
+  const { data } = supabase.storage.from(ATTACHMENT_BUCKET).getPublicUrl(path)
+  return data.publicUrl
+}
 
 function stringToColor(str) {
   let hash = 0
@@ -86,7 +97,7 @@ export function useMessaging() {
 
     const { data, error } = await supabase
       .from('messages')
-      .select('sender_id, receiver_id, content, created_at, read_at')
+      .select('sender_id, receiver_id, content, created_at, read_at, attachments')
       .or(`sender_id.eq.${user.value.id},receiver_id.eq.${user.value.id}`)
       .order('created_at', { ascending: false })
 
@@ -104,9 +115,10 @@ export function useMessaging() {
     for (const msg of data) {
       const otherId = msg.sender_id === user.value.id ? msg.receiver_id : msg.sender_id
       if (!groups[otherId]) {
+        const displayText = msg.content || (msg.attachments?.length ? '[Załącznik]' : '')
         groups[otherId] = {
           userId: otherId,
-          lastMessage: msg.content,
+          lastMessage: displayText,
           lastTime: msg.created_at,
           lastTimeLabel: formatRelativeTime(msg.created_at),
           unread: 0,
@@ -174,15 +186,41 @@ export function useMessaging() {
     currentContact.value = null
   }
 
-  async function sendMessage(content) {
-    if (!user.value || !activeUserId.value || !content.trim()) return false
+  async function uploadAttachments(files) {
+    if (!files || files.length === 0) return []
+    const uploaded = []
+    for (const file of files) {
+      const ext = file.name.split('.').pop()
+      const path = `chat/${user.value.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+      const { error } = await supabase.storage.from(ATTACHMENT_BUCKET).upload(path, file)
+      if (error) {
+        console.error('uploadAttachment error:', error)
+        continue
+      }
+      uploaded.push({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        path,
+        url: getAttachmentUrl(path),
+      })
+    }
+    return uploaded
+  }
+
+  async function sendMessage(content, files) {
+    if (!user.value || !activeUserId.value) return false
+    if (!content?.trim() && (!files || files.length === 0)) return false
+
+    const attachments = files?.length ? await uploadAttachments(files) : []
 
     const { data, error } = await supabase
       .from('messages')
       .insert({
         sender_id: user.value.id,
         receiver_id: activeUserId.value,
-        content: content.trim(),
+        content: content?.trim() || '',
+        attachments: attachments.length ? attachments : null,
       })
       .select()
       .single()
@@ -194,11 +232,13 @@ export function useMessaging() {
 
     messages.value = [...messages.value, data]
 
+    const displayText = data.content || (data.attachments?.length ? '[Załącznik]' : '')
+
     const convIdx = conversations.value.findIndex((c) => c.userId === activeUserId.value)
     if (convIdx >= 0) {
       const updated = {
         ...conversations.value[convIdx],
-        lastMessage: data.content,
+        lastMessage: displayText,
         lastTime: data.created_at,
         lastTimeLabel: formatRelativeTime(data.created_at),
       }
@@ -210,7 +250,7 @@ export function useMessaging() {
       const profile = await getProfileByAuthId(activeUserId.value)
       const entry = {
         ...makeContact(activeUserId.value, profile),
-        lastMessage: data.content,
+        lastMessage: displayText,
         lastTime: data.created_at,
         lastTimeLabel: formatRelativeTime(data.created_at),
         unread: 0,
@@ -366,11 +406,13 @@ export function useMessaging() {
 
       const idx = conversations.value.findIndex((c) => c.userId === otherId)
 
+      const displayText = msg.content || (msg.attachments?.length ? '[Załącznik]' : '')
+
       if (idx >= 0) {
         const isUnread = msg.receiver_id === user.value.id && otherId !== activeUserId.value
         const updated = {
           ...conversations.value[idx],
-          lastMessage: msg.content,
+          lastMessage: displayText,
           lastTime: msg.created_at,
           lastTimeLabel: formatRelativeTime(msg.created_at),
         }
@@ -384,7 +426,7 @@ export function useMessaging() {
         const isUnread = msg.receiver_id === user.value.id && otherId !== activeUserId.value
         const entry = {
           ...makeContact(otherId, profile),
-          lastMessage: msg.content,
+          lastMessage: displayText,
           lastTime: msg.created_at,
           lastTimeLabel: formatRelativeTime(msg.created_at),
           unread: isUnread ? 1 : 0,
@@ -399,7 +441,7 @@ export function useMessaging() {
       if (!involvesMe) return
 
       messages.value = messages.value.map((m) =>
-        m.id === msg.id ? { ...m, content: msg.content } : m,
+        m.id === msg.id ? { ...m, content: msg.content, attachments: msg.attachments } : m,
       )
 
       const otherId = msg.sender_id === user.value.id ? msg.receiver_id : msg.sender_id
