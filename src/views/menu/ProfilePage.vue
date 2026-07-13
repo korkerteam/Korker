@@ -1,11 +1,13 @@
 <script setup>
 import { reactive, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { upsertProfile, deleteProfile } from '@/services/profileService.js'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { translateAuthError } from '@/utils/authErrors.js'
 import LoadingBox from '@/components/LoadingBox.vue'
 
+const router = useRouter()
 const { user, profileData, profileLoading, setProfileName, clearNeedsProfile, signOut } = useAuth()
 const profile = reactive({
   name: '',
@@ -62,6 +64,10 @@ watch(
       fromDb(data)
       setProfileName(profile.name)
     } else {
+      const meta = user.value?.user_metadata
+      if (meta?.name) {
+        profile.name = [meta.name, meta.surname].filter(Boolean).join(' ')
+      }
       startEdit()
     }
     loading.value = false
@@ -133,13 +139,24 @@ function cancelEdit() {
 }
 
 const confirmingDelete = ref(false)
+const deleting = ref(false)
+const deleteError = ref('')
 
 async function deleteAccount() {
+  deleteError.value = ''
+  deleting.value = true
   try {
     await deleteProfile(user.value?.id)
-    await signOut()
+    try {
+      await signOut()
+    } catch {
+      // account already removed from auth.users, session is stale
+    }
+    router.push('/')
   } catch (err) {
-    console.error('Failed to delete account:', err)
+    deleteError.value = translateAuthError(err)
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -183,7 +200,10 @@ function onAvatarChange(event) {
           @change="onAvatarChange"
         />
         <template v-if="isEditing">
-          <input v-model="draft.name" class="name-input" placeholder="Imię i nazwisko" />
+          <label class="field-row name-input-label">
+            <span class="field-label">Imię i nazwisko</span>
+            <input v-model="draft.name" class="name-input" placeholder="Jan Kowalski" />
+          </label>
         </template>
         <template v-else>
           <h2>{{ profile.name }}</h2>
@@ -204,11 +224,11 @@ function onAvatarChange(event) {
           </label>
           <label class="field-row">
             <span class="field-label">Wiek</span>
-            <input v-model="draft.age" type="number" placeholder="Wiek" />
+            <input v-model="draft.age" type="number" placeholder="25" />
           </label>
           <label class="field-row">
             <span class="field-label">Miejsce zamieszkania</span>
-            <input v-model="draft.location" placeholder="Miasto" />
+            <input v-model="draft.location" placeholder="Płock" />
           </label>
           <label class="field-row">
             <span class="field-label">Płeć</span>
@@ -273,11 +293,19 @@ function onAvatarChange(event) {
         <div v-else class="delete-confirm">
           <span class="delete-confirm-text">Czy na pewno chcesz usunąć konto?</span>
           <div class="delete-confirm-actions">
-            <button class="btn btn-danger btn-sm" @click="deleteAccount">Tak, usuń</button>
-            <button class="btn btn-secondary btn-sm" @click="confirmingDelete = false">
+            <button class="btn btn-danger btn-sm" :disabled="deleting" @click="deleteAccount">
+              <span v-if="deleting" class="btn-spinner"></span>
+              {{ deleting ? 'Usuwanie...' : 'Tak, usuń' }}
+            </button>
+            <button
+              class="btn btn-secondary btn-sm"
+              :disabled="deleting"
+              @click="confirmingDelete = false"
+            >
               Anuluj
             </button>
           </div>
+          <div v-if="deleteError" class="error-box">{{ deleteError }}</div>
         </div>
       </template>
     </template>
@@ -581,5 +609,9 @@ function onAvatarChange(event) {
   font-weight: 500;
   color: #991b1b;
   text-align: center;
+}
+
+.name-input-label {
+  width: 100%;
 }
 </style>
