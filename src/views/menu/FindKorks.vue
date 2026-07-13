@@ -363,8 +363,8 @@ function closePage() {
 <style scoped>
 .find-korks-panel {
   border: 1.5px solid var(--primary-color);
-  width: 950px;
-  max-height: 700px;
+  width: 1200px;
+  height: 700px;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -526,13 +526,14 @@ function closePage() {
   display: flex;
   justify-content: center;
   width: 100%;
+  height: 800px;
   border-radius: 8px;
   overflow: hidden;
 }
 
 .card-image img {
-  width: 100%;
-  height: 180px;
+  width: 40%;
+  height: 400px;
   object-fit: cover;
   border-radius: 10px;
   border: 1px solid rgba(79, 117, 199, 0.1);
