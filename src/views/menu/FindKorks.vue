@@ -27,8 +27,7 @@ const tutors = [
     subject: 'Matematyka',
     level: 'Liceum',
     tags: ['Matura', 'Online'],
-    image:
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Pomagam przygotować się do matury z matematyki w przyjazny sposób.',
   },
   {
@@ -36,8 +35,7 @@ const tutors = [
     subject: 'Fizyka',
     level: 'Studia',
     tags: ['Egzamin', 'Na miejscu'],
-    image:
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Skupię się na zrozumieniu pojęć i praktycznych zadaniach.',
   },
   {
@@ -45,8 +43,7 @@ const tutors = [
     subject: 'Język polski',
     level: 'Szkoła podstawowa',
     tags: ['Online'],
-    image:
-      'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Łączę naukę z ciekawymi ćwiczeniami i czytaniem lektur.',
   },
   {
@@ -54,8 +51,7 @@ const tutors = [
     subject: 'Angielski',
     level: 'Liceum',
     tags: ['Matura', 'Na miejscu'],
-    image:
-      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Pomagam budować pewność siebie w mówieniu i rozumieniu tekstów.',
   },
   {
@@ -63,8 +59,7 @@ const tutors = [
     subject: 'Biologia',
     level: 'Liceum',
     tags: ['Online', 'Matura'],
-    image:
-      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Przygotowuję do egzaminów i tłumaczę trudne tematy obrazowo.',
   },
   {
@@ -72,8 +67,7 @@ const tutors = [
     subject: 'Informatyka',
     level: 'Studia',
     tags: ['Programowanie', 'Online'],
-    image:
-      'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Uczę logicznego myślenia i pracy z kodem od podstaw.',
   },
   {
@@ -81,8 +75,7 @@ const tutors = [
     subject: 'Chemia',
     level: 'Liceum',
     tags: ['Matura', 'Na miejscu'],
-    image:
-      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Wyjaśniam chemię krok po kroku i uczę skutecznie powtarzać materiał.',
   },
   {
@@ -90,8 +83,7 @@ const tutors = [
     subject: 'Historia',
     level: 'Szkoła podstawowa',
     tags: ['Online', 'Egzamin'],
-    image:
-      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Przygotowuję do sprawdzianów i uczę historii w ciekawy sposób.',
   },
   {
@@ -99,8 +91,7 @@ const tutors = [
     subject: 'Geografia',
     level: 'Liceum',
     tags: ['Matura', 'Online'],
-    image:
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Pomagam zapamiętywać mapy, pojęcia i schematy bez stresu.',
   },
   {
@@ -108,6 +99,7 @@ const tutors = [
     subject: 'Matematyka',
     level: 'Szkoła podstawowa',
     tags: ['Online', 'Egzamin'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Uczę matematyki spokojnie i krok po kroku.',
   },
   {
@@ -115,6 +107,7 @@ const tutors = [
     subject: 'Angielski',
     level: 'Liceum',
     tags: ['Matura', 'Na miejscu'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Pomagam poprawić słownictwo i komunikację.',
   },
   {
@@ -122,6 +115,7 @@ const tutors = [
     subject: 'Fizyka',
     level: 'Liceum',
     tags: ['Egzamin', 'Online'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Wytłumaczę trudne zagadnienia prostym językiem.',
   },
   {
@@ -129,6 +123,7 @@ const tutors = [
     subject: 'Biologia',
     level: 'Studia',
     tags: ['Online', 'Matura'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Skupię się na nauce z materiałów i praktycznych przykładów.',
   },
   {
@@ -136,6 +131,7 @@ const tutors = [
     subject: 'Informatyka',
     level: 'Liceum',
     tags: ['Programowanie', 'Na miejscu'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Pomagam zrozumieć podstawy programowania i algorytmiki.',
   },
   {
@@ -150,6 +146,7 @@ const tutors = [
     subject: 'Język polski',
     level: 'Szkoła podstawowa',
     tags: ['Egzamin', 'Na miejscu'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Uczę poprawnego pisania i wyrażania myśli w prosty sposób.',
   },
   {
@@ -157,6 +154,7 @@ const tutors = [
     subject: 'Chemia',
     level: 'Studia',
     tags: ['Online', 'Egzamin'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Przygotowuję do egzaminów i wyjaśniam trudne reakcje chemiczne.',
   },
   {
@@ -164,6 +162,7 @@ const tutors = [
     subject: 'Chemia',
     level: 'Liceum',
     tags: ['Matura', 'Na miejscu'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Pomagam zrozumieć chemię od podstaw do poziomu maturalnego.',
   },
   {
@@ -171,6 +170,7 @@ const tutors = [
     subject: 'Historia',
     level: 'Liceum',
     tags: ['Matura', 'Online'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Uczę historii w uporządkowany sposób i z naciskiem na daty.',
   },
   {
@@ -178,6 +178,7 @@ const tutors = [
     subject: 'Historia',
     level: 'Studia',
     tags: ['Egzamin', 'Na miejscu'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Pomagam zrozumieć kontekst historyczny i przygotować się do sprawdzianów.',
   },
   {
@@ -185,6 +186,7 @@ const tutors = [
     subject: 'Geografia',
     level: 'Szkoła podstawowa',
     tags: ['Online', 'Egzamin'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Łączę naukę geografii z prostymi schematami i ćwiczeniami.',
   },
   {
@@ -192,6 +194,7 @@ const tutors = [
     subject: 'Geografia',
     level: 'Studia',
     tags: ['Matura', 'Na miejscu'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Pomagam zrozumieć zjawiska geograficzne i przygotować się do testów.',
   },
 ]
