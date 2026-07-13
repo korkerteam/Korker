@@ -89,8 +89,8 @@ function handleClose() {
   closeConversation()
 }
 
-async function handleSend(content) {
-  await sendMessage(content)
+async function handleSend(content, files) {
+  await sendMessage(content, files)
 }
 </script>
 

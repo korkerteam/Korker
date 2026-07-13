@@ -13,6 +13,9 @@ const currentIndex = ref(0)
 const selectedSubjects = ref([])
 const selectedLevels = ref([])
 const selectedTags = ref([])
+const swipeStartX = ref(null)
+const swipeOffsetX = ref(0)
+const swipeRotation = ref(0)
 
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
@@ -24,8 +27,7 @@ const tutors = [
     subject: 'Matematyka',
     level: 'Liceum',
     tags: ['Matura', 'Online'],
-    image:
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Pomagam przygotować się do matury z matematyki w przyjazny sposób.',
   },
   {
@@ -33,8 +35,7 @@ const tutors = [
     subject: 'Fizyka',
     level: 'Studia',
     tags: ['Egzamin', 'Na miejscu'],
-    image:
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Skupię się na zrozumieniu pojęć i praktycznych zadaniach.',
   },
   {
@@ -42,8 +43,7 @@ const tutors = [
     subject: 'Język polski',
     level: 'Szkoła podstawowa',
     tags: ['Online'],
-    image:
-      'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Łączę naukę z ciekawymi ćwiczeniami i czytaniem lektur.',
   },
   {
@@ -51,8 +51,7 @@ const tutors = [
     subject: 'Angielski',
     level: 'Liceum',
     tags: ['Matura', 'Na miejscu'],
-    image:
-      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Pomagam budować pewność siebie w mówieniu i rozumieniu tekstów.',
   },
   {
@@ -60,8 +59,7 @@ const tutors = [
     subject: 'Biologia',
     level: 'Liceum',
     tags: ['Online', 'Matura'],
-    image:
-      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Przygotowuję do egzaminów i tłumaczę trudne tematy obrazowo.',
   },
   {
@@ -69,8 +67,7 @@ const tutors = [
     subject: 'Informatyka',
     level: 'Studia',
     tags: ['Programowanie', 'Online'],
-    image:
-      'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Uczę logicznego myślenia i pracy z kodem od podstaw.',
   },
   {
@@ -78,8 +75,7 @@ const tutors = [
     subject: 'Chemia',
     level: 'Liceum',
     tags: ['Matura', 'Na miejscu'],
-    image:
-      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Wyjaśniam chemię krok po kroku i uczę skutecznie powtarzać materiał.',
   },
   {
@@ -87,8 +83,7 @@ const tutors = [
     subject: 'Historia',
     level: 'Szkoła podstawowa',
     tags: ['Online', 'Egzamin'],
-    image:
-      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Przygotowuję do sprawdzianów i uczę historii w ciekawy sposób.',
   },
   {
@@ -96,8 +91,7 @@ const tutors = [
     subject: 'Geografia',
     level: 'Liceum',
     tags: ['Matura', 'Online'],
-    image:
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Pomagam zapamiętywać mapy, pojęcia i schematy bez stresu.',
   },
   {
@@ -105,6 +99,7 @@ const tutors = [
     subject: 'Matematyka',
     level: 'Szkoła podstawowa',
     tags: ['Online', 'Egzamin'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Uczę matematyki spokojnie i krok po kroku.',
   },
   {
@@ -112,6 +107,7 @@ const tutors = [
     subject: 'Angielski',
     level: 'Liceum',
     tags: ['Matura', 'Na miejscu'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Pomagam poprawić słownictwo i komunikację.',
   },
   {
@@ -119,6 +115,7 @@ const tutors = [
     subject: 'Fizyka',
     level: 'Liceum',
     tags: ['Egzamin', 'Online'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Wytłumaczę trudne zagadnienia prostym językiem.',
   },
   {
@@ -126,6 +123,7 @@ const tutors = [
     subject: 'Biologia',
     level: 'Studia',
     tags: ['Online', 'Matura'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Skupię się na nauce z materiałów i praktycznych przykładów.',
   },
   {
@@ -133,6 +131,7 @@ const tutors = [
     subject: 'Informatyka',
     level: 'Liceum',
     tags: ['Programowanie', 'Na miejscu'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Pomagam zrozumieć podstawy programowania i algorytmiki.',
   },
   {
@@ -147,6 +146,7 @@ const tutors = [
     subject: 'Język polski',
     level: 'Szkoła podstawowa',
     tags: ['Egzamin', 'Na miejscu'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Uczę poprawnego pisania i wyrażania myśli w prosty sposób.',
   },
   {
@@ -154,6 +154,7 @@ const tutors = [
     subject: 'Chemia',
     level: 'Studia',
     tags: ['Online', 'Egzamin'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Przygotowuję do egzaminów i wyjaśniam trudne reakcje chemiczne.',
   },
   {
@@ -161,6 +162,7 @@ const tutors = [
     subject: 'Chemia',
     level: 'Liceum',
     tags: ['Matura', 'Na miejscu'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Pomagam zrozumieć chemię od podstaw do poziomu maturalnego.',
   },
   {
@@ -168,6 +170,7 @@ const tutors = [
     subject: 'Historia',
     level: 'Liceum',
     tags: ['Matura', 'Online'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Uczę historii w uporządkowany sposób i z naciskiem na daty.',
   },
   {
@@ -175,6 +178,7 @@ const tutors = [
     subject: 'Historia',
     level: 'Studia',
     tags: ['Egzamin', 'Na miejscu'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Pomagam zrozumieć kontekst historyczny i przygotować się do sprawdzianów.',
   },
   {
@@ -182,6 +186,7 @@ const tutors = [
     subject: 'Geografia',
     level: 'Szkoła podstawowa',
     tags: ['Online', 'Egzamin'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Łączę naukę geografii z prostymi schematami i ćwiczeniami.',
   },
   {
@@ -189,6 +194,7 @@ const tutors = [
     subject: 'Geografia',
     level: 'Studia',
     tags: ['Matura', 'Na miejscu'],
+    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
     bio: 'Pomagam zrozumieć zjawiska geograficzne i przygotować się do testów.',
   },
 ]
@@ -217,11 +223,69 @@ watch(
   () => props.filters,
   () => {
     currentIndex.value = 0
+    resetSwipe()
   },
   { deep: true },
 )
 
+function resetSwipe() {
+  swipeStartX.value = null
+  swipeOffsetX.value = 0
+  swipeRotation.value = 0
+}
+
+function getSwipeClientX(event) {
+  if (event?.touches?.length) {
+    return event.touches[0].clientX
+  }
+  if (event?.changedTouches?.length) {
+    return event.changedTouches[0].clientX
+  }
+  return event?.clientX ?? 0
+}
+
+function startSwipe(event) {
+  if (event?.target?.closest('button')) {
+    swipeStartX.value = null
+    return
+  }
+
+  swipeStartX.value = getSwipeClientX(event)
+  swipeOffsetX.value = 0
+  swipeRotation.value = 0
+}
+
+function moveSwipe(event) {
+  if (swipeStartX.value === null) return
+
+  const currentX = getSwipeClientX(event)
+  const delta = currentX - swipeStartX.value
+  swipeOffsetX.value = Math.max(-140, Math.min(140, delta))
+  swipeRotation.value = Math.max(-18, Math.min(18, delta / 8))
+
+  if (Math.abs(delta) > 3) {
+    event.preventDefault?.()
+  }
+}
+
+function endSwipe(event) {
+  if (swipeStartX.value === null) return
+
+  const currentX = getSwipeClientX(event)
+  const delta = currentX - swipeStartX.value
+
+  if (delta < -80) {
+    handleDecision(false)
+  } else if (delta > 80) {
+    handleDecision(true)
+  } else {
+    resetSwipe()
+  }
+}
+
 function nextTutor() {
+  resetSwipe()
+
   if (currentIndex.value < filteredTutors.value.length - 1) {
     currentIndex.value += 1
   } else {
@@ -263,6 +327,7 @@ function toggleSelection(category, value) {
     targetArray.push(value)
   }
   currentIndex.value = 0
+  resetSwipe()
 }
 
 function closePage() {
@@ -333,8 +398,24 @@ function closePage() {
         <div class="progress">{{ currentIndex + 1 }} / {{ filteredTutors.length }}</div>
 
         <div v-if="currentTutor" class="tutor-card">
-          <div class="card-image">
-            <img v-if="currentTutor.image" :src="currentTutor.image" :alt="currentTutor.name" />
+          <div
+            class="card-image"
+            @pointerdown="startSwipe"
+            @pointermove="moveSwipe"
+            @pointerup="endSwipe"
+            @pointercancel="endSwipe"
+          >
+            <div v-if="currentTutor.image" class="swipe-image-wrapper">
+              <img
+                class="swipe-image"
+                :src="currentTutor.image"
+                :alt="currentTutor.name"
+                :style="{
+                  '--swipe-offset': `${swipeOffsetX}px`,
+                  '--swipe-rotation': `${swipeRotation}deg`,
+                }"
+              />
+            </div>
           </div>
 
           <div class="card-info">
@@ -345,9 +426,29 @@ function closePage() {
               <span v-for="tag in currentTutor.tags" :key="tag" class="tag">{{ tag }}</span>
             </div>
 
-            <div class="actions">
-              <button class="btn-dislike" @click="handleDecision(false)">Nie pasuje</button>
-              <button class="btn-like" @click="handleDecision(true)">Lubię</button>
+            <div
+              class="actions"
+              @pointerdown.stop
+              @pointermove.stop
+              @pointerup.stop
+              @pointercancel.stop
+            >
+              <button
+                id="dislike-button"
+                class="btn-dislike"
+                type="button"
+                @click.stop.prevent="handleDecision(false)"
+              >
+                Nie pasuje
+              </button>
+              <button
+                id="like-button"
+                class="btn-like"
+                type="button"
+                @click.stop.prevent="handleDecision(true)"
+              >
+                Lubię
+              </button>
             </div>
           </div>
         </div>
@@ -534,6 +635,7 @@ function closePage() {
 .card-image {
   display: flex;
   justify-content: center;
+  align-items: center;
   width: 100%;
   height: 340px;
   border-radius: 16px;
@@ -547,6 +649,24 @@ function closePage() {
   object-fit: cover;
   border-radius: 16px;
   border: 1px solid rgba(79, 117, 199, 0.1);
+  transform: translateX(var(--swipe-offset, 0px)) rotate(var(--swipe-rotation, 0deg));
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+  will-change: transform;
+  transform-origin: center center;
+  backface-visibility: hidden;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.swipe-image:hover {
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+  filter: saturate(1.05);
 }
 
 .card-info {
@@ -554,6 +674,7 @@ function closePage() {
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+  margin-top: 8px;
 }
 
 .tutor-name {
@@ -605,7 +726,9 @@ function closePage() {
 .actions {
   display: flex;
   gap: 6px;
-  margin-top: 4px;
+  margin-top: 10px;
+  position: relative;
+  z-index: 2;
 }
 
 .btn-like,
