@@ -10,6 +10,13 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'like-teacher'])
 const currentIndex = ref(0)
+const selectedSubjects = ref([])
+const selectedLevels = ref([])
+const selectedTags = ref([])
+
+const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
+const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
+const tagOptions = ['Matura', 'Egzamin', 'Online', 'Na miejscu']
 
 const tutors = [
   {
@@ -18,7 +25,7 @@ const tutors = [
     level: 'Liceum',
     tags: ['Matura', 'Online'],
     image:
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=500&q=80',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80',
     bio: 'Pomagam przygotować się do matury z matematyki w przyjazny sposób.',
   },
   {
@@ -27,7 +34,7 @@ const tutors = [
     level: 'Studia',
     tags: ['Egzamin', 'Na miejscu'],
     image:
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80',
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
     bio: 'Skupię się na zrozumieniu pojęć i praktycznych zadaniach.',
   },
   {
@@ -36,7 +43,7 @@ const tutors = [
     level: 'Szkoła podstawowa',
     tags: ['Online'],
     image:
-      'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=500&q=80',
+      'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=800&q=80',
     bio: 'Łączę naukę z ciekawymi ćwiczeniami i czytaniem lektur.',
   },
   {
@@ -45,7 +52,7 @@ const tutors = [
     level: 'Liceum',
     tags: ['Matura', 'Na miejscu'],
     image:
-      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=500&q=80',
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
     bio: 'Pomagam budować pewność siebie w mówieniu i rozumieniu tekstów.',
   },
   {
@@ -54,7 +61,7 @@ const tutors = [
     level: 'Liceum',
     tags: ['Online', 'Matura'],
     image:
-      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=500&q=80',
+      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80',
     bio: 'Przygotowuję do egzaminów i tłumaczę trudne tematy obrazowo.',
   },
   {
@@ -63,7 +70,7 @@ const tutors = [
     level: 'Studia',
     tags: ['Programowanie', 'Online'],
     image:
-      'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=500&q=80',
+      'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=800&q=80',
     bio: 'Uczę logicznego myślenia i pracy z kodem od podstaw.',
   },
   {
@@ -72,7 +79,7 @@ const tutors = [
     level: 'Liceum',
     tags: ['Matura', 'Na miejscu'],
     image:
-      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=500&q=80',
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
     bio: 'Wyjaśniam chemię krok po kroku i uczę skutecznie powtarzać materiał.',
   },
   {
@@ -81,7 +88,7 @@ const tutors = [
     level: 'Szkoła podstawowa',
     tags: ['Online', 'Egzamin'],
     image:
-      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=500&q=80',
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
     bio: 'Przygotowuję do sprawdzianów i uczę historii w ciekawy sposób.',
   },
   {
@@ -90,7 +97,7 @@ const tutors = [
     level: 'Liceum',
     tags: ['Matura', 'Online'],
     image:
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=500&q=80',
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
     bio: 'Pomagam zapamiętywać mapy, pojęcia i schematy bez stresu.',
   },
   {
@@ -188,12 +195,17 @@ const tutors = [
 
 const filteredTutors = computed(() => {
   return tutors.filter((tutor) => {
-    const matchesSubject =
-      props.filters.subjects.length === 0 || props.filters.subjects.includes(tutor.subject)
-    const matchesLevel =
-      props.filters.levels.length === 0 || props.filters.levels.includes(tutor.level)
+    // Local filters take precedence over global filters
+    const localSubjects =
+      selectedSubjects.value.length > 0 ? selectedSubjects.value : props.filters.subjects
+    const localLevels =
+      selectedLevels.value.length > 0 ? selectedLevels.value : props.filters.levels
+    const allSelectedTags = [...props.filters.tags, ...selectedTags.value]
+
+    const matchesSubject = localSubjects.length === 0 || localSubjects.includes(tutor.subject)
+    const matchesLevel = localLevels.length === 0 || localLevels.includes(tutor.level)
     const matchesTags =
-      props.filters.tags.length === 0 || props.filters.tags.some((tag) => tutor.tags.includes(tag))
+      allSelectedTags.length === 0 || allSelectedTags.some((tag) => tutor.tags.includes(tag))
 
     return matchesSubject && matchesLevel && matchesTags
   })
@@ -236,6 +248,23 @@ function handleDecision(isLiked) {
   }
 }
 
+function toggleSelection(category, value) {
+  const targetArray =
+    category === 'subjects'
+      ? selectedSubjects.value
+      : category === 'levels'
+        ? selectedLevels.value
+        : selectedTags.value
+
+  const index = targetArray.indexOf(value)
+  if (index > -1) {
+    targetArray.splice(index, 1)
+  } else {
+    targetArray.push(value)
+  }
+  currentIndex.value = 0
+}
+
 function closePage() {
   emit('close')
 }
@@ -252,24 +281,74 @@ function closePage() {
     </div>
 
     <div v-if="filteredTutors.length" class="tutors-content">
-      <div class="progress">{{ currentIndex + 1 }} / {{ filteredTutors.length }}</div>
-
-      <div v-if="currentTutor" class="tutor-card">
-        <div class="card-image">
-          <img v-if="currentTutor.image" :src="currentTutor.image" :alt="currentTutor.name" />
+      <div class="tags-filter-section">
+        <div class="tags-filter-header">
+          <h4>Filtry</h4>
         </div>
 
-        <div class="card-info">
-          <h3 class="tutor-name">{{ currentTutor.name }}</h3>
-          <p class="tutor-meta">{{ currentTutor.subject }} • {{ currentTutor.level }}</p>
+        <div class="filter-group">
+          <h5>Przedmioty</h5>
+          <div class="filter-options">
+            <label v-for="option in subjectOptions" :key="option">
+              <input
+                type="checkbox"
+                :checked="selectedSubjects.includes(option)"
+                @change="toggleSelection('subjects', option)"
+              />
+              {{ option }}
+            </label>
+          </div>
+        </div>
 
-          <div class="tags-list">
-            <span v-for="tag in currentTutor.tags" :key="tag" class="tag">{{ tag }}</span>
+        <div class="filter-group">
+          <h5>Poziom</h5>
+          <div class="filter-options">
+            <label v-for="option in levelOptions" :key="option">
+              <input
+                type="checkbox"
+                :checked="selectedLevels.includes(option)"
+                @change="toggleSelection('levels', option)"
+              />
+              {{ option }}
+            </label>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <h5>Tagi</h5>
+          <div class="filter-options">
+            <label v-for="option in tagOptions" :key="option">
+              <input
+                type="checkbox"
+                :checked="selectedTags.includes(option)"
+                @change="toggleSelection('tags', option)"
+              />
+              {{ option }}
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="tutor-section">
+        <div class="progress">{{ currentIndex + 1 }} / {{ filteredTutors.length }}</div>
+
+        <div v-if="currentTutor" class="tutor-card">
+          <div class="card-image">
+            <img v-if="currentTutor.image" :src="currentTutor.image" :alt="currentTutor.name" />
           </div>
 
-          <div class="actions">
-            <button class="btn-dislike" @click="handleDecision(false)">Nie pasuje</button>
-            <button class="btn-like" @click="handleDecision(true)">Lubię</button>
+          <div class="card-info">
+            <h3 class="tutor-name">{{ currentTutor.name }}</h3>
+            <p class="tutor-meta">{{ currentTutor.subject }} • {{ currentTutor.level }}</p>
+
+            <div class="tags-list">
+              <span v-for="tag in currentTutor.tags" :key="tag" class="tag">{{ tag }}</span>
+            </div>
+
+            <div class="actions">
+              <button class="btn-dislike" @click="handleDecision(false)">Nie pasuje</button>
+              <button class="btn-like" @click="handleDecision(true)">Lubię</button>
+            </div>
           </div>
         </div>
       </div>
@@ -284,7 +363,7 @@ function closePage() {
 <style scoped>
 .find-korks-panel {
   border: 1.5px solid var(--primary-color);
-  width: 700px;
+  width: 950px;
   max-height: 700px;
   display: flex;
   flex-direction: column;
@@ -338,7 +417,85 @@ function closePage() {
 
 .tutors-content {
   flex: 1;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  overflow: hidden;
+}
+
+.tags-filter-section {
+  width: 240px;
   padding: 16px;
+  border-right: 1.5px solid rgba(79, 117, 199, 0.1);
+  overflow-y: auto;
+  background: linear-gradient(135deg, rgba(248, 251, 255, 0.4) 0%, rgba(238, 242, 255, 0.4) 100%);
+}
+
+.tags-filter-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(79, 117, 199, 0.2);
+}
+
+.tags-filter-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.filter-group h5 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  color: #374151;
+}
+
+.filter-options label:hover {
+  background: rgba(79, 117, 199, 0.08);
+}
+
+.filter-options input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #4f75c7;
+}
+
+.tutor-section {
+  flex: 1;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -353,25 +510,29 @@ function closePage() {
 }
 
 .tutor-card {
-  display: grid;
-  grid-template-columns: 140px 1fr;
-  gap: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   background: linear-gradient(135deg, rgba(248, 251, 255, 0.98) 0%, rgba(238, 242, 255, 0.95) 100%);
   border: 1px solid rgba(79, 117, 199, 0.12);
   border-radius: 12px;
-  padding: 12px;
-  align-items: start;
+  padding: 14px;
   flex: 1;
+  max-height: 550px;
+  overflow-y: auto;
 }
 
 .card-image {
   display: flex;
   justify-content: center;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .card-image img {
   width: 100%;
-  height: 150px;
+  height: 180px;
   object-fit: cover;
   border-radius: 10px;
   border: 1px solid rgba(79, 117, 199, 0.1);
@@ -380,20 +541,20 @@ function closePage() {
 .card-info {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
 .tutor-name {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #1f2937;
 }
 
 .tutor-meta {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
   color: #4b5563;
   font-weight: 500;
 }
@@ -416,23 +577,23 @@ function closePage() {
 .tags-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
 }
 
 .tag {
   display: inline-block;
   background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
   color: #0c4a6e;
-  padding: 4px 10px;
-  border-radius: 14px;
-  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 10px;
   font-weight: 600;
   border: 1px solid rgba(79, 117, 199, 0.2);
 }
 
 .actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   margin-top: 4px;
 }
 
@@ -441,9 +602,9 @@ function closePage() {
   flex: 1;
   border: none;
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
