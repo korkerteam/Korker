@@ -13,6 +13,9 @@ const currentIndex = ref(0)
 const selectedSubjects = ref([])
 const selectedLevels = ref([])
 const selectedTags = ref([])
+const swipeStartX = ref(null)
+const swipeOffsetX = ref(0)
+const swipeRotation = ref(0)
 
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
@@ -217,11 +220,64 @@ watch(
   () => props.filters,
   () => {
     currentIndex.value = 0
+    resetSwipe()
   },
   { deep: true },
 )
 
+function resetSwipe() {
+  swipeStartX.value = null
+  swipeOffsetX.value = 0
+  swipeRotation.value = 0
+}
+
+function getSwipeClientX(event) {
+  if (event?.touches?.length) {
+    return event.touches[0].clientX
+  }
+  if (event?.changedTouches?.length) {
+    return event.changedTouches[0].clientX
+  }
+  return event?.clientX ?? 0
+}
+
+function startSwipe(event) {
+  swipeStartX.value = getSwipeClientX(event)
+  swipeOffsetX.value = 0
+  swipeRotation.value = 0
+}
+
+function moveSwipe(event) {
+  if (swipeStartX.value === null) return
+
+  const currentX = getSwipeClientX(event)
+  const delta = currentX - swipeStartX.value
+  swipeOffsetX.value = Math.max(-140, Math.min(140, delta))
+  swipeRotation.value = Math.max(-18, Math.min(18, delta / 8))
+
+  if (Math.abs(delta) > 3) {
+    event.preventDefault?.()
+  }
+}
+
+function endSwipe(event) {
+  if (swipeStartX.value === null) return
+
+  const currentX = getSwipeClientX(event)
+  const delta = currentX - swipeStartX.value
+
+  if (delta < -80) {
+    handleDecision(false)
+  } else if (delta > 80) {
+    handleDecision(true)
+  } else {
+    resetSwipe()
+  }
+}
+
 function nextTutor() {
+  resetSwipe()
+
   if (currentIndex.value < filteredTutors.value.length - 1) {
     currentIndex.value += 1
   } else {
@@ -263,6 +319,7 @@ function toggleSelection(category, value) {
     targetArray.push(value)
   }
   currentIndex.value = 0
+  resetSwipe()
 }
 
 function closePage() {
@@ -333,8 +390,24 @@ function closePage() {
         <div class="progress">{{ currentIndex + 1 }} / {{ filteredTutors.length }}</div>
 
         <div v-if="currentTutor" class="tutor-card">
-          <div class="card-image">
-            <img v-if="currentTutor.image" :src="currentTutor.image" :alt="currentTutor.name" />
+          <div
+            class="card-image"
+            @pointerdown="startSwipe"
+            @pointermove="moveSwipe"
+            @pointerup="endSwipe"
+            @pointercancel="endSwipe"
+          >
+            <div v-if="currentTutor.image" class="swipe-image-wrapper">
+              <img
+                class="swipe-image"
+                :src="currentTutor.image"
+                :alt="currentTutor.name"
+                :style="{
+                  '--swipe-offset': `${swipeOffsetX}px`,
+                  '--swipe-rotation': `${swipeRotation}deg`,
+                }"
+              />
+            </div>
           </div>
 
           <div class="card-info">
@@ -525,18 +598,50 @@ function closePage() {
 .card-image {
   display: flex;
   justify-content: center;
+  align-items: center;
   width: 100%;
-  height: 800px;
+  min-height: 280px;
   border-radius: 8px;
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+  padding: 6px 0;
+}
+
+.swipe-image-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
 }
 
-.card-image img {
+.swipe-image {
+  display: block;
   width: 40%;
-  height: 400px;
+  height: 320px;
   object-fit: cover;
   border-radius: 10px;
   border: 1px solid rgba(79, 117, 199, 0.1);
+  transform: translateX(var(--swipe-offset, 0px)) rotate(var(--swipe-rotation, 0deg));
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+  will-change: transform;
+  transform-origin: center center;
+  backface-visibility: hidden;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.swipe-image:hover {
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+  filter: saturate(1.05);
 }
 
 .card-info {
