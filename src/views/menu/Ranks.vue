@@ -35,6 +35,7 @@ const loading = ref(false)
   width: 500px;
   font-family: sans-serif;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  margin-top: 5rem;
 }
 
 .white-bg {

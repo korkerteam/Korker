@@ -52,13 +52,20 @@ function onRemove(teacher) {
 
 <style scoped>
 .teacher-panel {
-  width: min(520px, 100%);
+  width: min(520px, 90vw);
   background: #ffffff;
   border-radius: 16px;
   padding: 18px;
   box-shadow: 0 18px 40px rgba(20, 40, 80, 0.08);
   border: 1px solid rgba(79, 117, 199, 0.08);
   font-family: Inter, system-ui, sans-serif;
+  position: fixed;
+  top: 50%;
+  left: 65%;
+  transform: translate(-50%, -50%);
+  max-height: 85vh;
+  overflow: hidden;
+  z-index: 20;
 }
 
 .teacher-header h3 {
