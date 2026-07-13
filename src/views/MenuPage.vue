@@ -72,7 +72,17 @@ function updateFilters(filters) {
   emit('update:selectedFilters', filters)
 }
 
+function requireAuth() {
+  if (!isAuthenticated.value) {
+    openAuthModal()
+    router.push('/')
+    return false
+  }
+  return true
+}
+
 function handleToggleFilter() {
+  if (!requireAuth()) return
   toggleFilter(route, router, active)
 }
 
@@ -81,10 +91,12 @@ function handleToggleRank() {
 }
 
 function handleToggleTeachers() {
+  if (!requireAuth()) return
   active.value = active.value === 'teachers' ? null : 'teachers'
 }
 
 function handleToggleSearch() {
+  if (!requireAuth()) return
   active.value = active.value === 'search' ? null : 'search'
 }
 
