@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, provide } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import HeaderKorker from './components/HeaderKorker.vue'
 import SearchBar from './components/header/SearchBar.vue'
@@ -21,6 +21,8 @@ const selectedFilters = ref({ subjects: [], levels: [], tags: [] })
 const likedTeachers = ref([])
 const currentTeacher = ref(null)
 const showMissingFilterNotice = ref(false)
+const homeTrigger = ref(0)
+provide('homeTrigger', homeTrigger)
 function goToSearchPage() {
   const { subjects, levels, tags } = selectedFilters.value
   const hasSelection = subjects.length > 0 || levels.length > 0 || tags.length > 0
@@ -64,9 +66,10 @@ function removeLikedTeacher(teacher) {
 <template>
   <div class="main-layout">
     <div class="top-row">
-      <div class="Korker">
+      <div class="Korker" @click="homeTrigger++">
         <HeaderKorker />
       </div>
+
       <div class="search-block">
         <SearchBar />
         <LoginButton @login="openAuthModal" />

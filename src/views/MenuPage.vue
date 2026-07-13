@@ -1,8 +1,9 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth.js'
 import MenuContent from '@/components/MenuContent.vue'
+import HomePage from '@/views/HomePage.vue'
 import ProfilePage from './menu/ProfilePage.vue'
 import Ranks from './menu/Ranks.vue'
 import FilterPage from './menu/FilterPage.vue'
@@ -33,7 +34,13 @@ const route = useRoute()
 const router = useRouter()
 const { isAuthenticated, needsProfile, openAuthModal } = useAuth()
 
+const homeTrigger = inject('homeTrigger')
 const active = ref(null)
+
+watch(homeTrigger, () => {
+  active.value = null
+  if (route.path !== '/') router.push('/')
+})
 
 const activePanel = computed(() => active.value)
 
@@ -142,44 +149,7 @@ function confirmFilters() {
           @show-teacher="(t) => emit('show-teacher', t)"
           @remove-teacher="(t) => emit('remove-liked-teacher', t)"
         />
-        <div v-else key="dashboard" class="dashboard-shell">
-          <div class="dashboard-top">
-            <div>
-              <p class="dashboard-welcome">Witamy w Korker</p>
-              <h2 class="dashboard-title">Znajdź korepetytora w kilka sekund</h2>
-            </div>
-            <div class="dashboard-actions">
-              <button class="dashboard-action">Najbliższe lekcje</button>
-              <button class="dashboard-action">Powiadomienia</button>
-            </div>
-          </div>
-
-          <div class="dashboard-grid">
-            <article class="dashboard-card">
-              <h3>Najbliższe lekcje</h3>
-              <ul>
-                <li>
-                  <strong>Matematyka z Anna Kowalską</strong>
-                  <span>Dziś 16:00</span>
-                </li>
-                <li>
-                  <strong>Matematyka z Anna Kowalską</strong>
-                  <span>Dziś 16:00</span>
-                </li>
-              </ul>
-            </article>
-
-            <article class="dashboard-card">
-              <h3>Polecani nauczyciele</h3>
-              <p>Sprawdź nauczycieli dopasowanych do Twoich filtrów i preferencji.</p>
-            </article>
-
-            <article class="dashboard-card">
-              <h3>Ostatnie wiadomości</h3>
-              <p>Przeglądaj ostatnie rozmowy i informacje od nauczycieli.</p>
-            </article>
-          </div>
-        </div>
+        <HomePage v-else key="home" />
       </Transition>
     </div>
   </div>
