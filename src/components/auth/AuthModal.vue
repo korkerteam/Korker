@@ -134,11 +134,13 @@ async function handleSubmit() {
 .modal-card {
   position: relative;
   width: 100%;
-  max-width: 400px;
-  padding: 40px 32px 32px;
+  max-width: 360px;
+  padding: 32px 24px 28px;
   background: #ffffff;
   border-radius: 24px;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .close-btn {

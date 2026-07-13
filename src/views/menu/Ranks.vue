@@ -32,10 +32,14 @@ const loading = ref(false)
   color: white;
   padding: 30px;
   border-radius: 20px;
-  width: 500px;
+  width: 100%;
+  max-width: 720px;
   font-family: sans-serif;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-  margin-top: 5rem;
+  margin: 0 auto;
+  min-height: 0;
+  max-height: calc(100vh - 180px);
+  overflow: auto;
 }
 
 .white-bg {

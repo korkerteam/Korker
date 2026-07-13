@@ -121,14 +121,18 @@ function toggleAllFilters() {
 <style scoped>
 .FilterPage {
   border: 1.5px solid var(--primary-color);
-  width: 700px;
-  height: 600px;
+  width: 100%;
+  max-width: 720px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding: 24px;
+  margin: 0 auto;
   border-radius: 16px;
   background: #ffffff;
+  min-height: 0;
+  max-height: calc(100vh - 180px);
+  overflow: auto;
 }
 
 h3,

@@ -363,14 +363,17 @@ function closePage() {
 <style scoped>
 .find-korks-panel {
   border: 1.5px solid var(--primary-color);
-  width: 1200px;
-  height: 700px;
+  width: 100%;
+  max-width: 1080px;
+  min-height: 0;
+  max-height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
   gap: 0;
   background: #ffffff;
   border-radius: 16px;
   overflow: hidden;
+  margin: 0 auto;
 }
 
 .find-korks-header {
@@ -422,11 +425,13 @@ function closePage() {
   flex-direction: row;
   gap: 0;
   overflow: hidden;
+  align-items: stretch;
 }
 
 .tags-filter-section {
-  width: 240px;
-  padding: 16px;
+  width: min(280px, 35%);
+  min-width: 240px;
+  padding: 20px;
   border-right: 1.5px solid rgba(79, 117, 199, 0.1);
   overflow-y: auto;
   background: linear-gradient(135deg, rgba(248, 251, 255, 0.4) 0%, rgba(238, 242, 255, 0.4) 100%);
@@ -495,11 +500,13 @@ function closePage() {
 
 .tutor-section {
   flex: 1;
-  padding: 14px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   overflow-y: auto;
+  align-items: center;
+  justify-content: center;
 }
 
 .progress {
@@ -512,30 +519,33 @@ function closePage() {
 .tutor-card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   background: linear-gradient(135deg, rgba(248, 251, 255, 0.98) 0%, rgba(238, 242, 255, 0.95) 100%);
   border: 1px solid rgba(79, 117, 199, 0.12);
-  border-radius: 12px;
-  padding: 14px;
+  border-radius: 20px;
+  padding: 24px;
   flex: 1;
-  max-height: 550px;
+  max-height: 620px;
+  width: min(100%, 820px);
   overflow-y: auto;
+  margin: 0 auto;
 }
 
 .card-image {
   display: flex;
   justify-content: center;
   width: 100%;
-  height: 800px;
-  border-radius: 8px;
+  height: 340px;
+  border-radius: 16px;
   overflow: hidden;
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .card-image img {
-  width: 40%;
-  height: 400px;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: 16px;
   border: 1px solid rgba(79, 117, 199, 0.1);
 }
 
