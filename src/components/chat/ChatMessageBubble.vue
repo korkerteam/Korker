@@ -12,6 +12,7 @@ const emit = defineEmits(['edit', 'delete'])
 const { user } = useAuth()
 
 const isMine = computed(() => props.message?.sender_id === user.value?.id)
+const attachments = computed(() => props.message?.attachments || [])
 
 const editing = ref(false)
 const editText = ref('')
@@ -54,6 +55,17 @@ function formatTime(dateStr) {
   const d = new Date(dateStr)
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
+
+function isImage(att) {
+  return att.type?.startsWith('image/')
+}
+
+function formatSize(bytes) {
+  if (!bytes) return ''
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
 </script>
 
 <template>
@@ -81,7 +93,30 @@ function formatTime(dateStr) {
       </div>
       <div v-else class="bubble-row">
         <div class="bubble" :class="isMine ? 'bubble-mine' : 'bubble-them'">
-          {{ message?.content }}
+          <template v-if="message?.content">
+            <div class="bubble-text">{{ message.content }}</div>
+          </template>
+          <template v-if="attachments.length">
+            <div class="attachments-grid">
+              <template v-for="(att, i) in attachments" :key="i">
+                <a v-if="isImage(att)" :href="att.url" target="_blank" class="att-image-wrap">
+                  <img :src="att.url" :alt="att.name" class="att-image" loading="lazy" />
+                </a>
+                <a v-else :href="att.url" target="_blank" class="att-file" download>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM6 20V4h7v5h5v11H6z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  <div class="att-file-info">
+                    <span class="att-file-name">{{ att.name }}</span>
+                    <span class="att-file-size">{{ formatSize(att.size) }}</span>
+                  </div>
+                </a>
+              </template>
+            </div>
+          </template>
         </div>
         <div v-if="isMine" class="msg-actions">
           <button v-if="!showDeleteConfirm" class="action-btn" title="Edytuj" @click="startEdit">
@@ -251,6 +286,71 @@ function formatTime(dateStr) {
 }
 .confirm-no:hover {
   background: #d1dcee;
+}
+.bubble-text {
+  white-space: pre-wrap;
+}
+.attachments-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.att-image-wrap {
+  display: block;
+  border-radius: 10px;
+  overflow: hidden;
+  line-height: 0;
+}
+.att-image-wrap:hover {
+  opacity: 0.92;
+}
+.att-image {
+  max-width: 280px;
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+}
+.att-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.bubble-mine .att-file {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+.bubble-mine .att-file:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+.bubble-them .att-file {
+  background: rgba(0, 0, 0, 0.04);
+  color: #1a1a2e;
+}
+.bubble-them .att-file:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+.att-file-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.att-file-name {
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.att-file-size {
+  font-size: 12px;
+  opacity: 0.7;
 }
 .edit-area {
   display: flex;
