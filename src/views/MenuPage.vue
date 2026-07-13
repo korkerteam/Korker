@@ -7,7 +7,8 @@ import ProfilePage from './menu/ProfilePage.vue'
 import Ranks from './menu/Ranks.vue'
 import FilterPage from './menu/FilterPage.vue'
 import MyTeachers from './menu/MyTeachers.vue'
-import { toggleFilter, toggleProfile, toggleRank, toggleTeachers } from '../composables/menuToggle'
+import FindKorks from './menu/FindKorks.vue'
+import { toggleFilter, toggleProfile, toggleRank } from '../composables/menuToggle'
 
 defineProps({
   selectedFilters: {
@@ -22,9 +23,9 @@ defineProps({
 
 const emit = defineEmits([
   'update:selectedFilters',
-  'go-to-search',
   'show-teacher',
   'remove-liked-teacher',
+  'like-teacher',
   'openAuth',
 ])
 
@@ -47,7 +48,6 @@ function activateProtectedPanel(panel) {
 
 onMounted(() => {
   if (route.path === '/profil') activateProtectedPanel('profile')
-  else if (route.path === '/nauczyciele') activateProtectedPanel('teachers')
 })
 
 watch(isAuthenticated, (val) => {
@@ -62,8 +62,7 @@ watch(
   () => route.path,
   (path) => {
     if (path === '/profil') activateProtectedPanel('profile')
-    else if (path === '/nauczyciele') activateProtectedPanel('teachers')
-    else if (path === '/' && (active.value === 'profile' || active.value === 'teachers')) {
+    else if (path === '/' && active.value === 'profile') {
       active.value = null
     }
   },
@@ -81,6 +80,14 @@ function handleToggleRank() {
   toggleRank(route, router, active)
 }
 
+function handleToggleTeachers() {
+  active.value = active.value === 'teachers' ? null : 'teachers'
+}
+
+function handleToggleSearch() {
+  active.value = active.value === 'search' ? null : 'search'
+}
+
 function confirmFilters() {
   active.value = null
 }
@@ -93,8 +100,8 @@ function confirmFilters() {
         @toggle-profile="() => toggleProfile(route, router)"
         @toggle-rank="handleToggleRank"
         @toggle-filter="handleToggleFilter"
-        @toggle-teachers="() => toggleTeachers(route, router)"
-        @go-to-search-page="emit('go-to-search')"
+        @toggle-teachers="handleToggleTeachers"
+        @toggle-search="handleToggleSearch"
         @open-auth="emit('openAuth')"
       />
     </div>
@@ -108,6 +115,13 @@ function confirmFilters() {
           :model-value="selectedFilters"
           @update:model-value="updateFilters"
           @confirm="confirmFilters"
+        />
+        <FindKorks
+          v-else-if="activePanel === 'search'"
+          key="search"
+          :filters="selectedFilters"
+          @close="handleToggleSearch"
+          @like-teacher="(t) => emit('like-teacher', t)"
         />
         <MyTeachers
           v-else-if="activePanel === 'teachers'"

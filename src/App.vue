@@ -95,6 +95,7 @@ function removeLikedTeacher(teacher) {
       @update:selected-filters="selectedFilters = $event"
       @go-to-search="goToSearchPage"
       @show-teacher="showTeacherProfile"
+      @like-teacher="handleTeacherLike"
       @remove-liked-teacher="removeLikedTeacher"
       @open-auth="openAuthModal"
     />

@@ -11,42 +11,89 @@ const props = defineProps({
 })
 
 const loading = ref(false)
+const selectedTeacher = ref(null)
 
 function onShow(teacher) {
-  emit('show-teacher', teacher)
+  selectedTeacher.value = teacher
 }
 
 function onRemove(teacher) {
   emit('remove-teacher', teacher)
+  selectedTeacher.value = null
+}
+
+function goBack() {
+  selectedTeacher.value = null
 }
 </script>
 
 <template>
   <LoadingBox v-if="loading" />
   <div v-else class="teacher-panel">
-    <div class="teacher-header">
-      <div>
-        <h3>Moi Nauczyciele</h3>
-        <p class="sub">Lista nauczycieli dodanych do twojego konta</p>
-      </div>
-    </div>
-
-    <div class="teacher-card-list">
-      <template v-if="teachers.length">
-        <div v-for="teacher in teachers" :key="teacher.name" class="teacher-row">
-          <div class="avatar">{{ teacher.name.charAt(0) }}</div>
-          <div class="meta">
-            <div class="name">{{ teacher.name }}</div>
-            <div class="details">{{ teacher.subject }} • {{ teacher.level }}</div>
-          </div>
-          <div class="actions">
-            <button class="btn small" @click="onShow(teacher)">Pokaż</button>
-            <button class="btn small ghost" @click="onRemove(teacher)">Usuń</button>
-          </div>
+    <!-- Teacher List View -->
+    <template v-if="!selectedTeacher">
+      <div class="teacher-header">
+        <div>
+          <h3>Moi Nauczyciele</h3>
+          <p class="sub">{{ teachers.length }} wybranych nauczycieli</p>
         </div>
-      </template>
-      <p v-else class="empty-state">Jeszcze nie zapisano żadnego nauczyciela.</p>
-    </div>
+      </div>
+
+      <div class="teacher-card-list">
+        <template v-if="teachers.length">
+          <div v-for="teacher in teachers" :key="teacher.name" class="teacher-row">
+            <div class="avatar">{{ teacher.name.charAt(0) }}</div>
+            <div class="meta">
+              <div class="name">{{ teacher.name }}</div>
+              <div class="details">{{ teacher.subject }} • {{ teacher.level }}</div>
+            </div>
+            <div class="actions">
+              <button class="btn small" @click="onShow(teacher)">Pokaż</button>
+              <button class="btn small ghost" @click="onRemove(teacher)">Usuń</button>
+            </div>
+          </div>
+        </template>
+        <p v-else class="empty-state">
+          Wybierz nauczycieli korzystając z funkcji "Szukaj korepetycji"
+        </p>
+      </div>
+    </template>
+
+    <!-- Teacher Profile View -->
+    <template v-else>
+      <div class="profile-header">
+        <button class="back-button" @click="goBack">← Wróć</button>
+      </div>
+
+      <div class="profile-content">
+        <div class="profile-image">
+          <img
+            v-if="selectedTeacher.image"
+            :src="selectedTeacher.image"
+            :alt="selectedTeacher.name"
+          />
+          <div v-else class="image-placeholder">{{ selectedTeacher.name.charAt(0) }}</div>
+        </div>
+
+        <div class="profile-info">
+          <h2 class="profile-name">{{ selectedTeacher.name }}</h2>
+          <p class="profile-meta">{{ selectedTeacher.subject }} • {{ selectedTeacher.level }}</p>
+
+          <div class="bio-section">
+            <p class="profile-bio">{{ selectedTeacher.bio }}</p>
+          </div>
+
+          <div v-if="selectedTeacher.tags" class="tags-section">
+            <div class="tags-label">Specjalizacje:</div>
+            <div class="tags-grid">
+              <span v-for="tag in selectedTeacher.tags" :key="tag" class="tag">{{ tag }}</span>
+            </div>
+          </div>
+
+          <button class="remove-button" @click="onRemove(selectedTeacher)">Usuń z listy</button>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -55,17 +102,15 @@ function onRemove(teacher) {
   width: min(520px, 90vw);
   background: #ffffff;
   border-radius: 16px;
-  padding: 18px;
+  padding: 0;
   box-shadow: 0 18px 40px rgba(20, 40, 80, 0.08);
   border: 1px solid rgba(79, 117, 199, 0.08);
   font-family: Inter, system-ui, sans-serif;
-  position: fixed;
-  top: 50%;
-  left: 65%;
-  transform: translate(-50%, -50%);
   max-height: 85vh;
   overflow: hidden;
   z-index: 20;
+  display: flex;
+  flex-direction: column;
 }
 
 .teacher-header h3 {
@@ -79,11 +124,16 @@ function onRemove(teacher) {
   font-size: 13px;
 }
 
+.teacher-header {
+  padding: 18px;
+  border-bottom: 1px solid rgba(79, 117, 199, 0.08);
+}
+
 .teacher-card-list {
-  margin-top: 14px;
-  max-height: 420px;
+  margin-top: 0;
+  flex: 1;
   overflow-y: auto;
-  padding-right: 6px;
+  padding: 14px;
 }
 
 .teacher-card-list::-webkit-scrollbar {
@@ -106,7 +156,7 @@ function onRemove(teacher) {
   border-radius: 12px;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.01), rgba(0, 0, 0, 0.02));
   border: 1px solid rgba(0, 0, 0, 0.04);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .avatar {
@@ -154,19 +204,152 @@ function onRemove(teacher) {
 
 .empty-state {
   color: #6b7280;
-  padding: 16px;
+  padding: 24px;
+  text-align: center;
 }
 
-@media (max-width: 800px) {
-  .teacher-panel {
-    width: 100%;
-  }
-  .teacher-row {
-    padding: 10px;
-  }
-  .avatar {
-    width: 40px;
-    height: 40px;
-  }
+.profile-header {
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-top: 1px solid rgba(79, 117, 199, 0.08);
+}
+
+.back-button {
+  background: transparent;
+  border: none;
+  color: #4f75c7;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 0;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  color: #3d5a9f;
+}
+
+.profile-content {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.profile-image {
+  display: flex;
+  justify-content: center;
+}
+
+.profile-image img {
+  width: 100%;
+  max-width: 240px;
+  height: 240px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid rgba(79, 117, 199, 0.1);
+}
+
+.image-placeholder {
+  width: 240px;
+  height: 240px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6b8ef0, #4f75c7);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 72px;
+  font-weight: 700;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile-name {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.profile-meta {
+  margin: 0;
+  color: #4b5563;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.bio-section {
+  background: linear-gradient(135deg, rgba(248, 251, 255, 0.5) 0%, rgba(238, 242, 255, 0.5) 100%);
+  border: 1px solid rgba(79, 117, 199, 0.1);
+  border-radius: 10px;
+  padding: 12px;
+  border-left: 3px solid #4f75c7;
+}
+
+.profile-bio {
+  margin: 0;
+  line-height: 1.6;
+  color: #374151;
+  font-size: 14px;
+}
+
+.tags-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tags-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.tags-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  display: inline-block;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #0c4a6e;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(79, 117, 199, 0.2);
+}
+
+.remove-button {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 6px;
+}
+
+.remove-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
+}
+
+.remove-button:active {
+  transform: translateY(0);
 }
 </style>
