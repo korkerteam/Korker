@@ -19,6 +19,14 @@ const selectedFilters = computed({
   set: (value) => emit('update:modelValue', value),
 })
 
+const hasAnyFilterSelected = computed(() => {
+  return (
+    selectedFilters.value.subjects.length > 0 ||
+    selectedFilters.value.levels.length > 0 ||
+    selectedFilters.value.tags.length > 0
+  )
+})
+
 function toggleSelection(category, value) {
   const current = [...(selectedFilters.value[category] || [])]
   const index = current.indexOf(value)
@@ -32,6 +40,23 @@ function toggleSelection(category, value) {
   selectedFilters.value = {
     ...selectedFilters.value,
     [category]: current,
+  }
+}
+
+function toggleAllFilters() {
+  if (hasAnyFilterSelected.value) {
+    selectedFilters.value = {
+      subjects: [],
+      levels: [],
+      tags: [],
+    }
+    return
+  }
+
+  selectedFilters.value = {
+    subjects: [...subjectOptions],
+    levels: [...levelOptions],
+    tags: [...tagOptions],
   }
 }
 </script>
@@ -83,6 +108,9 @@ function toggleSelection(category, value) {
     </div>
 
     <div class="confirm-row">
+      <button class="confirm-button" type="button" @click="toggleAllFilters()">
+        {{ hasAnyFilterSelected ? 'Odznacz wszystkie filtry' : 'Zaznacz wszystkie filtry' }}
+      </button>
       <button class="confirm-button" type="button" @click="emit('confirm')">
         Potwierdź filtry
       </button>
@@ -124,6 +152,7 @@ h4 {
   margin-top: auto;
   display: flex;
   justify-content: center;
+  gap: 14px;
 }
 
 .confirm-button {
@@ -131,9 +160,9 @@ h4 {
   border-radius: 999px;
   padding: 12px 18px;
   cursor: pointer;
+  font-weight: 700;
   background: var(--primary-color);
   color: white;
-  font-weight: 700;
 }
 
 label {
