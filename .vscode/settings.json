@@ -14,5 +14,7 @@
     "strings": "on"
   },
   "editor.suggestOnTriggerCharacters": true,
-  "editor.acceptSuggestionOnEnter": "on"
+  "editor.acceptSuggestionOnEnter": "on",
+  "js/ts.preferences.importModuleSpecifier": "relative",
+  "js/ts.preferences.importModuleSpecifierEnding": "minimal"
 }

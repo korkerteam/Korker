@@ -1,9 +1,15 @@
-<script setup></script>
+<script setup>
+import { ref } from 'vue'
+import LoadingBox from '@/components/LoadingBox.vue'
+
+const loading = ref(false)
+</script>
 
 <template>
-  <div class="ranking-container">
+  <LoadingBox v-if="loading" />
+  <div v-else class="ranking-container">
     <h2>TOP 10 NAUCZYCIELI: SKARBIMIERZYCE</h2>
-    <div class="białe-tło">
+    <div class="white-bg">
       <ol>
         <li>LENA MEISSER, J. POLSKI</li>
         <li>PATRYCJA CHUDZYSKA, CHEMIA</li>
@@ -31,7 +37,7 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
-.białe-tło {
+.white-bg {
   background-color: white;
   color: black;
   padding: 20px;

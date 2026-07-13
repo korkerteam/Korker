@@ -26,13 +26,12 @@ function goHome() {
   font-family: Horizon;
   font-size: 54px;
   font-weight: 900;
-  color: #4f75c7;
+  color: var(--primary-color);
   background-color: #ffffff;
   border: none;
   border-radius: 32px;
   box-shadow: 0 16px 24px rgba(24, 78, 68, 0.25);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
-  cursor: pointer;
 }
 
 .logo-image {

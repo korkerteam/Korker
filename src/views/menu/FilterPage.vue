@@ -92,10 +92,9 @@ function toggleSelection(category, value) {
 
 <style scoped>
 .FilterPage {
-  border: 1.5px solid #4f75c7;
+  border: 1.5px solid var(--primary-color);
   width: 700px;
   height: 600px;
-  margin-top: 110px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -132,7 +131,7 @@ h4 {
   border-radius: 999px;
   padding: 12px 18px;
   cursor: pointer;
-  background: #4f75c7;
+  background: var(--primary-color);
   color: white;
   font-weight: 700;
 }
