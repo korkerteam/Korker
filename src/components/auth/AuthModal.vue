@@ -13,6 +13,8 @@ const { signIn, signUp } = useAuth()
 const isLogin = ref(true)
 const email = ref('')
 const password = ref('')
+const name = ref('')
+const surname = ref('')
 const error = ref('')
 const success = ref('')
 const submitting = ref(false)
@@ -32,6 +34,11 @@ async function handleSubmit() {
     return
   }
 
+  if (!isLogin.value && (!name.value || !surname.value)) {
+    error.value = 'Wypełnij wszystkie pola'
+    return
+  }
+
   if (password.value.length < 6) {
     error.value = 'Hasło musi mieć co najmniej 6 znaków'
     return
@@ -41,15 +48,19 @@ async function handleSubmit() {
   try {
     if (isLogin.value) {
       await signIn(email.value, password.value)
+      emit('close')
       router.push('/')
     } else {
-      const { user: newUser } = await signUp(email.value, password.value)
-      if (newUser) {
+      const data = await signUp(email.value, password.value, {
+        data: { name: name.value, surname: surname.value },
+      })
+      if (data?.session) {
+        emit('close')
+        router.push('/profil')
+      } else {
         success.value = 'Konto utworzone! Sprawdź email, aby potwierdzić rejestrację.'
-        return
       }
     }
-    emit('close')
   } catch (err) {
     error.value = translateAuthError(err.message)
   } finally {
@@ -88,6 +99,29 @@ async function handleSubmit() {
             placeholder="twoj@email.pl"
             autocomplete="email"
           />
+        </div>
+
+        <div v-if="!isLogin" class="field-row">
+          <div class="field">
+            <label for="name">Imię</label>
+            <input
+              id="name"
+              v-model="name"
+              type="text"
+              placeholder="Jan"
+              autocomplete="given-name"
+            />
+          </div>
+          <div class="field">
+            <label for="surname">Nazwisko</label>
+            <input
+              id="surname"
+              v-model="surname"
+              type="text"
+              placeholder="Kowalski"
+              autocomplete="family-name"
+            />
+          </div>
         </div>
 
         <div class="field">
@@ -134,7 +168,7 @@ async function handleSubmit() {
 .modal-card {
   position: relative;
   width: 100%;
-  max-width: 360px;
+  max-width: fit-content;
   padding: 32px 24px 28px;
   background: #ffffff;
   border-radius: 24px;
@@ -186,6 +220,12 @@ async function handleSubmit() {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 .field label {
