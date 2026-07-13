@@ -101,18 +101,21 @@ function goBack() {
 
 <style scoped>
 .teacher-panel {
-  width: min(520px, 90vw);
+  width: 100%;
+  max-width: 760px;
   background: #ffffff;
   border-radius: 16px;
   padding: 0;
   box-shadow: 0 18px 40px rgba(20, 40, 80, 0.08);
   border: 1px solid rgba(79, 117, 199, 0.08);
   font-family: Inter, system-ui, sans-serif;
-  max-height: 85vh;
+  min-height: 0;
+  max-height: calc(100vh - 180px);
   overflow: hidden;
   z-index: 20;
   display: flex;
   flex-direction: column;
+  margin: 0 auto;
 }
 
 .teacher-panel.compact {

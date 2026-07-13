@@ -153,19 +153,20 @@ function removeLikedTeacher(teacher) {
       />
     </div>
 
-    <MainContent
-      v-if="route.name !== 'korker-szukaj'"
-      :selected-filters="selectedFilters"
-      :liked-teachers="likedTeachers"
-      @update:selected-filters="selectedFilters = $event"
-      @go-to-search="goToSearchPage"
-      @show-teacher="showTeacherProfile"
-      @like-teacher="handleTeacherLike"
-      @remove-liked-teacher="removeLikedTeacher"
-      @open-auth="openAuthModal"
-    />
+    <div class="main-content-area" v-if="route.name !== 'korker-szukaj'">
+      <MainContent
+        :selected-filters="selectedFilters"
+        :liked-teachers="likedTeachers"
+        @update:selected-filters="selectedFilters = $event"
+        @go-to-search="goToSearchPage"
+        @show-teacher="showTeacherProfile"
+        @like-teacher="handleTeacherLike"
+        @remove-liked-teacher="removeLikedTeacher"
+        @open-auth="openAuthModal"
+      />
 
-    <CzatCzatSahur v-if="route.name !== 'korker-szukaj'" />
+      <CzatCzatSahur />
+    </div>
 
     <div class="Mapa">
       <MapPage />
@@ -178,8 +179,18 @@ function removeLikedTeacher(teacher) {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  height: 100vh;
   min-height: 100vh;
+  overflow: hidden;
   position: relative;
+}
+
+.main-content-area {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .top-row {
@@ -188,6 +199,8 @@ function removeLikedTeacher(teacher) {
   align-items: flex-start;
   gap: 20px;
   padding: 10px;
+  position: relative;
+  z-index: 70;
 }
 
 .search-block {
@@ -237,6 +250,11 @@ function removeLikedTeacher(teacher) {
   transition:
     transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
     opacity 0.55s ease;
+  pointer-events: auto;
+}
+
+.welcome-card {
+  pointer-events: auto;
 }
 
 .welcome-screen.dismissing {

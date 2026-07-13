@@ -289,13 +289,15 @@ function onAvatarChange(event) {
   background: #ffffff;
   border-radius: 16px;
   width: 100%;
-  max-width: 600px;
+  max-width: 720px;
   padding: 32px;
-  margin: 100px 20px 0 260px;
-  align-self: flex-start;
+  margin: 0 auto;
   box-shadow: 0 8px 32px rgba(15, 23, 42, 0.15);
   font-family: Inter, system-ui, sans-serif;
   color: #1f2937;
+  min-height: 0;
+  max-height: calc(100vh - 180px);
+  overflow: auto;
 }
 
 .header {

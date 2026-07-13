@@ -35,9 +35,11 @@ const emit = defineEmits(['close'])
   background: #fff;
   padding: 20px;
   border-radius: 14px;
-  width: min(560px, 92vw);
+  width: min(520px, 90vw);
   box-shadow: 0 20px 50px rgba(16, 32, 64, 0.25);
   position: relative;
+  max-height: 85vh;
+  overflow-y: auto;
 }
 .teacher-modal-header {
   display: flex;
