@@ -26,7 +26,11 @@ const {
 } = useMessaging()
 
 const showChat = ref(false)
+const totalUnread = computed(() =>
+  conversations.value.reduce((sum, conversation) => sum + (conversation.unread || 0), 0),
+)
 const panel = ref(null)
+let unreadInterval = null
 
 function onClickOutside(e) {
   if (panel.value && !panel.value.contains(e.target) && !e.target.closest('.fab')) {
@@ -38,11 +42,19 @@ function onClickOutside(e) {
 onMounted(() => {
   document.addEventListener('click', onClickOutside)
   setupRealtime()
+  unreadInterval = setInterval(() => {
+    if (showChat.value) return
+    loadConversations()
+  }, 1000)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', onClickOutside)
   teardownRealtime()
+  if (unreadInterval) {
+    clearInterval(unreadInterval)
+    unreadInterval = null
+  }
 })
 
 const list = computed(() => !activeUserId.value)
@@ -83,7 +95,7 @@ async function handleSend(content) {
 </script>
 
 <template>
-  <ChatFab v-if="!showChat" @toggle="toggle" />
+  <ChatFab v-if="!showChat" :unread-count="totalUnread" @toggle="toggle" />
   <Transition name="fade">
     <div v-if="showChat" class="backdrop"></div>
   </Transition>
