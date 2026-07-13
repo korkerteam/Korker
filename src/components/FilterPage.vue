@@ -34,6 +34,30 @@ function toggleSelection(category, value) {
     [category]: current,
   }
 }
+
+const anyFilterActive = computed(() => {
+  return (
+    selectedFilters.value.subjects.length > 0 ||
+    selectedFilters.value.levels.length > 0 ||
+    selectedFilters.value.tags.length > 0
+  )
+})
+
+function toggleAllFilters() {
+  if (anyFilterActive.value) {
+    selectedFilters.value = {
+      subjects: [],
+      levels: [],
+      tags: [],
+    }
+  } else {
+    selectedFilters.value = {
+      subjects: [...subjectOptions],
+      levels: [...levelOptions],
+      tags: [...tagOptions],
+    }
+  }
+}
 </script>
 
 <template>
@@ -86,6 +110,11 @@ function toggleSelection(category, value) {
       <button class="confirm-button" type="button" @click="emit('confirm')">
         Potwierdź filtry
       </button>
+      <div class="confirm-row">
+        <button class="confirm-button" type="button" @click="toggleAllFilters()">
+          {{ anyFilterActive ? 'Odznacz wszystkie filtry' : 'Zaznacz wszystkie filtry' }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -124,7 +153,7 @@ h4 {
 .confirm-row {
   margin-top: auto;
   display: flex;
-  justify-content: center;
+  justify-content: space-around;
 }
 
 .confirm-button {
