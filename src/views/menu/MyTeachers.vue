@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import LoadingBox from '@/components/LoadingBox.vue'
 
 const emit = defineEmits(['show-teacher', 'remove-teacher'])
@@ -12,6 +12,8 @@ const props = defineProps({
 
 const loading = ref(false)
 const selectedTeacher = ref(null)
+
+const isMany = computed(() => (props.teachers || []).length > 5)
 
 function onShow(teacher) {
   selectedTeacher.value = teacher
@@ -29,7 +31,7 @@ function goBack() {
 
 <template>
   <LoadingBox v-if="loading" />
-  <div v-else class="teacher-panel">
+  <div v-else class="teacher-panel" :class="{ compact: isMany }">
     <!-- Teacher List View -->
     <template v-if="!selectedTeacher">
       <div class="teacher-header">
@@ -111,6 +113,10 @@ function goBack() {
   z-index: 20;
   display: flex;
   flex-direction: column;
+}
+
+.teacher-panel.compact {
+  max-height: 60vh;
 }
 
 .teacher-header h3 {
