@@ -73,6 +73,7 @@ function handleSearchClick() {
   gap: 14px;
   padding: 24px 0;
   max-height: 78vh;
+  overflow: visible;
 }
 
 .menu-item {
@@ -92,17 +93,14 @@ function handleSearchClick() {
   letter-spacing: 0.02em;
   text-align: left;
   cursor: pointer;
-  box-shadow: 0 16px 30px rgba(41, 55, 103, 0.18);
+  box-shadow: none;
   transition:
     transform 0.22s ease,
-    box-shadow 0.22s ease,
     background 0.22s ease;
 }
 
 .menu-item:hover {
-  transform: translateX(3px);
   background: linear-gradient(180deg, #4b79e2 0%, #2e60be 100%);
-  box-shadow: 0 20px 40px rgba(34, 51, 92, 0.25);
 }
 
 .icon {
