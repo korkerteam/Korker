@@ -231,7 +231,7 @@ watch(activeId, down)
           </button>
         </div>
         <div v-else class="h hc">
-          <button class="hb" @click="back">
+          <button class="hb" @click.stop="back">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path
                 d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"
@@ -258,7 +258,7 @@ watch(activeId, down)
           </button>
         </div>
         <div v-if="list" class="cl">
-          <button v-for="c in contacts" :key="c.id" class="ci" @click="openChat(c.id)">
+          <button v-for="c in contacts" :key="c.id" class="ci" @click.stop="openChat(c.id)">
             <div class="cil">
               <div class="cia" :style="{ background: c.color }">{{ c.name.charAt(0) }}</div>
               <div class="cii">
