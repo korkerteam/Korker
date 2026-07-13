@@ -13,7 +13,32 @@ const props = defineProps({
 const loading = ref(false)
 const selectedTeacher = ref(null)
 
+const teacherImageMap = {
+  'Anna Kowalska':
+    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80',
+  'Piotr Nowak':
+    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
+  'Marta Wiśniewska':
+    'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=800&q=80',
+  'Jakub Zieliński':
+    'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
+  'Katarzyna Sobczak':
+    'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80',
+  'Maciej Płaczek':
+    'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=800&q=80',
+  'Natalia Wójcik':
+    'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+  'Oliwier Kaczmarek':
+    'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
+  'Patrycja Marek':
+    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
+}
+
 const isMany = computed(() => (props.teachers || []).length > 5)
+
+function getTeacherImage(teacher) {
+  return teacher?.image || teacherImageMap[teacher?.name] || ''
+}
 
 function onShow(teacher) {
   selectedTeacher.value = teacher
@@ -44,7 +69,14 @@ function goBack() {
       <div class="teacher-card-list">
         <template v-if="teachers.length">
           <div v-for="teacher in teachers" :key="teacher.name" class="teacher-row">
-            <div class="avatar">{{ teacher.name.charAt(0) }}</div>
+            <div class="avatar">
+              <img
+                v-if="getTeacherImage(teacher)"
+                :src="getTeacherImage(teacher)"
+                :alt="teacher.name"
+              />
+              <span v-else>{{ teacher.name.charAt(0) }}</span>
+            </div>
             <div class="meta">
               <div class="name">{{ teacher.name }}</div>
               <div class="details">{{ teacher.subject }} • {{ teacher.level }}</div>
@@ -70,8 +102,8 @@ function goBack() {
       <div class="profile-content">
         <div class="profile-image">
           <img
-            v-if="selectedTeacher.image"
-            :src="selectedTeacher.image"
+            v-if="getTeacherImage(selectedTeacher)"
+            :src="getTeacherImage(selectedTeacher)"
             :alt="selectedTeacher.name"
           />
           <div v-else class="image-placeholder">{{ selectedTeacher.name.charAt(0) }}</div>
@@ -175,6 +207,23 @@ function goBack() {
   align-items: center;
   justify-content: center;
   font-weight: 700;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .meta .name {
