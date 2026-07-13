@@ -242,6 +242,11 @@ function getSwipeClientX(event) {
 }
 
 function startSwipe(event) {
+  if (event?.target?.closest('button')) {
+    swipeStartX.value = null
+    return
+  }
+
   swipeStartX.value = getSwipeClientX(event)
   swipeOffsetX.value = 0
   swipeRotation.value = 0
@@ -418,9 +423,29 @@ function closePage() {
               <span v-for="tag in currentTutor.tags" :key="tag" class="tag">{{ tag }}</span>
             </div>
 
-            <div class="actions">
-              <button class="btn-dislike" @click="handleDecision(false)">Nie pasuje</button>
-              <button class="btn-like" @click="handleDecision(true)">Lubię</button>
+            <div
+              class="actions"
+              @pointerdown.stop
+              @pointermove.stop
+              @pointerup.stop
+              @pointercancel.stop
+            >
+              <button
+                id="dislike-button"
+                class="btn-dislike"
+                type="button"
+                @click.stop.prevent="handleDecision(false)"
+              >
+                Nie pasuje
+              </button>
+              <button
+                id="like-button"
+                class="btn-like"
+                type="button"
+                @click.stop.prevent="handleDecision(true)"
+              >
+                Lubię
+              </button>
             </div>
           </div>
         </div>
@@ -593,6 +618,7 @@ function closePage() {
   flex: 1;
   max-height: 550px;
   overflow-y: auto;
+  justify-content: space-between;
 }
 
 .card-image {
@@ -600,7 +626,7 @@ function closePage() {
   justify-content: center;
   align-items: center;
   width: 100%;
-  min-height: 280px;
+  min-height: 360px;
   border-radius: 8px;
   overflow: hidden;
   touch-action: pan-y;
@@ -620,7 +646,7 @@ function closePage() {
 .swipe-image {
   display: block;
   width: 40%;
-  height: 320px;
+  height: 380px;
   object-fit: cover;
   border-radius: 10px;
   border: 1px solid rgba(79, 117, 199, 0.1);
@@ -649,6 +675,7 @@ function closePage() {
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+  margin-top: 8px;
 }
 
 .tutor-name {
@@ -700,7 +727,9 @@ function closePage() {
 .actions {
   display: flex;
   gap: 6px;
-  margin-top: 4px;
+  margin-top: 10px;
+  position: relative;
+  z-index: 2;
 }
 
 .btn-like,
