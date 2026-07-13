@@ -70,13 +70,9 @@ function handleSearchClick() {
 .menu-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 24px 18px;
+  gap: 14px;
+  padding: 24px 0;
   max-height: 78vh;
-  background: rgba(255, 255, 255, 0.98);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 34px;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
 }
 
 .menu-item {
@@ -87,14 +83,16 @@ function handleSearchClick() {
   min-height: 72px;
   padding: 18px 20px;
   border: none;
-  border-radius: 22px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(243, 247, 255, 0.95));
-  color: #0f172a;
+  border-radius: 0 38px 38px 0;
+  background: linear-gradient(180deg, #3e69d1 0%, #264fa7 100%);
+  color: #ffffff;
   font-size: 15px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
   text-align: left;
   cursor: pointer;
-  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.12);
+  box-shadow: 0 16px 30px rgba(41, 55, 103, 0.18);
   transition:
     transform 0.22s ease,
     box-shadow 0.22s ease,
@@ -103,8 +101,8 @@ function handleSearchClick() {
 
 .menu-item:hover {
   transform: translateX(3px);
-  background: rgba(239, 246, 255, 1);
-  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, #4b79e2 0%, #2e60be 100%);
+  box-shadow: 0 20px 40px rgba(34, 51, 92, 0.25);
 }
 
 .icon {
@@ -113,12 +111,12 @@ function handleSearchClick() {
   display: grid;
   place-items: center;
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(79, 117, 199, 0.18), rgba(59, 96, 191, 0.06));
+  background: rgba(255, 255, 255, 0.16);
 }
 
 .icon svg {
   width: 20px;
   height: 20px;
-  fill: #2563eb;
+  fill: #ffffff;
 }
 </style>
