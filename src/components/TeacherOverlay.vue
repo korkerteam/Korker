@@ -28,8 +28,7 @@ const emit = defineEmits(['close'])
   z-index: 80;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  padding-top: 4rem;
+  align-items: center;
   background: rgba(10, 20, 40, 0.4);
 }
 .teacher-card-modal {
