@@ -184,11 +184,10 @@ function confirmFilters() {
 }
 
 .left-side {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 32px;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
-  padding: 20px 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
   height: 100%;
   overflow: auto;
 }
