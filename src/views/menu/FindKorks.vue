@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import tutorImage from '@/assets/photos/received_1226459671681636_1.gif'
 
 const props = defineProps({
   filters: {
@@ -68,7 +69,7 @@ const tutorTemplates = [
     subject: 'Matematyka',
     level: 'Liceum',
     tags: ['Matura', 'Online'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Pomagam przygotować się do matury z matematyki w przyjazny sposób.',
   },
   {
@@ -76,7 +77,7 @@ const tutorTemplates = [
     subject: 'Fizyka',
     level: 'Studia',
     tags: ['Egzamin', 'Na miejscu'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Skupię się na zrozumieniu pojęć i praktycznych zadaniach.',
   },
   {
@@ -84,7 +85,7 @@ const tutorTemplates = [
     subject: 'Język polski',
     level: 'Szkoła podstawowa',
     tags: ['Online'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Łączę naukę z ciekawymi ćwiczeniami i czytaniem lektur.',
   },
   {
@@ -92,7 +93,7 @@ const tutorTemplates = [
     subject: 'Angielski',
     level: 'Liceum',
     tags: ['Matura', 'Na miejscu'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Pomagam budować pewność siebie w mówieniu i rozumieniu tekstów.',
   },
   {
@@ -100,7 +101,7 @@ const tutorTemplates = [
     subject: 'Biologia',
     level: 'Liceum',
     tags: ['Online', 'Matura'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Przygotowuję do egzaminów i tłumaczę trudne tematy obrazowo.',
   },
   {
@@ -108,7 +109,7 @@ const tutorTemplates = [
     subject: 'Informatyka',
     level: 'Studia',
     tags: ['Programowanie', 'Online'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Uczę logicznego myślenia i pracy z kodem od podstaw.',
   },
   {
@@ -116,7 +117,7 @@ const tutorTemplates = [
     subject: 'Chemia',
     level: 'Liceum',
     tags: ['Matura', 'Na miejscu'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Wyjaśniam chemię krok po kroku i uczę skutecznie powtarzać materiał.',
   },
   {
@@ -124,7 +125,7 @@ const tutorTemplates = [
     subject: 'Historia',
     level: 'Szkoła podstawowa',
     tags: ['Online', 'Egzamin'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Przygotowuję do sprawdzianów i uczę historii w ciekawy sposób.',
   },
   {
@@ -132,7 +133,7 @@ const tutorTemplates = [
     subject: 'Geografia',
     level: 'Liceum',
     tags: ['Matura', 'Online'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Pomagam zapamiętywać mapy, pojęcia i schematy bez stresu.',
   },
   {
@@ -140,7 +141,7 @@ const tutorTemplates = [
     subject: 'Matematyka',
     level: 'Szkoła podstawowa',
     tags: ['Online', 'Egzamin'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Uczę matematyki spokojnie i krok po kroku.',
   },
   {
@@ -148,7 +149,7 @@ const tutorTemplates = [
     subject: 'Angielski',
     level: 'Liceum',
     tags: ['Matura', 'Na miejscu'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Pomagam poprawić słownictwo i komunikację.',
   },
   {
@@ -156,7 +157,7 @@ const tutorTemplates = [
     subject: 'Fizyka',
     level: 'Liceum',
     tags: ['Egzamin', 'Online'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Wytłumaczę trudne zagadnienia prostym językiem.',
   },
   {
@@ -164,7 +165,7 @@ const tutorTemplates = [
     subject: 'Biologia',
     level: 'Studia',
     tags: ['Online', 'Matura'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Skupię się na nauce z materiałów i praktycznych przykładów.',
   },
   {
@@ -172,7 +173,7 @@ const tutorTemplates = [
     subject: 'Informatyka',
     level: 'Liceum',
     tags: ['Programowanie', 'Na miejscu'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Pomagam zrozumieć podstawy programowania i algorytmiki.',
   },
   {
@@ -187,7 +188,7 @@ const tutorTemplates = [
     subject: 'Język polski',
     level: 'Szkoła podstawowa',
     tags: ['Egzamin', 'Na miejscu'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Uczę poprawnego pisania i wyrażania myśli w prosty sposób.',
   },
   {
@@ -195,7 +196,7 @@ const tutorTemplates = [
     subject: 'Chemia',
     level: 'Studia',
     tags: ['Online', 'Egzamin'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Przygotowuję do egzaminów i wyjaśniam trudne reakcje chemiczne.',
   },
   {
@@ -203,7 +204,7 @@ const tutorTemplates = [
     subject: 'Chemia',
     level: 'Liceum',
     tags: ['Matura', 'Na miejscu'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Pomagam zrozumieć chemię od podstaw do poziomu maturalnego.',
   },
   {
@@ -211,7 +212,7 @@ const tutorTemplates = [
     subject: 'Historia',
     level: 'Liceum',
     tags: ['Matura', 'Online'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Uczę historii w uporządkowany sposób i z naciskiem na daty.',
   },
   {
@@ -219,7 +220,7 @@ const tutorTemplates = [
     subject: 'Historia',
     level: 'Studia',
     tags: ['Egzamin', 'Na miejscu'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Pomagam zrozumieć kontekst historyczny i przygotować się do sprawdzianów.',
   },
   {
@@ -227,7 +228,7 @@ const tutorTemplates = [
     subject: 'Geografia',
     level: 'Szkoła podstawowa',
     tags: ['Online', 'Egzamin'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Łączę naukę geografii z prostymi schematami i ćwiczeniami.',
   },
   {
@@ -235,7 +236,7 @@ const tutorTemplates = [
     subject: 'Geografia',
     level: 'Studia',
     tags: ['Matura', 'Na miejscu'],
-    image: 'https://media1.tenor.com/m/CZytKmg1_AEAAAAd/troll-face-internet.gif',
+    image: tutorImage,
     bio: 'Pomagam zrozumieć zjawiska geograficzne i przygotować się do testów.',
   },
 ]
@@ -395,24 +396,21 @@ function closePage() {
   <div class="find-korks-panel">
     <div class="tutors-content">
       <div class="tutor-section">
-        <div v-if="filteredTutors.length && currentTutor" class="tutor-card">
-          <div
-            class="card-image"
-            @pointerdown="startSwipe"
-            @pointermove="moveSwipe"
-            @pointerup="endSwipe"
-            @pointercancel="endSwipe"
-          >
+        <div
+          v-if="filteredTutors.length && currentTutor"
+          class="tutor-card"
+          @pointerdown="startSwipe"
+          @pointermove="moveSwipe"
+          @pointerup="endSwipe"
+          @pointercancel="endSwipe"
+          :style="{
+            '--swipe-offset': `${swipeOffsetX}px`,
+            '--swipe-rotation': `${swipeRotation}deg`,
+          }"
+        >
+          <div class="card-image">
             <div v-if="currentTutor.image" class="swipe-image-wrapper">
-              <img
-                class="swipe-image"
-                :src="currentTutor.image"
-                :alt="currentTutor.name"
-                :style="{
-                  '--swipe-offset': `${swipeOffsetX}px`,
-                  '--swipe-rotation': `${swipeRotation}deg`,
-                }"
-              />
+              <img class="swipe-image" :src="currentTutor.image" :alt="currentTutor.name" />
             </div>
           </div>
 
@@ -424,32 +422,33 @@ function closePage() {
             <div class="tags-list">
               <span v-for="tag in currentTutor.tags" :key="tag" class="tag">{{ tag }}</span>
             </div>
-
-            <div
-              class="actions"
-              @pointerdown.stop
-              @pointermove.stop
-              @pointerup.stop
-              @pointercancel.stop
-            >
-              <button
-                id="dislike-button"
-                class="btn-dislike"
-                type="button"
-                @click.stop.prevent="handleDecision(false)"
-              >
-                Nie pasuje
-              </button>
-              <button
-                id="like-button"
-                class="btn-like"
-                type="button"
-                @click.stop.prevent="handleDecision(true)"
-              >
-                Lubię
-              </button>
-            </div>
           </div>
+        </div>
+
+        <div
+          v-if="filteredTutors.length && currentTutor"
+          class="actions"
+          @pointerdown.stop
+          @pointermove.stop
+          @pointerup.stop
+          @pointercancel.stop
+        >
+          <button
+            id="dislike-button"
+            class="btn-dislike"
+            type="button"
+            @click.stop.prevent="handleDecision(false)"
+          >
+            Nie pasuje
+          </button>
+          <button
+            id="like-button"
+            class="btn-like"
+            type="button"
+            @click.stop.prevent="handleDecision(true)"
+          >
+            Lubię
+          </button>
         </div>
 
         <div v-else-if="!filteredTutors.length" class="empty-state-card">
@@ -705,6 +704,13 @@ function closePage() {
   border-radius: 20px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.8);
+  transform: translateX(var(--swipe-offset, 0px)) rotate(var(--swipe-rotation, 0deg));
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+  will-change: transform;
+  transform-origin: center center;
 }
 
 .card-image img {
@@ -713,14 +719,6 @@ function closePage() {
   object-fit: cover;
   border-radius: 16px;
   border: 1px solid rgba(79, 117, 199, 0.1);
-  transform: translateX(var(--swipe-offset, 0px)) rotate(var(--swipe-rotation, 0deg));
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    filter 0.2s ease;
-  will-change: transform;
-  transform-origin: center center;
-  backface-visibility: hidden;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
   -webkit-user-drag: none;
   user-select: none;
