@@ -115,7 +115,6 @@ function removeLikedTeacher(teacher) {
   gap: 22px;
   min-height: 100vh;
   position: relative;
-  padding: 22px 26px 18px;
 }
 
 .main-content-area {
