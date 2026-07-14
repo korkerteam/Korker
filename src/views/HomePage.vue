@@ -1,33 +1,35 @@
+To klasyczny i bardzo częsty problem z tzw. **propagacją zdarzeń (event propagation)** w JavaScript!
+🤦‍♂️ Czuję Twój ból, to potrafi zirytować. ### Dlaczego tak się działo? Gdy klikałeś w powiadomienie,
+działy się dwie rzeczy jednocześnie w ułamku sekundy: 1. Kliknięcie odpalało funkcję otwierającą
+czat (`showChat = true`). 2. To samo kliknięcie "leciało" dalej w górę do samego dokumentu
+(`document`). Tam globalny detektor kliknięcia poza czatem (`onClickOutside`) stwierdzał: *"O,
+użytkownik kliknął coś, co nie jest czatem! Zamykam czat!"* i natychmiast go ukrywał. ### Jak to
+naprawiliśmy? Dodaliśmy modyfikator **`@click.stop`** (odpowiednik `event.stopPropagation()`) do
+elementu listy powiadomień oraz do całego menu powiadomień. Dzięki temu kliknięcie w powiadomienie
+"zatrzymuje się" w miejscu i nie informuje reszty strony, zapobiegając uruchomieniu autozamykania
+czatu. Oto poprawiony, kompletny kod do pliku **`HomePage.vue`**. Podmień go, a czat pozostanie
+otwarty jak skała! 🧱 ```vue
 <template>
   <div class="home-shell">
-    <!-- GÓRNY PANEL (DASHBOARD TOP) -->
     <div class="dashboard-top">
       <div>
         <p class="dashboard-welcome">Witamy w Korker</p>
         <h2 class="dashboard-title">Znajdź korepetytora w kilka sekund</h2>
       </div>
       <div class="dashboard-actions">
-        <!-- Przycisk Najbliższe Lekcje (Otwiera Modal) -->
         <button class="dashboard-action" @click="openLessonsModal">Najbliższe lekcje</button>
 
-        <!-- Wrapper na Powiadomienia z Dropdownem -->
+        <!-- Powiadomienia zintegrowane z czatem -->
         <div class="notifications-wrapper" ref="notifWrapper">
           <button class="dashboard-action action-secondary" @click="toggleNotifications">
             Powiadomienia
             <span v-if="unreadCount > 0" class="notif-badge">{{ unreadCount }}</span>
           </button>
 
-          <!-- Menu Powiadomień (Dropdown) -->
-          <div v-if="isNotificationsOpen" class="notifications-dropdown">
+          <!-- Dropdown powiadomień (dodano @click.stop aby kliknięcia wewnątrz nie zamykały czatu) -->
+          <div v-if="isNotificationsOpen" class="notifications-dropdown" @click.stop>
             <div class="dropdown-header">
-              <h4>Powiadomienia</h4>
-              <button
-                v-if="notifications.length > 0"
-                class="clear-all-btn"
-                @click="clearAllNotifications"
-              >
-                Wyczyść wszystko
-              </button>
+              <h4>Powiadomienia czatu</h4>
             </div>
 
             <div v-if="notifications.length === 0" class="notifications-empty">
@@ -35,16 +37,17 @@
             </div>
 
             <ul v-else class="notifications-list">
+              <!-- Dodano @click.stop, co rozwiązuje problem natychmiastowego zamykania -->
               <li
                 v-for="notif in notifications"
                 :key="notif.id"
-                :class="{ unread: !notif.isRead }"
-                @click="markAsRead(notif.id)"
+                class="unread"
+                @click.stop="handleNotificationClick(notif.id)"
               >
                 <div class="notif-status-dot"></div>
                 <div class="notif-info">
                   <p class="notif-text">{{ notif.text }}</p>
-                  <span class="notif-time">{{ notif.time }}</span>
+                  <span class="notif-time">{{ notif.lastMessage }}</span>
                 </div>
               </li>
             </ul>
@@ -53,9 +56,7 @@
       </div>
     </div>
 
-    <!-- GŁÓWNA SIATKA (GRID) -->
     <div class="dashboard-grid">
-      <!-- Karta: Najbliższe lekcje -->
       <article class="dashboard-card clickable-card" @click="openLessonsModal">
         <h3>Najbliższe lekcje</h3>
         <ul>
@@ -66,20 +67,18 @@
         </ul>
       </article>
 
-      <!-- Karta: Polecani nauczyciele -->
       <article class="dashboard-card">
         <h3>Polecani nauczyciele</h3>
         <p>Sprawdź nauczycieli dopasowanych do Twoich filtrów i preferencji.</p>
       </article>
 
-      <!-- Karta: Ostatnie wiadomości -->
       <article class="dashboard-card">
         <h3>Ostatnie wiadomości</h3>
         <p>Przeglądaj ostatnie rozmowy i informacje od nauczycieli.</p>
       </article>
     </div>
 
-    <!-- OKNO MODALNE (HARMONOGRAM LEKCJI) -->
+    <!-- Modal Terminarza -->
     <Transition name="fade">
       <div v-if="isLessonsModalOpen" class="modal-backdrop" @click.self="closeLessonsModal">
         <div class="modal-content">
@@ -87,7 +86,6 @@
             <h3>Twój terminarz lekcji</h3>
             <button class="close-modal-btn" @click="closeLessonsModal">&times;</button>
           </div>
-
           <div class="modal-body">
             <div class="timeline">
               <div v-for="lesson in lessons" :key="lesson.id" class="timeline-item">
@@ -112,14 +110,71 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
+import { useMessaging } from '@/composables/useMessaging.js'
 
-// --- STANY INTERFEJSU ---
+const { conversations } = useMessaging()
+
+const { openChatWithUser } = inject('globalChat', {
+  openChatWithUser: () => {},
+})
+
 const isLessonsModalOpen = ref(false)
 const isNotificationsOpen = ref(false)
 const notifWrapper = ref(null)
 
-// --- DANE (MOCK DATA) ---
+const notifications = computed(() => {
+  return conversations.value
+    .filter((c) => c.unread > 0)
+    .map((c) => {
+      const senderName = c.name || c.senderName || c.username || 'Użytkownik'
+      const lastMsgText =
+        typeof c.lastMessage === 'string'
+          ? c.lastMessage
+          : c.lastMessage?.content || 'Wysłał(a) wiadomość...'
+
+      return {
+        id: c.userId || c.id,
+        text: `Nowa wiadomość od: ${senderName}`,
+        lastMessage: lastMsgText,
+      }
+    })
+})
+
+const unreadCount = computed(() => notifications.value.length)
+
+const toggleNotifications = () => {
+  isNotificationsOpen.value = !isNotificationsOpen.value
+}
+
+const handleNotificationClick = (userId) => {
+  openChatWithUser(userId)
+  isNotificationsOpen.value = false
+}
+
+const openLessonsModal = () => {
+  isLessonsModalOpen.value = true
+  isNotificationsOpen.value = false
+}
+
+const closeLessonsModal = () => {
+  isLessonsModalOpen.value = false
+}
+
+const handleClickOutside = (event) => {
+  if (notifWrapper.value && !notifWrapper.value.contains(event.target)) {
+    isNotificationsOpen.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
 const lessons = ref([
   {
     id: 1,
@@ -132,15 +187,6 @@ const lessons = ref([
   },
   {
     id: 2,
-    subject: 'Matematyka',
-    teacher: 'Anna Kowalska',
-    date: 'Dziś',
-    time: '16:00',
-    status: 'upcoming',
-    statusLabel: 'Wkrótce',
-  },
-  {
-    id: 3,
     subject: 'Fizyka',
     teacher: 'Jan Nowak',
     date: 'Jutro',
@@ -148,82 +194,10 @@ const lessons = ref([
     status: 'confirmed',
     statusLabel: 'Potwierdzona',
   },
-  {
-    id: 4,
-    subject: 'Chemia',
-    teacher: 'Katarzyna Polak',
-    date: 'Piątek',
-    time: '10:15',
-    status: 'pending',
-    statusLabel: 'Oczekuje na opłatę',
-  },
 ])
-
-const notifications = ref([
-  {
-    id: 1,
-    text: 'Anna Kowalska przesłała materiały do lekcji.',
-    time: '15 min temu',
-    isRead: false,
-  },
-  { id: 2, text: 'Nowa wiadomość od nauczyciela: Jan Nowak.', time: '1 godz. temu', isRead: false },
-  {
-    id: 3,
-    text: 'Twoja lekcja z chemii została zatwierdzona.',
-    time: '3 godz. temu',
-    isRead: true,
-  },
-])
-
-// --- LOGIKA POWIADOMIEŃ ---
-const unreadCount = computed(() => {
-  return notifications.value.filter((n) => !n.isRead).length
-})
-
-const toggleNotifications = () => {
-  isNotificationsOpen.value = !isNotificationsOpen.value
-}
-
-const markAsRead = (id) => {
-  const notif = notifications.value.find((n) => n.id === id)
-  if (notif) {
-    notif.isRead = true
-  }
-}
-
-const clearAllNotifications = () => {
-  notifications.value = []
-}
-
-// Zamykanie dropdownu powiadomień po kliknięciu poza nim
-const handleClickOutside = (event) => {
-  if (notifWrapper.value && !notifWrapper.value.contains(event.target)) {
-    isNotificationsOpen.value = false
-  }
-}
-
-// --- LOGIKA OKNA MODALNEGO ---
-const openLessonsModal = () => {
-  isLessonsModalOpen.value = true
-  isNotificationsOpen.value = false // Zamknij powiadomienia, gdy otwieramy lekcje
-}
-
-const closeLessonsModal = () => {
-  isLessonsModalOpen.value = false
-}
-
-// --- CYKL ŻYCIA KOMPONENTU ---
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
 </script>
 
 <style scoped>
-/* PODSTAWOWY UKŁAD */
 .home-shell {
   display: grid;
   gap: 24px;
@@ -270,7 +244,6 @@ onUnmounted(() => {
   align-items: center;
 }
 
-/* PRZYCISKI */
 .dashboard-action {
   border: none;
   border-radius: 16px;
@@ -306,17 +279,10 @@ onUnmounted(() => {
   box-shadow: none;
 }
 
-/* KARTY (GRID) */
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
-}
-
-@media (max-width: 1024px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .dashboard-card {
@@ -375,7 +341,7 @@ onUnmounted(() => {
   color: #111827;
 }
 
-/* POWIADOMIENIA DROPDOWN */
+/* DROPDOWN POWIADOMIEŃ */
 .notifications-wrapper {
   position: relative;
 }
@@ -431,19 +397,6 @@ onUnmounted(() => {
   color: #0f172a;
 }
 
-.clear-all-btn {
-  background: none;
-  border: none;
-  color: #2563eb;
-  font-size: 12px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.clear-all-btn:hover {
-  text-decoration: underline;
-}
-
 .notifications-list {
   list-style: none;
   margin: 0;
@@ -472,13 +425,9 @@ onUnmounted(() => {
 .notif-status-dot {
   width: 8px;
   height: 8px;
-  background: transparent;
+  background: #2563eb;
   border-radius: 50%;
   margin-top: 6px;
-}
-
-.unread .notif-status-dot {
-  background: #2563eb;
 }
 
 .notif-info {
@@ -491,12 +440,17 @@ onUnmounted(() => {
   margin: 0;
   font-size: 13px;
   color: #1e293b;
+  font-weight: 600;
   line-height: 1.4;
 }
 
 .notif-time {
   font-size: 11px;
-  color: #94a3b8;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
 }
 
 .notifications-empty {
@@ -506,7 +460,7 @@ onUnmounted(() => {
   font-size: 14px;
 }
 
-/* MODAL - HARMONOGRAM */
+/* OKNO MODALNE TERMINARZA */
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -528,18 +482,6 @@ onUnmounted(() => {
   border-radius: 28px;
   box-shadow: 0 30px 60px rgba(15, 23, 42, 0.25);
   overflow: hidden;
-  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes scaleIn {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
 }
 
 .modal-header {
@@ -574,7 +516,6 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 
-/* MODAL TIMELINE */
 .timeline {
   display: flex;
   flex-direction: column;
@@ -604,10 +545,6 @@ onUnmounted(() => {
   border-radius: 12px;
 }
 
-.timeline-details {
-  flex: 1;
-}
-
 .timeline-details h4 {
   margin: 0 0 4px;
   font-size: 16px;
@@ -624,7 +561,6 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -633,14 +569,12 @@ onUnmounted(() => {
   color: #64748b;
 }
 
-/* STATUS TAGS */
 .status-badge {
   font-size: 11px;
   font-weight: 700;
   padding: 4px 8px;
   border-radius: 8px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .status-badge.upcoming {
@@ -653,12 +587,6 @@ onUnmounted(() => {
   color: #15803d;
 }
 
-.status-badge.pending {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-/* ANIMACJE VUE TRANSITION */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.25s ease;
@@ -669,3 +597,5 @@ onUnmounted(() => {
   opacity: 0;
 }
 </style>
+
+```
