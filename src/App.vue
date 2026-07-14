@@ -23,6 +23,20 @@ const currentTeacher = ref(null)
 const showMissingFilterNotice = ref(false)
 const homeTrigger = ref(0)
 provide('homeTrigger', homeTrigger)
+
+// --- GLOBALNY STAN CZATU (DO PRZEKAZYWANIA MIĘDZY KOMPONENTAMI) ---
+const showChatGlobal = ref(false)
+const chatTargetUserId = ref(null)
+
+provide('globalChat', {
+  showChatGlobal,
+  chatTargetUserId,
+  openChatWithUser(userId) {
+    chatTargetUserId.value = userId
+    showChatGlobal.value = true
+  },
+})
+
 function goToSearchPage() {
   const { subjects, levels, tags } = selectedFilters.value
   const hasSelection = subjects.length > 0 || levels.length > 0 || tags.length > 0

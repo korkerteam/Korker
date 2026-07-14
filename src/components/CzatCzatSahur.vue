@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth.js'
 import { useMessaging } from '@/composables/useMessaging.js'
 import ChatFab from './chat/ChatFab.vue'
@@ -25,7 +25,12 @@ const {
   teardownRealtime,
 } = useMessaging()
 
-const showChat = ref(false)
+// Wstrzykujemy globalny stan czatu zamiast tworzyć lokalny ref(false)
+const { showChatGlobal: showChat, chatTargetUserId } = inject('globalChat', {
+  showChatGlobal: ref(false),
+  chatTargetUserId: ref(null),
+})
+
 const totalUnread = computed(() =>
   conversations.value.reduce((sum, conversation) => sum + (conversation.unread || 0), 0),
 )
@@ -38,6 +43,15 @@ function onClickOutside(e) {
     closeConversation()
   }
 }
+
+// Obserwujemy, czy inny komponent zażądał otwarcia czatu z konkretnym użytkownikiem
+watch(chatTargetUserId, (userId) => {
+  if (userId) {
+    handleOpenChat(userId)
+    // Czyścimy flagę, aby można było kliknąć to samo powiadomienie ponownie
+    chatTargetUserId.value = null
+  }
+})
 
 onMounted(() => {
   document.addEventListener('click', onClickOutside)

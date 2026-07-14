@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from './useAuth.js'
 
@@ -11,6 +11,9 @@ const activeUserId = ref(null)
 const searchResults = ref([])
 const searchLoading = ref(false)
 const currentContact = ref(null)
+const lastIncomingMessage = ref(null)
+const notifications = ref([])
+const nextNotificationId = ref(1)
 
 let realtimeChannel = null
 
@@ -380,6 +383,50 @@ export function useMessaging() {
     searchResults.value = []
   }
 
+  async function getSenderDisplayName(senderId) {
+    if (!senderId) return 'Nieznany'
+
+    const existing = conversations.value.find((conversation) => conversation.userId === senderId)
+    if (existing?.name) return existing.name
+
+    const profile = await getProfileByAuthId(senderId)
+    return [profile?.name, profile?.surname].filter(Boolean).join(' ') || 'Nieznany'
+  }
+
+  async function addChatNotification(msg) {
+    if (!msg || !msg.sender_id) return
+    if (notifications.value.some((n) => n.id === msg.id)) return
+
+    const senderId = msg.sender_id
+    const preview = msg.content || (msg.attachments?.length ? '[Załącznik]' : '[Nowa wiadomość]')
+    const senderName = await getSenderDisplayName(senderId)
+    const timestamp = 'Teraz'
+
+    notifications.value.unshift({
+      id: msg.id || nextNotificationId.value,
+      senderId,
+      message: preview,
+      sender: senderName,
+      time: timestamp,
+      isRead: false,
+    })
+
+    if (!msg.id) {
+      nextNotificationId.value += 1
+    }
+  }
+
+  function markNotificationRead(id) {
+    const notif = notifications.value.find((n) => n.id === id)
+    if (notif) {
+      notif.isRead = true
+    }
+  }
+
+  function clearNotifications() {
+    notifications.value = []
+  }
+
   function setupRealtime() {
     teardownRealtime()
 
@@ -403,6 +450,14 @@ export function useMessaging() {
 
       const otherId = msg.sender_id === user.value.id ? msg.receiver_id : msg.sender_id
       if (!otherId) return
+
+      const isIncoming = msg.receiver_id === user.value.id && msg.sender_id !== user.value.id
+      if (isIncoming) {
+        lastIncomingMessage.value = msg
+        if (msg.sender_id !== activeUserId.value) {
+          await addChatNotification(msg)
+        }
+      }
 
       const idx = conversations.value.findIndex((c) => c.userId === otherId)
 
@@ -508,6 +563,18 @@ export function useMessaging() {
     }
   }
 
+  watch(
+    () => user.value?.id,
+    (userId) => {
+      if (userId) {
+        setupRealtime()
+      } else {
+        teardownRealtime()
+      }
+    },
+    { immediate: true },
+  )
+
   return {
     conversations,
     messages,
@@ -525,6 +592,10 @@ export function useMessaging() {
     markAsRead,
     searchUsers,
     clearSearch,
+    notifications,
+    markNotificationRead,
+    clearNotifications,
+    lastIncomingMessage,
     setupRealtime,
     teardownRealtime,
   }
