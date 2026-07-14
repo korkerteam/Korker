@@ -138,7 +138,6 @@ function handleToggleSearch() {
   gap: 26px;
   align-items: stretch;
   min-height: 0;
-  height: 100%;
 }
 
 .left-side {
@@ -159,8 +158,7 @@ function handleToggleSearch() {
   justify-content: flex-start;
   padding: 28px 0;
   width: 100%;
-  height: 100%;
-  overflow-y: auto;
+  overflow-y: visible;
   overflow-x: hidden;
 }
 </style>
