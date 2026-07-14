@@ -5,7 +5,6 @@ import HeaderKorker from './components/HeaderKorker.vue'
 import SearchBar from './components/header/SearchBar.vue'
 import CzatCzatSahur from './components/CzatCzatSahur.vue'
 import MapPage from './components/Map.vue'
-import FindKorks from './views/menu/FindKorks.vue'
 import MissingFilterNotice from './components/MissingFilterNotice.vue'
 import TeacherOverlay from './components/TeacherOverlay.vue'
 import MainContent from './views/MenuPage.vue'
@@ -37,22 +36,6 @@ provide('globalChat', {
     showChatGlobal.value = true
   },
 })
-
-function goToSearchPage() {
-  const { subjects, levels, tags } = selectedFilters.value
-  const hasSelection = subjects.length > 0 || levels.length > 0 || tags.length > 0
-
-  if (!hasSelection) {
-    showMissingFilterNotice.value = true
-    return
-  }
-
-  router.push({ name: 'korker-szukaj' })
-}
-
-function closeSearchPage() {
-  router.push({ name: 'home' })
-}
 
 function handleTeacherLike(teacher) {
   if (!teacher) return
@@ -98,19 +81,11 @@ function removeLikedTeacher(teacher) {
     <TeacherOverlay :teacher="currentTeacher" @close="currentTeacher = null" />
 
     <div class="main-content-area">
-      <template v-if="route.name === 'korker-szukaj'">
-        <FindKorks
-          :filters="selectedFilters"
-          @close="closeSearchPage"
-          @like-teacher="handleTeacherLike"
-        />
-      </template>
-      <template v-else>
+      <template v-if="['home', 'profil', 'nauczyciele'].includes(route.name)">
         <MainContent
           :selected-filters="selectedFilters"
           :liked-teachers="likedTeachers"
           @update:selected-filters="selectedFilters = $event"
-          @go-to-search="goToSearchPage"
           @show-teacher="showTeacherProfile"
           @like-teacher="handleTeacherLike"
           @remove-liked-teacher="removeLikedTeacher"
@@ -118,6 +93,10 @@ function removeLikedTeacher(teacher) {
         />
 
         <CzatCzatSahur />
+      </template>
+
+      <template v-else>
+        <router-view />
       </template>
     </div>
 
@@ -133,9 +112,10 @@ function removeLikedTeacher(teacher) {
 .main-layout {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 22px;
   min-height: 100vh;
   position: relative;
+  padding: 22px 26px 18px;
 }
 
 .main-content-area {
@@ -150,27 +130,29 @@ function removeLikedTeacher(teacher) {
 .top-row {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 20px;
-  padding: 10px;
+  align-items: center;
+  gap: 18px;
+  padding-bottom: 10px;
   position: relative;
-  z-index: 70;
+  z-index: 10;
 }
 
 .search-block {
   display: flex;
   align-items: center;
   margin-left: auto;
-  gap: 5px;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .Korker {
-  margin-bottom: 10px;
+  display: inline-flex;
 }
 
 .Mapa {
   position: fixed;
-  right: 12px;
+  right: 16px;
   bottom: 10%;
+  z-index: 5;
 }
 </style>
