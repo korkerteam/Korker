@@ -19,33 +19,40 @@ function goHome() {
 .header-button {
   display: inline-flex;
   align-items: center;
-  gap: 16px;
-  min-width: 520px;
-  height: 96px;
-  padding: 0 24px;
-  font-family: Horizon;
-  font-size: 54px;
-  font-weight: 900;
-  color: var(--primary-color);
-  background-color: #ffffff;
-  border: none;
-  border-radius: 32px;
-  box-shadow: 0 16px 24px rgba(24, 78, 68, 0.25);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  gap: 14px;
+  padding: 16px 24px;
+  font-family: Horizon, 'Inter', system-ui, sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(79, 117, 199, 0.2);
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(79, 117, 199, 0.12);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
 }
 
 .logo-image {
-  width: 82px;
-  height: 82px;
+  width: 60px;
+  height: 60px;
   object-fit: contain;
 }
 
 .logo-text {
   display: inline-block;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.04em;
+}
+
+.header-button:hover {
+  transform: translateY(-1px);
 }
 
 .header-button:active {
-  opacity: 0.94;
+  opacity: 0.95;
+  transform: translateY(0);
 }
 </style>

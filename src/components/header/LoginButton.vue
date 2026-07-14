@@ -54,23 +54,24 @@ function handleProfileClick() {
 .user-menu {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 16px 6px 6px;
+  gap: 10px;
+  padding: 10px 16px;
   border-radius: 999px;
-  background-color: #ffffff;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  background-color: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(79, 117, 199, 0.18);
+  box-shadow: 0 18px 45px rgba(79, 117, 199, 0.1);
 }
 
 .user-avatar {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  background-color: var(--primary-color);
+  background-color: var(--accent);
   color: #ffffff;
-  font-size: 14px;
+  font-size: 0.95rem;
   font-weight: 700;
   font-family: Inter, system-ui, sans-serif;
   flex-shrink: 0;
@@ -78,9 +79,9 @@ function handleProfileClick() {
 
 .user-email {
   font-family: Inter, system-ui, sans-serif;
-  font-size: 13px;
+  font-size: 0.92rem;
   font-weight: 600;
-  color: #333;
+  color: #111827;
   max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -91,47 +92,48 @@ function handleProfileClick() {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border: none;
   border-radius: 50%;
-  background: transparent;
-  color: #999;
+  background: rgba(15, 23, 42, 0.05);
+  color: #475569;
   cursor: pointer;
   transition:
-    background 0.15s,
-    color 0.15s;
+    background 0.18s,
+    color 0.18s,
+    transform 0.18s;
 }
 
 .logout-btn:hover {
-  background: #f0f0f0;
-  color: #d32f2f;
+  background: rgba(79, 117, 199, 0.12);
+  color: #1f2937;
+  transform: translateY(-1px);
 }
 
 .login-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
+  gap: 10px;
+  padding: 12px 20px;
   border: none;
   border-radius: 999px;
-  background-color: var(--primary-color);
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
   color: #ffffff;
   font-family: Inter, system-ui, sans-serif;
-  font-size: 14px;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(79, 117, 199, 0.18);
+  box-shadow: 0 14px 36px rgba(79, 117, 199, 0.16);
   white-space: nowrap;
 }
 
 .login-btn:hover {
-  box-shadow: 0 14px 36px rgba(79, 117, 199, 0.22);
-  background-color: var(--primary-color-hover);
+  box-shadow: 0 18px 44px rgba(79, 117, 199, 0.22);
 }
 
 .login-btn:active {
-  box-shadow: 0 4px 12px rgba(79, 117, 199, 0.18);
+  box-shadow: 0 8px 20px rgba(79, 117, 199, 0.16);
 }
 
 .login-icon {
@@ -143,11 +145,11 @@ function handleProfileClick() {
 }
 
 .avatar {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #eef2ff;
+  border: 3px solid rgba(239, 246, 255, 0.95);
   display: block;
 }
 </style>

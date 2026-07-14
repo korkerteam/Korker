@@ -13,30 +13,36 @@
         <div class="footer__column">
           <h3 class="footer__heading">Dla uczniów</h3>
           <ul class="footer__links">
-            <li><a href="/find-tutor">Znajdź korepetytora</a></li>
-            <li><a href="/how-it-works">Jak to działa</a></li>
-            <li><a href="/calendar">Zintegrowany kalendarz</a></li>
-            <li><a href="/pricing">Cennik</a></li>
+            <li>
+              <router-link :to="{ name: 'home', query: { search: '1' } }">
+                Znajdź korepetytora
+              </router-link>
+            </li>
+            <li><router-link to="/jak-to-dziala">Jak to działa</router-link></li>
+            <li><router-link to="/kalendarz">Zintegrowany kalendarz</router-link></li>
+            <li><router-link to="/cennik">Cennik</router-link></li>
           </ul>
         </div>
 
         <div class="footer__column">
           <h3 class="footer__heading">Dla korepetytorów</h3>
           <ul class="footer__links">
-            <li><a href="/become-a-tutor">Zostań korepetytorem</a></li>
-            <li><a href="/benefits">Korzyści dla korepetytorów</a></li>
-            <li><a href="/join-database">Dołącz do bazy</a></li>
-            <li><a href="/tutor-faq">FAQ dla korepetytorów</a></li>
+            <li><router-link to="/zostan-korepetytorem">Zostań korepetytorem</router-link></li>
+            <li>
+              <router-link to="/korzysci-dla-korepetytorow">Korzyści dla korepetytorów</router-link>
+            </li>
+            <li><router-link to="/dolacz-do-bazy">Dołącz do bazy</router-link></li>
+            <li><router-link to="/faq-korepetytorzy">FAQ dla korepetytorów</router-link></li>
           </ul>
         </div>
 
         <div class="footer__column">
           <h3 class="footer__heading">Kontakt i wsparcie</h3>
           <ul class="footer__links">
-            <li><a href="/help-center">Centrum pomocy</a></li>
-            <li><a href="/contact">Kontakt</a></li>
-            <li><a href="/terms">Regulamin</a></li>
-            <li><a href="/privacy">Polityka prywatności</a></li>
+            <li><router-link to="/centrum-pomocy">Centrum pomocy</router-link></li>
+            <li><router-link to="/kontakt">Kontakt</router-link></li>
+            <li><router-link to="/regulamin">Regulamin</router-link></li>
+            <li><router-link to="/polityka-prywatnosci">Polityka prywatności</router-link></li>
           </ul>
         </div>
       </div>
@@ -73,55 +79,55 @@
 
 <style scoped>
 .footer {
-  background: #f8fafc;
-  color: #0f172a;
-  border-top: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #0f172a 0%, #0c1422 100%);
+  color: #d8e2f3;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .footer__container {
-  max-width: 1200px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 16px 14px 14px;
+  padding: 40px 24px 28px;
 }
 
 .footer__grid {
   display: grid;
-  gap: 16px;
-  grid-template-columns: 1.1fr repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  grid-template-columns: 1.5fr repeat(3, minmax(0, 1fr));
 }
 
 .footer__brand {
-  max-width: 220px;
+  max-width: 280px;
 }
 
 .footer__logo {
   display: inline-flex;
   align-items: center;
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #0f172a;
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #ffffff;
   text-decoration: none;
 }
 
 .footer__description {
-  margin-top: 8px;
-  line-height: 1.5;
-  color: #475569;
-  font-size: 0.86rem;
+  margin-top: 12px;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.95rem;
 }
 
 .footer__column {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .footer__heading {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #0f172a;
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .footer__links {
@@ -129,61 +135,65 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .footer__links a {
-  color: #475569;
+  color: rgba(255, 255, 255, 0.74);
   text-decoration: none;
-  font-size: 0.84rem;
-  transition: color 0.2s ease;
+  font-size: 0.94rem;
+  transition:
+    color 0.18s ease,
+    transform 0.18s ease;
 }
 
 .footer__links a:hover {
-  color: #0f172a;
+  color: #ffffff;
+  transform: translateX(2px);
 }
 
 .footer__bottom {
-  margin-top: 20px;
+  margin-top: 30px;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid #e2e8f0;
-  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 24px;
+  gap: 18px;
 }
 
 .footer__copyright {
   margin: 0;
-  color: #64748b;
-  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.88rem;
 }
 
 .footer__socials {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .footer__social {
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  color: #475569;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #d8e2f3;
   transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease;
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
 }
 
 .footer__social:hover {
-  background: #eef2ff;
-  border-color: #c7d2fe;
-  color: #0f172a;
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
 }
 
 .footer__social svg {
@@ -199,26 +209,22 @@
 
 @media (max-width: 640px) {
   .footer__container {
-    padding: 18px 14px 14px;
+    padding: 28px 18px 20px;
   }
 
   .footer__grid {
     grid-template-columns: 1fr;
   }
-
-  .footer__bottom {
-    gap: 12px;
-  }
 }
 
 @media (max-width: 480px) {
   .footer__container {
-    padding: 16px 12px 12px;
+    padding: 22px 14px 16px;
   }
 
   .footer__social {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
   }
 }
 </style>

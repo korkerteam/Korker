@@ -194,121 +194,120 @@ const lessons = ref([
 <style scoped>
 .home-shell {
   display: grid;
-  gap: 24px;
+  gap: 26px;
   width: 100%;
   min-height: calc(100vh - 220px);
-  font-family:
-    system-ui,
-    -apple-system,
-    sans-serif;
+  padding-bottom: 10px;
 }
 
 .dashboard-top {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  gap: 24px;
   align-items: center;
-  padding: 26px 28px;
+  padding: 32px 36px;
   background: rgba(255, 255, 255, 0.92);
-  border-radius: 24px;
+  border-radius: 36px;
   border: 1px solid rgba(148, 163, 184, 0.18);
-  position: relative;
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(18px);
 }
 
 .dashboard-welcome {
-  margin: 0 0 6px;
-  color: #4f75c7;
-  font-size: 13px;
-  font-weight: 700;
+  margin: 0 0 10px;
+  color: var(--accent-strong);
+  font-size: 0.85rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
 }
 
 .dashboard-title {
   margin: 0;
-  font-size: clamp(24px, 2.2vw, 32px);
-  line-height: 1.1;
-  color: #0f172a;
+  font-size: clamp(2.4rem, 3vw, 3.5rem);
+  line-height: 1.02;
+  color: #111827;
 }
 
 .dashboard-actions {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
   align-items: center;
 }
 
 .dashboard-action {
   border: none;
-  border-radius: 16px;
-  background: #2563eb;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
   color: white;
-  padding: 12px 20px;
+  padding: 14px 24px;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 0.95rem;
   cursor: pointer;
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    background 0.2s;
-  display: flex;
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
+  box-shadow: 0 18px 40px rgba(79, 117, 199, 0.18);
 }
 
 .dashboard-action:hover {
-  background: #1d4ed8;
-  transform: translateY(-1px);
-  box-shadow: 0 16px 32px rgba(37, 99, 235, 0.18);
+  background: linear-gradient(135deg, #3d60c9, #2f54be);
+  transform: translateY(-2px);
 }
 
 .action-secondary {
-  background: #f1f5f9;
-  color: #1e293b;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(241, 245, 249, 0.92);
+  color: #1f2937;
+  border: 1px solid rgba(79, 117, 199, 0.12);
+  box-shadow: none;
 }
 
 .action-secondary:hover {
-  background: #e2e8f0;
+  background: rgba(229, 236, 255, 0.92);
   box-shadow: none;
 }
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 24px;
 }
 
 .dashboard-card {
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 26px;
-  padding: 24px;
-  box-shadow: 0 22px 40px rgba(15, 23, 42, 0.07);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 32px;
+  padding: 28px;
+  box-shadow: 0 26px 60px rgba(15, 23, 42, 0.08);
 }
 
 .clickable-card {
   cursor: pointer;
   transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .clickable-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 26px 46px rgba(15, 23, 42, 0.1);
+  box-shadow: 0 32px 70px rgba(15, 23, 42, 0.12);
 }
 
 .dashboard-card h3 {
-  margin: 0 0 14px;
-  font-size: 18px;
-  color: #0f172a;
+  margin: 0 0 18px;
+  font-size: 1.12rem;
+  color: #111827;
 }
 
 .dashboard-card p,
 .dashboard-card span {
   color: #475569;
-  font-size: 14px;
+  font-size: 0.96rem;
 }
 
 .dashboard-card ul {
@@ -316,14 +315,14 @@ const lessons = ref([
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 
 .dashboard-card li {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 14px 0;
+  gap: 6px;
+  padding: 16px 0;
   border-bottom: 1px solid rgba(148, 163, 184, 0.12);
 }
 
@@ -335,7 +334,6 @@ const lessons = ref([
   color: #111827;
 }
 
-/* DROPDOWN POWIADOMIEŃ */
 .notifications-wrapper {
   position: relative;
 }
@@ -345,8 +343,8 @@ const lessons = ref([
   color: white;
   font-size: 11px;
   font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 10px;
+  padding: 3px 8px;
+  border-radius: 999px;
   display: inline-flex;
   justify-content: center;
   align-items: center;
@@ -357,37 +355,27 @@ const lessons = ref([
   top: calc(100% + 12px);
   right: 0;
   width: 320px;
-  background: white;
+  background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 20px;
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.15);
+  border-radius: 24px;
+  box-shadow: 0 26px 70px rgba(15, 23, 42, 0.16);
   z-index: 100;
   overflow: hidden;
+  backdrop-filter: blur(16px);
   animation: slideIn 0.2s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .dropdown-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #f1f5f9;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
 }
 
 .dropdown-header h4 {
   margin: 0;
-  font-size: 16px;
+  font-size: 1rem;
   color: #0f172a;
 }
 
@@ -402,23 +390,23 @@ const lessons = ref([
 .notifications-list li {
   display: flex;
   gap: 12px;
-  padding: 14px 20px;
+  padding: 16px 20px;
   cursor: pointer;
-  border-bottom: 1px solid #f8fafc;
-  transition: background 0.15s;
+  border-bottom: 1px solid rgba(241, 245, 249, 0.9);
+  transition: background 0.15s ease;
 }
 
 .notifications-list li:hover {
-  background: #f8fafc;
+  background: rgba(239, 246, 255, 0.9);
 }
 
 .notifications-list li.unread {
-  background: #f0f7ff;
+  background: rgba(239, 247, 255, 0.96);
 }
 
 .notif-status-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   background: #2563eb;
   border-radius: 50%;
   margin-top: 6px;
@@ -427,19 +415,19 @@ const lessons = ref([
 .notif-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .notif-text {
   margin: 0;
-  font-size: 13px;
-  color: #1e293b;
+  font-size: 0.95rem;
+  color: #1f2937;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .notif-time {
-  font-size: 11px;
+  font-size: 0.85rem;
   color: #64748b;
   white-space: nowrap;
   overflow: hidden;
@@ -451,10 +439,9 @@ const lessons = ref([
   padding: 24px;
   text-align: center;
   color: #64748b;
-  font-size: 14px;
+  font-size: 0.95rem;
 }
 
-/* OKNO MODALNE TERMINARZA */
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -470,11 +457,11 @@ const lessons = ref([
 }
 
 .modal-content {
-  background: white;
+  background: #ffffff;
   width: 100%;
-  max-width: 550px;
-  border-radius: 28px;
-  box-shadow: 0 30px 60px rgba(15, 23, 42, 0.25);
+  max-width: 560px;
+  border-radius: 32px;
+  box-shadow: 0 36px 90px rgba(15, 23, 42, 0.18);
   overflow: hidden;
 }
 
@@ -482,45 +469,45 @@ const lessons = ref([
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 30px;
-  border-bottom: 1px solid #f1f5f9;
+  padding: 28px 30px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .modal-header h3 {
   margin: 0;
-  font-size: 20px;
-  color: #0f172a;
+  font-size: 1.2rem;
+  color: #111827;
 }
 
 .close-modal-btn {
   background: none;
   border: none;
-  font-size: 28px;
+  font-size: 30px;
   color: #64748b;
   cursor: pointer;
 }
 
 .close-modal-btn:hover {
-  color: #0f172a;
+  color: #111827;
 }
 
 .modal-body {
-  padding: 30px;
-  max-height: 400px;
+  padding: 32px;
+  max-height: 420px;
   overflow-y: auto;
 }
 
 .timeline {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 22px;
 }
 
 .timeline-item {
   display: flex;
-  gap: 16px;
+  gap: 18px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
 }
 
 .timeline-item:last-child {
@@ -529,25 +516,25 @@ const lessons = ref([
 }
 
 .timeline-icon {
-  font-size: 20px;
+  font-size: 22px;
   background: #eff6ff;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 12px;
+  border-radius: 16px;
 }
 
 .timeline-details h4 {
-  margin: 0 0 4px;
-  font-size: 16px;
-  color: #0f172a;
+  margin: 0 0 6px;
+  font-size: 1rem;
+  color: #111827;
 }
 
 .timeline-details .teacher {
-  margin: 0 0 8px;
-  font-size: 13px;
+  margin: 0 0 10px;
+  font-size: 0.96rem;
   color: #475569;
 }
 
@@ -555,30 +542,30 @@ const lessons = ref([
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .timeline-meta .time {
-  font-size: 13px;
+  font-size: 0.95rem;
   color: #64748b;
 }
 
 .status-badge {
-  font-size: 11px;
+  font-size: 0.82rem;
   font-weight: 700;
-  padding: 4px 8px;
-  border-radius: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
   text-transform: uppercase;
 }
 
 .status-badge.upcoming {
   background: #fef3c7;
-  color: #d97706;
+  color: #b45309;
 }
 
 .status-badge.confirmed {
   background: #dcfce7;
-  color: #15803d;
+  color: #166534;
 }
 
 .fade-enter-active,

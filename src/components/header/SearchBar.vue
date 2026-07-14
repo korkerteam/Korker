@@ -49,63 +49,59 @@ function onSubmit(event) {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: linear-gradient(180deg, #ffffff, #fbfdff);
-  padding: 6px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.96);
   border-radius: 999px;
-  box-shadow: 0 6px 20px rgba(31, 65, 137, 0.08);
-  border: 1px solid rgba(79, 117, 199, 0.12);
+  border: 1px solid rgba(79, 117, 199, 0.18);
+  box-shadow: 0 18px 42px rgba(79, 117, 199, 0.08);
 }
 
 .search-input {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 12px;
-  background: transparent;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.92);
   border-radius: 999px;
   flex: 1 1 auto;
 }
 
 .search-input .icon {
-  color: var(--primary-color);
-  opacity: 0.95;
+  color: var(--accent-strong);
 }
 
 .search-input input {
   border: none;
   outline: none;
-  font-size: 14px;
+  font-size: 0.95rem;
   padding: 6px 0;
   width: 100%;
   background: transparent;
 }
 
 .submit-btn {
-  background-color: var(--primary-color);
-  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #ffffff;
   border: none;
-  padding: 10px 16px;
+  padding: 12px 18px;
   border-radius: 999px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(79, 117, 199, 0.18);
-  transition:
-    transform 120ms ease,
-    box-shadow 120ms ease,
-    opacity 120ms ease;
+  box-shadow: 0 12px 28px rgba(79, 117, 199, 0.18);
 }
 
 .submit-btn:hover {
-  background-color: var(--primary-color-hover);
-  box-shadow: 0 14px 36px rgba(79, 117, 199, 0.22);
+  box-shadow: 0 16px 36px rgba(79, 117, 199, 0.22);
+  transform: translateY(-1px);
 }
 
 @media (max-width: 900px) {
   .searchbar {
-    padding: 4px;
+    padding: 8px 10px;
   }
+
   .submit-btn {
-    padding: 8px 12px;
+    padding: 10px 14px;
   }
 }
 </style>

@@ -36,6 +36,30 @@ watch(homeTrigger, () => {
 })
 
 const activePanel = computed(() => active.value)
+const searchOpenedFromQuery = ref(false)
+
+function isSearchQueryEnabled(search) {
+  return search !== undefined && search !== '0' && search !== 'false' && search !== ''
+}
+
+watch(
+  () => route.query.search,
+  (search) => {
+    const shouldOpen = isSearchQueryEnabled(search)
+    if (shouldOpen) {
+      searchOpenedFromQuery.value = true
+      if (!requireAuth()) return
+      active.value = 'search'
+      return
+    }
+
+    if (searchOpenedFromQuery.value && active.value === 'search') {
+      active.value = null
+      searchOpenedFromQuery.value = false
+    }
+  },
+  { immediate: true },
+)
 
 function activateProtectedPanel(panel) {
   if (!isAuthenticated.value) {
@@ -88,6 +112,13 @@ function handleToggleTeachers() {
 
 function handleToggleSearch() {
   if (!requireAuth()) return
+
+  if (active.value === 'search' && route.query.search !== undefined) {
+    const query = { ...route.query }
+    delete query.search
+    router.replace({ name: route.name, query })
+  }
+
   active.value = active.value === 'search' ? null : 'search'
 }
 </script>
