@@ -91,14 +91,14 @@ function removeLikedTeacher(teacher) {
           @remove-liked-teacher="removeLikedTeacher"
           @open-auth="openAuthModal"
         />
-
-        <CzatCzatSahur />
       </template>
 
       <template v-else>
         <router-view />
       </template>
     </div>
+
+    <CzatCzatSahur />
 
     <div class="Mapa">
       <MapPage />
