@@ -18,12 +18,18 @@ const profile = reactive({
   profile_picture: '',
 })
 
+const tagOptions = ['Matura', 'Egzamin', 'Online', 'Na miejscu']
+const subjectOptions = ['Matematyka', 'Język polski', 'Angielski', 'Fizyka']
+const TUTOR_POST_KEY = 'korkerTutorPost'
+
 const isEditing = ref(false)
 const saving = ref(false)
 const loading = ref(true)
 const saveError = ref('')
 const pendingAvatarFile = ref(null)
+const pendingLessonPhotoFile = ref(null)
 let originalProfilePicture = ''
+let originalLessonPhoto = ''
 const draft = reactive({
   name: profile.name,
   accountType: profile.accountType,
@@ -31,6 +37,12 @@ const draft = reactive({
   location: profile.location,
   gender: profile.gender,
   profile_picture: profile.profile_picture,
+  lessonPhoto: '',
+  lessonPrice: '',
+  lessonTags: [],
+  lessonSubject: '',
+  lessonLevel: 'Liceum',
+  lessonDescription: '',
 })
 
 function toDb() {
@@ -56,6 +68,46 @@ function fromDb(data) {
   profile.profile_picture = data.profile_picture ?? ''
 }
 
+function loadTutorPost() {
+  if (typeof window === 'undefined') return null
+  try {
+    return JSON.parse(localStorage.getItem(TUTOR_POST_KEY) || 'null')
+  } catch {
+    return null
+  }
+}
+
+function saveTutorPost(post) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(TUTOR_POST_KEY, JSON.stringify(post))
+}
+
+function removeTutorPost() {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(TUTOR_POST_KEY)
+}
+
+function generateDefaultTutorSlots() {
+  return [
+    { day: 'Poniedziałek', time: '10:00', date: '2024-01-15' },
+    { day: 'Wtorek', time: '14:00', date: '2024-01-16' },
+    { day: 'Czwartek', time: '16:00', date: '2024-01-18' },
+    { day: 'Piątek', time: '18:00', date: '2024-01-19' },
+  ]
+}
+
+function applySavedTutorPost() {
+  const saved = loadTutorPost()
+  if (saved) {
+    draft.lessonPhoto = saved.lessonPhoto || ''
+    draft.lessonPrice = saved.lessonPrice || ''
+    draft.lessonTags = saved.lessonTags || []
+    draft.lessonSubject = saved.lessonSubject || ''
+    draft.lessonLevel = saved.lessonLevel || 'Liceum'
+    draft.lessonDescription = saved.lessonDescription || ''
+  }
+}
+
 watch(
   [profileData, profileLoading],
   ([data, busy]) => {
@@ -63,6 +115,7 @@ watch(
     if (data) {
       fromDb(data)
       setProfileName(profile.name)
+      applySavedTutorPost()
     } else {
       const meta = user.value?.user_metadata
       if (meta?.name) {
@@ -77,7 +130,9 @@ watch(
 
 function startEdit() {
   originalProfilePicture = profile.profile_picture
+  originalLessonPhoto = draft.lessonPhoto || ''
   Object.assign(draft, profile)
+  applySavedTutorPost()
   isEditing.value = true
 }
 
@@ -112,12 +167,49 @@ async function saveProfile() {
       pendingAvatarFile.value = null
     }
 
+    if (pendingLessonPhotoFile.value) {
+      const file = pendingLessonPhotoFile.value
+      const path = `lesson-${Date.now()}-${file.name}`
+      const { error: uploadError } = await supabase.storage
+        .from('profile_pictures')
+        .upload(path, file)
+
+      if (uploadError) {
+        console.error('Failed to upload lesson photo:', uploadError)
+        saving.value = false
+        return
+      }
+
+      const { data: urlData } = supabase.storage.from('profile_pictures').getPublicUrl(path)
+      draft.lessonPhoto = urlData.publicUrl
+      pendingLessonPhotoFile.value = null
+    }
+
     Object.assign(profile, draft)
     const result = await upsertProfile(toDb(), user.value?.id)
     if (result) {
       fromDb(result)
       profileData.value = { ...result }
     }
+
+    if (draft.accountType === 'tutor') {
+      const tutorPost = {
+        name: draft.name || profile.name || 'Korepetytor',
+        subject: draft.lessonSubject || 'Korepetycje',
+        level: draft.lessonLevel || 'Liceum',
+        tags: draft.lessonTags || [],
+        image: draft.lessonPhoto || profile.profile_picture || null,
+        bio: draft.lessonDescription || 'Zapraszam na lekcje w dogodnym terminie.',
+        price: Number(draft.lessonPrice) || 50,
+        rating: 4.5,
+        ratingCount: 1,
+        availableSlots: generateDefaultTutorSlots(),
+      }
+      saveTutorPost(tutorPost)
+    } else {
+      removeTutorPost()
+    }
+
     setProfileName(profile.name)
     clearNeedsProfile()
     isEditing.value = false
@@ -164,6 +256,10 @@ function triggerAvatarUpload() {
   document.getElementById('avatar-input')?.click()
 }
 
+function triggerLessonPhotoUpload() {
+  document.getElementById('lesson-photo-input')?.click()
+}
+
 function onAvatarChange(event) {
   const file = event.target.files?.[0]
   if (!file) return
@@ -171,6 +267,23 @@ function onAvatarChange(event) {
   pendingAvatarFile.value = file
   profile.profile_picture = URL.createObjectURL(file)
   draft.profile_picture = profile.profile_picture
+}
+
+function onLessonPhotoChange(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  pendingLessonPhotoFile.value = file
+  draft.lessonPhoto = URL.createObjectURL(file)
+}
+
+function toggleLessonTag(tag) {
+  const index = draft.lessonTags.indexOf(tag)
+  if (index > -1) {
+    draft.lessonTags.splice(index, 1)
+  } else {
+    draft.lessonTags.push(tag)
+  }
 }
 </script>
 
@@ -239,6 +352,75 @@ function onAvatarChange(event) {
             </select>
           </label>
 
+          <template v-if="draft.accountType === 'tutor'">
+            <div class="tutor-offer-header">Twój post korepetytora</div>
+            <label class="field-row">
+              <span class="field-label">Przedmiot</span>
+              <div class="subject-table">
+                <button
+                  v-for="subject in subjectOptions"
+                  :key="subject"
+                  type="button"
+                  class="subject-option"
+                  :class="{ selected: draft.lessonSubject === subject }"
+                  @click="draft.lessonSubject = subject"
+                >
+                  {{ subject }}
+                </button>
+              </div>
+            </label>
+            <label class="field-row">
+              <span class="field-label">Poziom</span>
+              <select v-model="draft.lessonLevel">
+                <option value="Szkoła podstawowa">Szkoła podstawowa</option>
+                <option value="Liceum">Liceum</option>
+                <option value="Studia">Studia</option>
+              </select>
+            </label>
+            <label class="field-row">
+              <span class="field-label">Stawka za lekcję (zł/h)</span>
+              <input v-model="draft.lessonPrice" type="number" min="10" placeholder="50" />
+            </label>
+            <label class="field-row">
+              <span class="field-label">Tagi</span>
+              <div class="tag-options-row">
+                <label v-for="option in tagOptions" :key="option" class="tag-option">
+                  <input
+                    type="checkbox"
+                    :checked="draft.lessonTags.includes(option)"
+                    @change.prevent="toggleLessonTag(option)"
+                  />
+                  {{ option }}
+                </label>
+              </div>
+            </label>
+            <label class="field-row">
+              <span class="field-label">Opis oferty</span>
+              <textarea
+                v-model="draft.lessonDescription"
+                placeholder="Napisz krótki opis lekcji..."
+              ></textarea>
+            </label>
+            <label class="field-row lesson-photo-row">
+              <span class="field-label">Zdjęcie oferty</span>
+              <div class="lesson-photo-input">
+                <button class="btn btn-secondary" type="button" @click="triggerLessonPhotoUpload">
+                  Wybierz zdjęcie
+                </button>
+                <input
+                  id="lesson-photo-input"
+                  type="file"
+                  accept="image/*"
+                  class="avatar-input"
+                  @change="onLessonPhotoChange"
+                />
+              </div>
+              <div v-if="draft.lessonPhoto" class="lesson-photo-preview">
+                <img :src="draft.lessonPhoto" alt="Zdjęcie lekcji" />
+              </div>
+            </label>
+          </template>
+
           <div v-if="saveError" class="error-box">{{ saveError }}</div>
 
           <div class="actions">
@@ -275,6 +457,37 @@ function onAvatarChange(event) {
               profile.gender === 'male' ? 'Mężczyzna' : profile.gender === 'female' ? 'Kobieta' : ''
             }}</span>
           </div>
+
+          <template v-if="profile.accountType === 'tutor'">
+            <div class="tutor-offer-view">
+              <h4>Twoja oferta korepetytora</h4>
+              <div class="offer-row">
+                <span class="offer-label">Przedmiot</span>
+                <span class="offer-value">{{ draft.lessonSubject || 'Korepetycje' }}</span>
+              </div>
+              <div class="offer-row">
+                <span class="offer-label">Poziom</span>
+                <span class="offer-value">{{ draft.lessonLevel || 'Liceum' }}</span>
+              </div>
+              <div class="offer-row">
+                <span class="offer-label">Stawka</span>
+                <span class="offer-value">{{
+                  draft.lessonPrice ? draft.lessonPrice + ' zł/h' : 'Brak'
+                }}</span>
+              </div>
+              <div class="offer-row" v-if="draft.lessonTags && draft.lessonTags.length">
+                <span class="offer-label">Tagi</span>
+                <span class="offer-value">{{ draft.lessonTags.join(', ') }}</span>
+              </div>
+              <div class="offer-row" v-if="draft.lessonDescription">
+                <span class="offer-label">Opis</span>
+                <span class="offer-value">{{ draft.lessonDescription }}</span>
+              </div>
+              <div v-if="draft.lessonPhoto" class="offer-photo-preview">
+                <img :src="draft.lessonPhoto" alt="Oferta korepetytora" />
+              </div>
+            </div>
+          </template>
         </template>
       </div>
 
@@ -449,7 +662,8 @@ function onAvatarChange(event) {
 }
 
 .field-row input,
-.field-row select {
+.field-row select,
+.field-row textarea {
   width: 100%;
   padding: 10px 14px;
   border: 1.5px solid #d1d5db;
@@ -464,17 +678,141 @@ function onAvatarChange(event) {
     box-shadow 0.2s;
 }
 
+.field-row textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
 .field-row input:focus,
-.field-row select:focus {
+.field-row select:focus,
+.field-row textarea:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(79, 117, 199, 0.12);
 }
 
-.info-row {
+.tag-options-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  font-size: 13px;
+  background: #f8fafc;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.tag-option input {
+  width: 14px;
+  height: 14px;
+}
+
+.subject-table {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.subject-option {
+  border: 1.5px solid #d1d5db;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #102036;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.subject-option.selected {
+  background: #eef2ff;
+  border-color: #4f75c7;
+  color: #1f2937;
+}
+
+.subject-option:hover {
+  background: #e2e8f0;
+}
+
+.lesson-photo-row {
+  gap: 12px;
+}
+
+.lesson-photo-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lesson-photo-preview {
+  margin-top: 10px;
+  max-width: 160px;
+  max-height: 120px;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(79, 117, 199, 0.15);
+}
+
+.lesson-photo-preview img,
+.offer-photo-preview img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.tutor-offer-header {
+  margin-top: 12px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.tutor-offer-view {
+  background: #f8fafc;
+  border: 1px solid rgba(79, 117, 199, 0.1);
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.tutor-offer-view h4 {
+  margin: 0;
+  font-size: 15px;
+  color: #1f2937;
+}
+
+.offer-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 4px 0;
+  gap: 16px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.offer-label {
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.offer-value {
+  text-align: right;
+  color: #102036;
+}
+
+.offer-photo-preview {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(79, 117, 199, 0.15);
 }
 
 .info-label {

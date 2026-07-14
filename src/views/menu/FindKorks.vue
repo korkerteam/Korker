@@ -24,8 +24,45 @@ const swipeRotation = ref(0)
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
 const tagOptions = ['Matura', 'Egzamin', 'Online', 'Na miejscu']
+const TUTOR_POST_KEY = 'korkerTutorPost'
 
-const tutors = [
+function getRandomPrice() {
+  return Math.floor(Math.random() * 41) + 60
+}
+
+function loadTutorPost() {
+  if (typeof window === 'undefined') return null
+  try {
+    return JSON.parse(localStorage.getItem(TUTOR_POST_KEY) || 'null')
+  } catch {
+    return null
+  }
+}
+
+function getTutorsWithCustomPost() {
+  const saved = loadTutorPost()
+  const list = [...tutors]
+  if (saved && saved.name) {
+    const exists = list.some((tutor) => tutor.name === saved.name)
+    if (!exists) {
+      list.unshift({
+        ...saved,
+        price: saved.price ?? getRandomPrice(),
+        rating: saved.rating ?? 4.5,
+        ratingCount: saved.ratingCount ?? 1,
+        availableSlots: saved.availableSlots || [
+          { day: 'Poniedziałek', time: '10:00', date: '2024-01-15' },
+          { day: 'Wtorek', time: '14:00', date: '2024-01-16' },
+          { day: 'Czwartek', time: '16:00', date: '2024-01-18' },
+          { day: 'Piątek', time: '18:00', date: '2024-01-19' },
+        ],
+      })
+    }
+  }
+  return list
+}
+
+const tutorTemplates = [
   {
     name: 'Anna Kowalska',
     subject: 'Matematyka',
@@ -203,12 +240,19 @@ const tutors = [
   },
 ]
 
+const tutors = tutorTemplates.map((tutor) => ({
+  ...tutor,
+  price: tutor.price ?? getRandomPrice(),
+}))
+
 const likedTeacherNames = computed(() => {
   return new Set((props.likedTeachers || []).map((teacher) => teacher?.name).filter(Boolean))
 })
 
+const tutorsWithCustomPost = computed(() => getTutorsWithCustomPost())
+
 const filteredTutors = computed(() => {
-  return tutors.filter((tutor) => {
+  return tutorsWithCustomPost.value.filter((tutor) => {
     if (likedTeacherNames.value.has(tutor.name)) {
       return false
     }
@@ -375,6 +419,7 @@ function closePage() {
           <div class="card-info">
             <h3 class="tutor-name">{{ currentTutor.name }}</h3>
             <p class="tutor-meta">{{ currentTutor.subject }} • {{ currentTutor.level }}</p>
+            <p class="tutor-price">{{ currentTutor.price }} zł/h</p>
 
             <div class="tags-list">
               <span v-for="tag in currentTutor.tags" :key="tag" class="tag">{{ tag }}</span>
@@ -708,6 +753,13 @@ function closePage() {
   font-size: 12px;
   color: #4b5563;
   font-weight: 500;
+}
+
+.tutor-price {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: #1f2937;
+  font-weight: 700;
 }
 
 .bio-box {
