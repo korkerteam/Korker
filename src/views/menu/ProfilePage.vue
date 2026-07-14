@@ -18,7 +18,7 @@ const profile = reactive({
   profile_picture: '',
 })
 
-const tagOptions = ['Matura', 'Egzamin', 'Online', 'Na miejscu']
+const tagOptions = ['Online', 'Na miejscu']
 const subjectOptions = ['Matematyka', 'Język polski', 'Angielski', 'Fizyka']
 const TUTOR_POST_KEY = 'korkerTutorPost'
 
@@ -644,6 +644,14 @@ function toggleLessonTag(tag) {
   flex-direction: column;
   gap: 16px;
   margin-bottom: 24px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-top: 4px;
 }
 
 .field-row {

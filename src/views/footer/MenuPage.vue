@@ -3,12 +3,12 @@ import { ref, computed, watch, onMounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth.js'
 import MenuContent from '@/components/MenuContent.vue'
-import HomePage from '@/views/HomePage.vue'
-import ProfilePage from './menu/ProfilePage.vue'
-import Ranks from './menu/Ranks.vue'
-import MyTeachers from './menu/MyTeachers.vue'
-import FindKorks from './menu/FindKorks.vue'
-import { toggleProfile, toggleRank } from '../composables/menuToggle'
+import HomePage from '@/views/footer/HomePage.vue'
+import ProfilePage from '@/views/menu/ProfilePage.vue'
+import Ranks from '@/views/menu/Ranks.vue'
+import MyTeachers from '@/views/menu/MyTeachers.vue'
+import FindKorks from '@/views/menu/FindKorks.vue'
+import { toggleProfile, toggleRank } from '@/composables/menuToggle.js'
 
 defineProps({
   selectedFilters: {
