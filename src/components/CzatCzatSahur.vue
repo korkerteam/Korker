@@ -109,7 +109,7 @@ async function handleSend(content, files) {
 </script>
 
 <template>
-  <ChatFab v-if="!showChat" :unread-count="totalUnread" @toggle="toggle" />
+  <ChatFab :unread-count="totalUnread" @toggle="toggle" />
   <Transition name="fade">
     <div v-if="showChat" class="backdrop"></div>
   </Transition>

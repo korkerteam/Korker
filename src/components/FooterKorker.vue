@@ -1,6 +1,9 @@
 <script setup>
-function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+function scrollToTop(event) {
+  const target = event?.target
+  if (target && target.closest('a, button, router-link')) {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 }
 </script>
 

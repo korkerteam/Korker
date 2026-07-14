@@ -1,75 +1,218 @@
-<script setup></script>
-
 <template>
-  <main class="min-h-screen bg-slate-100 py-12">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-      <section
-        class="overflow-hidden rounded-[40px] bg-white p-8 shadow-[0_35px_80px_rgba(15,23,42,0.12)] ring-1 ring-slate-200 sm:p-12"
-      >
-        <div class="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
-          <div>
-            <span
-              class="inline-flex rounded-full bg-sky-100 px-4 py-2 text-sm font-semibold uppercase tracking-[0.24em] text-sky-700"
-              >Prosty cennik</span
-            >
-            <h1 class="mt-6 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-              Korzystanie z platformy Korker dla uczniów jest całkowicie bezpłatne.
-            </h1>
-            <p class="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              Uczniowie korzystają za darmo z wyszukiwarki, czatu i kalendarza. Korepetytorzy
-              decydują o swoich stawkach i wyborze modelu rozliczeń.
-            </p>
-            <div class="mt-8 grid gap-4 sm:grid-cols-2">
-              <div class="rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm">
-                <p class="text-sm font-semibold text-slate-950">Uczniowie</p>
-                <p class="mt-3 text-slate-600">Brak opłat za konto, wyszukiwanie i komunikację.</p>
-              </div>
-              <div class="rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm">
-                <p class="text-sm font-semibold text-slate-950">Korepetytorzy</p>
-                <p class="mt-3 text-slate-600">
-                  Wybierz indywidualną stawkę lub przejrzysty abonament.
-                </p>
-              </div>
-            </div>
-          </div>
+  <main class="pricing-page">
+    <div class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Prosty cennik</span>
 
-          <div class="rounded-[32px] bg-slate-50 p-8 ring-1 ring-slate-200">
-            <div class="flex items-center gap-4 rounded-3xl bg-white p-5 shadow-sm">
-              <span
-                class="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-sky-50 text-sky-600 text-2xl"
-                >💎</span
-              >
-              <div>
-                <p class="text-sm font-semibold text-slate-950">Przejrzystość w centrum</p>
-                <p class="mt-1 text-sm text-slate-600">
-                  Wszystkie koszty są jasne, bez ukrytych opłat.
-                </p>
-              </div>
-            </div>
-            <div class="mt-8 grid gap-5">
-              <article class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-sky-600">
-                  Dla uczniów
-                </p>
-                <h2 class="mt-3 text-2xl font-semibold text-slate-950">0 PLN</h2>
-                <p class="mt-3 text-slate-600">
-                  Zakładanie konta i korzystanie z platformy jest darmowe. Płacisz tylko
-                  nauczycielowi za lekcje.
-                </p>
-              </article>
-              <article class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-sky-600">
-                  Dla korepetytorów
-                </p>
-                <h2 class="mt-3 text-2xl font-semibold text-slate-950">Stawki indywidualne</h2>
-                <p class="mt-3 text-slate-600">
-                  Ustalasz cenę godzinową, a my wspieramy Cię prostą obsługą płatności i rezerwacji.
-                </p>
-              </article>
-            </div>
+        <h1 class="hero-title">
+          Korzystanie z platformy Korker dla uczniów jest całkowicie bezpłatne.
+        </h1>
+
+        <p>
+          Uczniowie korzystają za darmo z wyszukiwarki, czatu i kalendarza. Korepetytorzy decydują o
+          swoich stawkach i wyborze modelu rozliczeń.
+        </p>
+      </div>
+
+      <div class="hero-cards">
+        <article class="preview-card">
+          <div class="preview-card-icon">💎</div>
+          <div class="preview-card-content">
+            <h3>Przejrzystość w centrum</h3>
+            <p>Wszystkie koszty są jasne, bez ukrytych opłat.</p>
           </div>
-        </div>
-      </section>
+        </article>
+
+        <article class="preview-card">
+          <div class="preview-card-icon">🎓</div>
+          <div class="preview-card-content">
+            <h3>Uczniowie</h3>
+            <p>Brak opłat za konto, wyszukiwanie i komunikację.</p>
+          </div>
+        </article>
+      </div>
     </div>
+
+    <section class="pricing-grid">
+      <article class="pricing-card">
+        <p class="pricing-label">Dla uczniów</p>
+        <h2>0 PLN</h2>
+        <p>
+          Zakładanie konta i korzystanie z platformy jest darmowe. Płacisz tylko nauczycielowi za
+          lekcje.
+        </p>
+      </article>
+
+      <article class="pricing-card">
+        <p class="pricing-label">Dla korepetytorów</p>
+        <h2>Stawki indywidualne</h2>
+        <p>Ustalasz cenę godzinową, a my wspieramy Cię prostą obsługą płatności i rezerwacji.</p>
+      </article>
+    </section>
   </main>
 </template>
+
+<style scoped>
+.pricing-page {
+  min-height: 100vh;
+  padding: 48px 24px;
+  background:
+    radial-gradient(circle at top left, rgba(79, 117, 199, 0.14), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(82, 93, 225, 0.12), transparent 18%), #f8fbff;
+}
+
+.hero {
+  display: grid;
+  gap: 28px;
+  max-width: 1200px;
+  margin: 0 auto 40px;
+}
+
+.hero-copy {
+  display: grid;
+  gap: 22px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(79, 117, 199, 0.12);
+  color: #3366ff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.hero-title {
+  margin: 0;
+  font-size: clamp(2.4rem, 4vw, 4.2rem);
+  line-height: 1.02;
+  color: #0f172a;
+}
+
+.hero-copy p {
+  margin: 0;
+  max-width: 640px;
+  color: #475569;
+  font-size: 1.05rem;
+  line-height: 1.85;
+}
+
+.hero-cards {
+  display: grid;
+  gap: 20px;
+  padding: 30px;
+  border-radius: 32px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.08);
+}
+
+.preview-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 24px;
+  background: white;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.preview-card-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  background: rgba(79, 117, 199, 0.1);
+  color: #3366ff;
+  font-size: 1.4rem;
+}
+
+.preview-card-content h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.preview-card-content p {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.75;
+}
+
+.pricing-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pricing-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  padding: 28px;
+  background: white;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+.pricing-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  margin: 0 0 16px;
+  border-radius: 999px;
+  background: rgba(79, 117, 199, 0.1);
+  color: #3366ff;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.pricing-card h2 {
+  margin: 0 0 12px;
+  font-size: 1.8rem;
+  color: #0f172a;
+}
+
+.pricing-card p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.96rem;
+  line-height: 1.75;
+}
+
+@media (max-width: 900px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .pricing-page {
+    padding: 30px 18px;
+  }
+}
+
+@media (max-width: 520px) {
+  .preview-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .preview-card-icon {
+    width: 48px;
+    height: 48px;
+  }
+}
+</style>
