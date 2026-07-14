@@ -62,7 +62,6 @@ function goBack() {
       <div class="teacher-header">
         <div>
           <h3>Moi Nauczyciele</h3>
-          <p class="sub">{{ teachers.length }} wybranych nauczycieli</p>
         </div>
       </div>
 

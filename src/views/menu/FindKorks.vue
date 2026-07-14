@@ -6,6 +6,10 @@ const props = defineProps({
     type: Object,
     default: () => ({ subjects: [], levels: [], tags: [] }),
   },
+  likedTeachers: {
+    type: Array,
+    default: () => [],
+  },
 })
 
 const emit = defineEmits(['close', 'like-teacher'])
@@ -199,8 +203,16 @@ const tutors = [
   },
 ]
 
+const likedTeacherNames = computed(() => {
+  return new Set((props.likedTeachers || []).map((teacher) => teacher?.name).filter(Boolean))
+})
+
 const filteredTutors = computed(() => {
   return tutors.filter((tutor) => {
+    if (likedTeacherNames.value.has(tutor.name)) {
+      return false
+    }
+
     // Local filters take precedence over global filters
     const localSubjects =
       selectedSubjects.value.length > 0 ? selectedSubjects.value : props.filters.subjects
@@ -337,11 +349,9 @@ function closePage() {
 
 <template>
   <div class="find-korks-panel">
-    <div v-if="filteredTutors.length" class="tutors-content">
+    <div class="tutors-content">
       <div class="tutor-section">
-        <div class="progress">{{ currentIndex + 1 }} / {{ filteredTutors.length }}</div>
-
-        <div v-if="currentTutor" class="tutor-card">
+        <div v-if="filteredTutors.length && currentTutor" class="tutor-card">
           <div
             class="card-image"
             @pointerdown="startSwipe"
@@ -396,6 +406,11 @@ function closePage() {
             </div>
           </div>
         </div>
+
+        <div v-else-if="!filteredTutors.length" class="empty-state-card">
+          <h3>Brak nauczycieli</h3>
+          <p>Nie ma wyników dla tych filtrów. Spróbuj zmienić tagi lub wybrać inne kryteria.</p>
+        </div>
       </div>
 
       <div class="tags-filter-section">
@@ -446,10 +461,6 @@ function closePage() {
         </div>
       </div>
     </div>
-
-    <div v-else class="empty-state">
-      <p>Brak korepetytorów dla wybranych filtrów.</p>
-    </div>
   </div>
 </template>
 
@@ -498,6 +509,40 @@ function closePage() {
   gap: 0;
   overflow: hidden;
   align-items: stretch;
+}
+
+.tutor-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  min-height: 0;
+}
+
+.empty-state-card {
+  width: min(100%, 480px);
+  max-width: 480px;
+  padding: 28px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
+  border: 1px solid rgba(79, 117, 199, 0.18);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.empty-state-card h3 {
+  margin: 0 0 10px;
+  color: #123;
+  font-size: 22px;
+}
+
+.empty-state-card p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.6;
+  font-size: 15px;
 }
 
 .tags-filter-section {
