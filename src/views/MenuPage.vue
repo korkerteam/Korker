@@ -114,6 +114,7 @@ function handleToggleSearch() {
           v-else-if="activePanel === 'search'"
           key="search"
           :filters="selectedFilters"
+          :liked-teachers="likedTeachers"
           @close="handleToggleSearch"
           @like-teacher="(t) => emit('like-teacher', t)"
         />
