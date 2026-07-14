@@ -2,7 +2,6 @@
 const emit = defineEmits([
   'toggleProfile',
   'toggleRank',
-  'toggleFilter',
   'toggleTeachers',
   'toggleSearch',
   'openAuth',
@@ -10,10 +9,6 @@ const emit = defineEmits([
 
 function handleRankClick() {
   emit('toggleRank')
-}
-
-function handleFilterClick() {
-  emit('toggleFilter')
 }
 
 function handleTeachersClick() {
@@ -24,6 +19,7 @@ function handleSearchClick() {
   emit('toggleSearch')
 }
 </script>
+
 <template>
   <nav class="menu-sidebar">
     <button class="menu-item search" @click="handleSearchClick">
@@ -36,14 +32,7 @@ function handleSearchClick() {
       </span>
       <span>Szukaj korepetycji</span>
     </button>
-    <button class="menu-item filter" @click="handleFilterClick">
-      <span class="icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M3 5h18v2H3V5zm3 6h12v2H6v-2zm3 6h6v2H9v-2z" />
-        </svg>
-      </span>
-      <span>Filtry</span>
-    </button>
+
     <button class="menu-item rank" @click="handleRankClick">
       <span class="icon">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -54,6 +43,7 @@ function handleSearchClick() {
       </span>
       <span>Ranking</span>
     </button>
+
     <button class="menu-item teachers" @click="handleTeachersClick">
       <span class="icon">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -66,6 +56,7 @@ function handleSearchClick() {
     </button>
   </nav>
 </template>
+
 <style scoped>
 .menu-sidebar {
   display: flex;

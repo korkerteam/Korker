@@ -6,10 +6,9 @@ import MenuContent from '@/components/MenuContent.vue'
 import HomePage from '@/views/HomePage.vue'
 import ProfilePage from './menu/ProfilePage.vue'
 import Ranks from './menu/Ranks.vue'
-import FilterPage from './menu/FilterPage.vue'
 import MyTeachers from './menu/MyTeachers.vue'
 import FindKorks from './menu/FindKorks.vue'
-import { toggleFilter, toggleProfile, toggleRank } from '../composables/menuToggle'
+import { toggleProfile, toggleRank } from '../composables/menuToggle'
 
 defineProps({
   selectedFilters: {
@@ -22,13 +21,7 @@ defineProps({
   },
 })
 
-const emit = defineEmits([
-  'update:selectedFilters',
-  'show-teacher',
-  'remove-liked-teacher',
-  'like-teacher',
-  'openAuth',
-])
+const emit = defineEmits(['show-teacher', 'remove-liked-teacher', 'like-teacher', 'openAuth'])
 
 const route = useRoute()
 const router = useRouter()
@@ -75,10 +68,6 @@ watch(
   },
 )
 
-function updateFilters(filters) {
-  emit('update:selectedFilters', filters)
-}
-
 function requireAuth() {
   if (!isAuthenticated.value) {
     openAuthModal()
@@ -86,11 +75,6 @@ function requireAuth() {
     return false
   }
   return true
-}
-
-function handleToggleFilter() {
-  if (!requireAuth()) return
-  toggleFilter(route, router, active)
 }
 
 function handleToggleRank() {
@@ -106,10 +90,6 @@ function handleToggleSearch() {
   if (!requireAuth()) return
   active.value = active.value === 'search' ? null : 'search'
 }
-
-function confirmFilters() {
-  active.value = null
-}
 </script>
 
 <template>
@@ -118,23 +98,16 @@ function confirmFilters() {
       <MenuContent
         @toggle-profile="() => toggleProfile(route, router)"
         @toggle-rank="handleToggleRank"
-        @toggle-filter="handleToggleFilter"
         @toggle-teachers="handleToggleTeachers"
         @toggle-search="handleToggleSearch"
         @open-auth="emit('openAuth')"
       />
     </div>
+
     <div class="right-side">
       <Transition name="fade" mode="out-in">
         <ProfilePage v-if="activePanel === 'profile'" key="profile" />
         <Ranks v-else-if="activePanel === 'ranks'" key="ranks" />
-        <FilterPage
-          v-else-if="activePanel === 'filter'"
-          key="filter"
-          :model-value="selectedFilters"
-          @update:model-value="updateFilters"
-          @confirm="confirmFilters"
-        />
         <FindKorks
           v-else-if="activePanel === 'search'"
           key="search"
