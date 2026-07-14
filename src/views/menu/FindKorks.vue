@@ -465,7 +465,7 @@ function closePage() {
 .find-korks-panel {
   border: 1.5px solid var(--primary-color);
   width: 100%;
-  max-width: 1080px;
+  max-width: 1280px;
   min-height: 0;
   max-height: calc(100vh - 160px);
   display: flex;
