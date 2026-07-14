@@ -2,7 +2,7 @@
   <main class="pricing-page">
     <div class="hero">
       <div class="hero-copy">
-        <span class="eyebrow">Prosty cennik</span>
+        <span class="eyebrow">Cennik</span>
 
         <h1 class="hero-title">
           Korzystanie z platformy Korker dla uczniów jest całkowicie bezpłatne.
