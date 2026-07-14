@@ -11,6 +11,7 @@ import TeacherOverlay from './components/TeacherOverlay.vue'
 import MainContent from './views/MenuPage.vue'
 import LoginButton from './components/header/LoginButton.vue'
 import AuthModal from './components/auth/AuthModal.vue'
+import FooterKorker from './components/FooterKorker.vue'
 import { useAuth } from '@/composables/useAuth.js'
 
 const route = useRoute()
@@ -122,6 +123,8 @@ function removeLikedTeacher(teacher) {
     <div class="Mapa">
       <MapPage />
     </div>
+
+    <FooterKorker />
   </div>
 </template>
 
@@ -130,9 +133,7 @@ function removeLikedTeacher(teacher) {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  height: 100vh;
   min-height: 100vh;
-  overflow: hidden;
   position: relative;
 }
 
@@ -141,7 +142,8 @@ function removeLikedTeacher(teacher) {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: auto;
+  padding-bottom: 20px;
 }
 
 .top-row {

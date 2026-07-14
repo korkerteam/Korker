@@ -1,14 +1,3 @@
-To klasyczny i bardzo częsty problem z tzw. **propagacją zdarzeń (event propagation)** w JavaScript!
-🤦‍♂️ Czuję Twój ból, to potrafi zirytować. ### Dlaczego tak się działo? Gdy klikałeś w powiadomienie,
-działy się dwie rzeczy jednocześnie w ułamku sekundy: 1. Kliknięcie odpalało funkcję otwierającą
-czat (`showChat = true`). 2. To samo kliknięcie "leciało" dalej w górę do samego dokumentu
-(`document`). Tam globalny detektor kliknięcia poza czatem (`onClickOutside`) stwierdzał: *"O,
-użytkownik kliknął coś, co nie jest czatem! Zamykam czat!"* i natychmiast go ukrywał. ### Jak to
-naprawiliśmy? Dodaliśmy modyfikator **`@click.stop`** (odpowiednik `event.stopPropagation()`) do
-elementu listy powiadomień oraz do całego menu powiadomień. Dzięki temu kliknięcie w powiadomienie
-"zatrzymuje się" w miejscu i nie informuje reszty strony, zapobiegając uruchomieniu autozamykania
-czatu. Oto poprawiony, kompletny kod do pliku **`HomePage.vue`**. Podmień go, a czat pozostanie
-otwarty jak skała! 🧱 ```vue
 <template>
   <div class="home-shell">
     <div class="dashboard-top">
@@ -32,22 +21,21 @@ otwarty jak skała! 🧱 ```vue
               <h4>Powiadomienia czatu</h4>
             </div>
 
-            <div v-if="notifications.length === 0" class="notifications-empty">
+            <div v-if="notificationsToShow.length === 0" class="notifications-empty">
               Brak nowych powiadomień 🎉
             </div>
 
             <ul v-else class="notifications-list">
-              <!-- Dodano @click.stop, co rozwiązuje problem natychmiastowego zamykania -->
               <li
-                v-for="notif in notifications"
+                v-for="notif in notificationsToShow"
                 :key="notif.id"
                 class="unread"
-                @click.stop="handleNotificationClick(notif.id)"
+                @click.stop="handleNotificationClick(notif.id, notif.senderId)"
               >
                 <div class="notif-status-dot"></div>
                 <div class="notif-info">
-                  <p class="notif-text">{{ notif.text }}</p>
-                  <span class="notif-time">{{ notif.lastMessage }}</span>
+                  <p class="notif-text">{{ notif.sender }}: {{ notif.message }}</p>
+                  <span class="notif-time">{{ notif.time }}</span>
                 </div>
               </li>
             </ul>
@@ -113,7 +101,7 @@ otwarty jak skała! 🧱 ```vue
 import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useMessaging } from '@/composables/useMessaging.js'
 
-const { conversations } = useMessaging()
+const { conversations, notifications, markNotificationRead } = useMessaging()
 
 const { openChatWithUser } = inject('globalChat', {
   openChatWithUser: () => {},
@@ -123,32 +111,38 @@ const isLessonsModalOpen = ref(false)
 const isNotificationsOpen = ref(false)
 const notifWrapper = ref(null)
 
-const notifications = computed(() => {
-  return conversations.value
+const notificationsToShow = computed(() => {
+  const pendingFromChat = (notifications.value || []).filter((notif) => !notif.isRead)
+  const pendingFromConversations = (conversations.value || [])
     .filter((c) => c.unread > 0)
-    .map((c) => {
-      const senderName = c.name || c.senderName || c.username || 'Użytkownik'
-      const lastMsgText =
-        typeof c.lastMessage === 'string'
-          ? c.lastMessage
-          : c.lastMessage?.content || 'Wysłał(a) wiadomość...'
+    .map((c) => ({
+      id: c.userId,
+      senderId: c.userId,
+      sender: c.name || 'Użytkownik',
+      message: c.lastMessage || 'Nowa wiadomość...',
+      time: c.lastTimeLabel || 'Teraz',
+      isRead: false,
+    }))
 
-      return {
-        id: c.userId || c.id,
-        text: `Nowa wiadomość od: ${senderName}`,
-        lastMessage: lastMsgText,
-      }
-    })
+  const combined = [...pendingFromConversations, ...pendingFromChat]
+  const unique = new Map()
+  for (const notif of combined) {
+    if (!unique.has(notif.id)) {
+      unique.set(notif.id, notif)
+    }
+  }
+  return Array.from(unique.values())
 })
 
-const unreadCount = computed(() => notifications.value.length)
+const unreadCount = computed(() => notificationsToShow.value.length)
 
 const toggleNotifications = () => {
   isNotificationsOpen.value = !isNotificationsOpen.value
 }
 
-const handleNotificationClick = (userId) => {
-  openChatWithUser(userId)
+const handleNotificationClick = (notificationId, senderId) => {
+  openChatWithUser(senderId)
+  markNotificationRead(notificationId)
   isNotificationsOpen.value = false
 }
 
@@ -202,7 +196,7 @@ const lessons = ref([
   display: grid;
   gap: 24px;
   width: 100%;
-  min-height: 100%;
+  min-height: calc(100vh - 220px);
   font-family:
     system-ui,
     -apple-system,
@@ -597,5 +591,3 @@ const lessons = ref([
   opacity: 0;
 }
 </style>
-
-```
