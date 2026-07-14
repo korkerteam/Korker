@@ -97,27 +97,28 @@ function removeLikedTeacher(teacher) {
 
     <TeacherOverlay :teacher="currentTeacher" @close="currentTeacher = null" />
 
-    <div v-if="route.name === 'korker-szukaj'" class="search-overlay">
-      <FindKorks
-        :filters="selectedFilters"
-        @close="closeSearchPage"
-        @like-teacher="handleTeacherLike"
-      />
-    </div>
+    <div class="main-content-area">
+      <template v-if="route.name === 'korker-szukaj'">
+        <FindKorks
+          :filters="selectedFilters"
+          @close="closeSearchPage"
+          @like-teacher="handleTeacherLike"
+        />
+      </template>
+      <template v-else>
+        <MainContent
+          :selected-filters="selectedFilters"
+          :liked-teachers="likedTeachers"
+          @update:selected-filters="selectedFilters = $event"
+          @go-to-search="goToSearchPage"
+          @show-teacher="showTeacherProfile"
+          @like-teacher="handleTeacherLike"
+          @remove-liked-teacher="removeLikedTeacher"
+          @open-auth="openAuthModal"
+        />
 
-    <div class="main-content-area" v-if="route.name !== 'korker-szukaj'">
-      <MainContent
-        :selected-filters="selectedFilters"
-        :liked-teachers="likedTeachers"
-        @update:selected-filters="selectedFilters = $event"
-        @go-to-search="goToSearchPage"
-        @show-teacher="showTeacherProfile"
-        @like-teacher="handleTeacherLike"
-        @remove-liked-teacher="removeLikedTeacher"
-        @open-auth="openAuthModal"
-      />
-
-      <CzatCzatSahur />
+        <CzatCzatSahur />
+      </template>
     </div>
 
     <div class="Mapa">
@@ -171,16 +172,5 @@ function removeLikedTeacher(teacher) {
   position: fixed;
   right: 12px;
   bottom: 10%;
-}
-
-.search-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 24px;
-  background: transparent;
 }
 </style>
