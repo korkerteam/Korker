@@ -110,6 +110,17 @@ function startEdit() {
 async function saveProfile() {
   saveError.value = ''
 
+  if (draft.accountType === 'tutor') {
+    if (!draft.lessonSubject) {
+      saveError.value = 'Wybierz przedmiot'
+      return
+    }
+    if (!draft.lessonPrice) {
+      saveError.value = 'Podaj stawkę za lekcję'
+      return
+    }
+  }
+
   const ageNum = parseInt(draft.age, 10)
   if (draft.age !== '' && (isNaN(ageNum) || ageNum < 1 || ageNum > 100)) {
     saveError.value = 'Wiek musi być liczbą od 1 do 100'
