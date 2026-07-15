@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref, watch } from 'vue'
+import { reactive, ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { upsertProfile, deleteProfile } from '@/services/profileService.js'
 import { supabase } from '@/lib/supabase.js'
@@ -13,17 +13,42 @@ const profile = reactive({
   name: '',
   accountType: 'student',
   age: '',
-  location: '',
+  city: '',
   gender: '',
   profile_picture: '',
 })
 
-const tagOptions = ['Online', 'Na miejscu']
+const teachingFormats = ['Stacjonarnie', 'Z dojazdem', 'Online']
 const subjectOptions = ['Matematyka', 'Język polski', 'Angielski', 'Fizyka']
+const weeklyDayLabels = [
+  'Poniedziałek',
+  'Wtorek',
+  'Środa',
+  'Czwartek',
+  'Piątek',
+  'Sobota',
+  'Niedziela',
+]
+const weeklyTimeSlots = [
+  '08:00-09:00',
+  '09:00-10:00',
+  '10:00-11:00',
+  '11:00-12:00',
+  '12:00-13:00',
+  '13:00-14:00',
+  '14:00-15:00',
+  '15:00-16:00',
+  '16:00-17:00',
+  '17:00-18:00',
+  '18:00-19:00',
+  '19:00-20:00',
+]
+const TUTOR_POST_KEY = 'korkerTutorPost'
 
 const isEditing = ref(false)
 const saving = ref(false)
 const loading = ref(true)
+const availabilityExpanded = ref(false)
 const saveError = ref('')
 const pendingAvatarFile = ref(null)
 const pendingLessonPhotoFile = ref(null)
@@ -33,15 +58,27 @@ const draft = reactive({
   name: profile.name,
   accountType: profile.accountType,
   age: profile.age,
-  location: profile.location,
+  teachingFormats: [],
+  city: '',
+  street: '',
+  homeNumber: '',
+  flatNumber: '',
   gender: profile.gender,
   profile_picture: profile.profile_picture,
   lessonPhoto: '',
   lessonPrice: '',
-  lessonTags: [],
   lessonSubject: '',
   lessonLevel: 'Liceum',
   lessonDescription: '',
+  weeklyAvailability: {},
+})
+
+const strictestFormat = computed(() => {
+  const sf = draft.teachingFormats
+  if (sf.includes('Stacjonarnie')) return 'Stacjonarnie'
+  if (sf.includes('Z dojazdem')) return 'Z dojazdem'
+  if (sf.includes('Online')) return 'Online'
+  return ''
 })
 
 function toDb() {
@@ -52,7 +89,7 @@ function toDb() {
     age: parseInt(profile.age, 10) || null,
     gender: profile.gender || null,
     account_type: profile.accountType || 'student',
-    location: profile.location || '',
+    city: profile.city || '',
     profile_picture: profile.profile_picture || null,
   }
 }
@@ -62,9 +99,110 @@ function fromDb(data) {
   profile.name = [data.name, data.surname].filter(Boolean).join(' ')
   profile.age = String(data.age ?? '')
   profile.accountType = data.account_type ?? 'student'
-  profile.location = data.location ?? ''
+  profile.city = data.city ?? ''
   profile.gender = data.gender ?? ''
   profile.profile_picture = data.profile_picture ?? ''
+  profile.teachingFormats = []
+  profile.street = ''
+  profile.homeNumber = ''
+  profile.flatNumber = ''
+}
+
+function loadTutorPost() {
+  if (typeof window === 'undefined') return null
+  try {
+    return JSON.parse(localStorage.getItem(TUTOR_POST_KEY) || 'null')
+  } catch {
+    return null
+  }
+}
+
+function saveTutorPost(post) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(TUTOR_POST_KEY, JSON.stringify(post))
+}
+
+function removeTutorPost() {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(TUTOR_POST_KEY)
+}
+
+function createDefaultWeeklyAvailability() {
+  return {
+    Poniedziałek: ['10:00-11:00'],
+    Wtorek: ['14:00-15:00'],
+    Środa: [],
+    Czwartek: ['16:00-17:00'],
+    Piątek: ['18:00-19:00'],
+    Sobota: [],
+    Niedziela: [],
+  }
+}
+
+function normalizeWeeklyAvailability(value) {
+  if (Array.isArray(value)) {
+    const grouped = Object.fromEntries(weeklyDayLabels.map((day) => [day, []]))
+    value.forEach((slot) => {
+      if (!slot?.day || !slot?.time) return
+      if (!grouped[slot.day]) grouped[slot.day] = []
+      grouped[slot.day].push(slot.time)
+    })
+    return grouped
+  }
+
+  if (value && typeof value === 'object') {
+    const normalized = Object.fromEntries(weeklyDayLabels.map((day) => [day, []]))
+    weeklyDayLabels.forEach((day) => {
+      const slots = Array.isArray(value[day]) ? value[day] : []
+      normalized[day] = [...slots]
+    })
+    return normalized
+  }
+
+  return createDefaultWeeklyAvailability()
+}
+
+function buildAvailabilitySlots(availability) {
+  return Object.entries(availability || {}).flatMap(([day, slots]) =>
+    (Array.isArray(slots) ? slots : []).map((time) => ({ day, time })),
+  )
+}
+
+function toggleAvailabilitySlot(day, slot) {
+  if (!draft.weeklyAvailability) {
+    draft.weeklyAvailability = {}
+  }
+
+  if (!draft.weeklyAvailability[day]) {
+    draft.weeklyAvailability[day] = []
+  }
+
+  const slots = draft.weeklyAvailability[day]
+  const index = slots.indexOf(slot)
+  if (index > -1) {
+    slots.splice(index, 1)
+  } else {
+    slots.push(slot)
+  }
+}
+
+function isAvailabilitySelected(day, slot) {
+  return (draft.weeklyAvailability?.[day] || []).includes(slot)
+}
+
+function getAvailabilitySummary(day) {
+  const slots = draft.weeklyAvailability?.[day] || []
+  return slots.length ? slots.join(', ') : 'Brak godzin'
+}
+
+function copyMondayToWeekdays() {
+  const mondaySlots = [...(draft.weeklyAvailability?.['Poniedziałek'] || [])]
+  if (!mondaySlots.length) return
+
+  const weekdays = ['Wtorek', 'Środa', 'Czwartek', 'Piątek']
+  weekdays.forEach((day) => {
+    draft.weeklyAvailability[day] = [...mondaySlots]
+  })
 }
 
 function applySavedTutorPost(data) {
@@ -72,10 +210,18 @@ function applySavedTutorPost(data) {
     const tp = data.tutor_post
     draft.lessonPhoto = tp.photo || ''
     draft.lessonPrice = String(tp.price ?? '')
-    draft.lessonTags = tp.tags || []
     draft.lessonSubject = tp.subject || ''
     draft.lessonLevel = tp.level || 'Liceum'
     draft.lessonDescription = tp.description || ''
+    draft.teachingFormats = Array.isArray(tp.teachingFormats)
+      ? tp.teachingFormats
+      : tp.teachingFormat
+        ? [tp.teachingFormat]
+        : draft.teachingFormats
+    draft.city = tp.city || draft.city || ''
+    draft.street = tp.street || draft.street || ''
+    draft.homeNumber = tp.homeNumber || draft.homeNumber || ''
+    draft.flatNumber = tp.flatNumber || draft.flatNumber || ''
   }
 }
 
@@ -110,6 +256,7 @@ function startEdit() {
 async function saveProfile() {
   saveError.value = ''
 
+  const sf = draft.accountType === 'tutor' ? strictestFormat.value : 't'
   if (draft.accountType === 'tutor') {
     if (!draft.lessonSubject) {
       saveError.value = 'Wybierz przedmiot'
@@ -119,6 +266,18 @@ async function saveProfile() {
       saveError.value = 'Podaj stawkę za lekcję'
       return
     }
+    if (!draft.teachingFormats.length) {
+      saveError.value = 'Wybierz formę nauczania'
+      return
+    }
+  }
+  if ((sf === 'Stacjonarnie' || draft.accountType !== 'tutor') && !draft.city) {
+    saveError.value = 'Podaj miasto'
+    return
+  }
+  if (sf === 'Stacjonarnie' && !draft.street) {
+    saveError.value = 'Podaj ulicę'
+    return
   }
 
   const ageNum = parseInt(draft.age, 10)
@@ -175,9 +334,14 @@ async function saveProfile() {
         subject: draft.lessonSubject || '',
         level: draft.lessonLevel || 'Liceum',
         price: Number(draft.lessonPrice) || null,
-        tags: draft.lessonTags || [],
+        tags: [...draft.teachingFormats],
         description: draft.lessonDescription || '',
         photo: draft.lessonPhoto || null,
+        teachingFormats: [...draft.teachingFormats],
+        city: draft.city || '',
+        street: draft.street || '',
+        homeNumber: draft.homeNumber || '',
+        flatNumber: draft.flatNumber || '',
       }
     }
 
@@ -254,12 +418,16 @@ function onLessonPhotoChange(event) {
   draft.lessonPhoto = URL.createObjectURL(file)
 }
 
-function toggleLessonTag(tag) {
-  const index = draft.lessonTags.indexOf(tag)
-  if (index > -1) {
-    draft.lessonTags.splice(index, 1)
+function formattedLocation() {
+  return profile.city || ''
+}
+
+function toggleTeachingFormat(format) {
+  const idx = draft.teachingFormats.indexOf(format)
+  if (idx > -1) {
+    draft.teachingFormats.splice(idx, 1)
   } else {
-    draft.lessonTags.push(tag)
+    draft.teachingFormats.push(format)
   }
 }
 </script>
@@ -305,7 +473,7 @@ function toggleLessonTag(tag) {
       <div class="details">
         <template v-if="isEditing">
           <label class="field-row">
-            <span class="field-label">Typ konta</span>
+            <span class="field-label">Typ konta<span class="req">*</span></span>
             <select v-model="draft.accountType">
               <option value="" disabled>Wybierz typ konta</option>
               <option value="student">Student</option>
@@ -316,9 +484,50 @@ function toggleLessonTag(tag) {
             <span class="field-label">Wiek</span>
             <input v-model="draft.age" type="number" placeholder="25" />
           </label>
-          <label class="field-row">
-            <span class="field-label">Miejsce zamieszkania</span>
-            <input v-model="draft.location" placeholder="Płock" />
+          <template v-if="draft.accountType === 'tutor'">
+            <label class="field-row">
+              <span class="field-label">Forma nauczania<span class="req">*</span></span>
+              <div class="format-options-row">
+                <button
+                  v-for="fmt in teachingFormats"
+                  :key="fmt"
+                  type="button"
+                  class="format-option"
+                  :class="{ selected: draft.teachingFormats.includes(fmt) }"
+                  @click="toggleTeachingFormat(fmt)"
+                >
+                  {{ fmt }}
+                </button>
+              </div>
+            </label>
+            <template v-if="strictestFormat">
+              <label class="field-row">
+                <span class="field-label"
+                  >Miasto<span v-if="strictestFormat !== 'Online'" class="req">*</span></span
+                >
+                <input v-model="draft.city" placeholder="Warszawa" />
+              </label>
+              <template v-if="strictestFormat === 'Stacjonarnie'">
+                <label class="field-row">
+                  <span class="field-label">Ulica<span class="req">*</span></span>
+                  <input v-model="draft.street" placeholder="Marszałkowska" />
+                </label>
+                <div class="address-row">
+                  <label class="field-row address-field">
+                    <span class="field-label">Nr domu</span>
+                    <input v-model="draft.homeNumber" placeholder="12" />
+                  </label>
+                  <label class="field-row address-field">
+                    <span class="field-label">Nr mieszkania</span>
+                    <input v-model="draft.flatNumber" placeholder="3" />
+                  </label>
+                </div>
+              </template>
+            </template>
+          </template>
+          <label class="field-row" v-if="draft.accountType !== 'tutor'">
+            <span class="field-label">Miasto<span class="req">*</span></span>
+            <input v-model="draft.city" placeholder="Warszawa" />
           </label>
           <label class="field-row">
             <span class="field-label">Płeć</span>
@@ -332,7 +541,7 @@ function toggleLessonTag(tag) {
           <template v-if="draft.accountType === 'tutor'">
             <div class="tutor-offer-header">Twój post korepetytora</div>
             <label class="field-row">
-              <span class="field-label">Przedmiot</span>
+              <span class="field-label">Przedmiot<span class="req">*</span></span>
               <div class="subject-table">
                 <button
                   v-for="subject in subjectOptions"
@@ -355,22 +564,37 @@ function toggleLessonTag(tag) {
               </select>
             </label>
             <label class="field-row">
-              <span class="field-label">Stawka za lekcję (zł/h)</span>
+              <span class="field-label">Stawka za lekcję (zł/h)<span class="req">*</span></span>
               <input v-model="draft.lessonPrice" type="number" min="10" placeholder="50" />
             </label>
-            <label class="field-row">
-              <span class="field-label">Tagi</span>
-              <div class="tag-options-row">
-                <label v-for="option in tagOptions" :key="option" class="tag-option">
-                  <input
-                    type="checkbox"
-                    :checked="draft.lessonTags.includes(option)"
-                    @change.prevent="toggleLessonTag(option)"
-                  />
-                  {{ option }}
-                </label>
+            <div class="availability-section">
+              <div class="availability-header">
+                <span class="field-label">Dostępne godziny w tygodniu</span>
+                <span class="availability-hint"
+                  >Kliknij godziny, w których chcesz prowadzić lekcje.</span
+                >
+                <button class="availability-copy-btn" type="button" @click="copyMondayToWeekdays">
+                  Kopiuj z poniedziałku na wtorek–piątek
+                </button>
               </div>
-            </label>
+              <div class="availability-grid">
+                <div v-for="day in weeklyDayLabels" :key="day" class="availability-day-card">
+                  <div class="availability-day-title">{{ day }}</div>
+                  <div class="availability-slot-list">
+                    <button
+                      v-for="slot in weeklyTimeSlots"
+                      :key="`${day}-${slot}`"
+                      type="button"
+                      class="availability-slot"
+                      :class="{ selected: isAvailabilitySelected(day, slot) }"
+                      @click="toggleAvailabilitySlot(day, slot)"
+                    >
+                      {{ slot }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
             <label class="field-row">
               <span class="field-label">Opis oferty</span>
               <textarea
@@ -425,8 +649,8 @@ function toggleLessonTag(tag) {
             <span class="info-value">{{ profile.age || '' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-label">Miejsce zamieszkania</span>
-            <span class="info-value">{{ profile.location || '' }}</span>
+            <span class="info-label">Miasto</span>
+            <span class="info-value">{{ formattedLocation() }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">Płeć</span>
@@ -452,9 +676,9 @@ function toggleLessonTag(tag) {
                   draft.lessonPrice ? draft.lessonPrice + ' zł/h' : 'Brak'
                 }}</span>
               </div>
-              <div class="offer-row" v-if="draft.lessonTags && draft.lessonTags.length">
-                <span class="offer-label">Tagi</span>
-                <span class="offer-value">{{ draft.lessonTags.join(', ') }}</span>
+              <div class="offer-row" v-if="draft.teachingFormats.length">
+                <span class="offer-label">Forma</span>
+                <span class="offer-value">{{ draft.teachingFormats.join(', ') }}</span>
               </div>
               <div class="offer-row" v-if="draft.lessonDescription">
                 <span class="offer-label">Opis</span>
@@ -515,8 +739,6 @@ function toggleLessonTag(tag) {
   font-family: Inter, system-ui, sans-serif;
   color: var(--text);
   min-height: 0;
-  max-height: calc(100vh - 180px);
-  overflow: auto;
 }
 
 .header {
@@ -735,6 +957,53 @@ function toggleLessonTag(tag) {
   background: rgba(138, 180, 255, 0.16);
 }
 
+.format-option {
+  border: 1.5px solid #d1d5db;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #102036;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s ease;
+  outline: none;
+}
+
+.format-option.selected {
+  background: #eef2ff;
+  border-color: #4f75c7;
+  color: #1f2937;
+}
+
+.format-option:hover {
+  background: #e2e8f0;
+}
+
+.format-option:focus-visible {
+  box-shadow: 0 0 0 2px rgba(79, 117, 199, 0.4);
+}
+
+.req {
+  color: #dc2626;
+  margin-left: 2px;
+}
+
+.format-options-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.address-row {
+  display: flex;
+  gap: 12px;
+}
+
+.address-field {
+  flex: 1;
+}
+
 .lesson-photo-row {
   gap: 12px;
 }
@@ -790,6 +1059,116 @@ function toggleLessonTag(tag) {
   color: var(--muted);
 }
 
+.availability-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.availability-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.availability-hint {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.availability-copy-btn {
+  align-self: flex-start;
+  border: 1px solid rgba(79, 117, 199, 0.2);
+  background: #eef2ff;
+  color: #1f2937;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.availability-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.availability-day-card {
+  border: 1px solid rgba(79, 117, 199, 0.15);
+  border-radius: 12px;
+  padding: 10px;
+  background: #f8fafc;
+}
+
+.availability-day-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #102036;
+  margin-bottom: 8px;
+}
+
+.availability-slot-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.availability-slot {
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #374151;
+  padding: 6px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.availability-slot.selected {
+  background: #eef2ff;
+  border-color: #4f75c7;
+  color: #1f2937;
+}
+
+.availability-toggle {
+  border: none;
+  background: transparent;
+  color: #4f75c7;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.availability-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: -2px;
+}
+
+.availability-day-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: #374151;
+  background: #f8fafc;
+  border: 1px solid rgba(79, 117, 199, 0.12);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.availability-day {
+  font-weight: 600;
+  color: #102036;
+}
+
+.availability-times {
+  text-align: right;
+  color: #4b5563;
+}
+
 .offer-label {
   font-weight: 600;
   color: var(--muted);
@@ -801,9 +1180,12 @@ function toggleLessonTag(tag) {
 }
 
 .offer-photo-preview {
+  justify-self: center;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(79, 117, 199, 0.15);
+  max-width: 200px;
+  max-height: 150px;
 }
 
 .info-label {

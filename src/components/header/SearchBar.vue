@@ -233,9 +233,9 @@ onBeforeUnmount(() => {
   overflow-y: auto;
   padding: 8px;
   border-radius: 18px;
-  background: var(--surface-strong);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-soft);
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(79, 117, 199, 0.16);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
 }
 
 .result-loading,
@@ -250,11 +250,11 @@ onBeforeUnmount(() => {
   padding: 10px 12px;
   text-align: left;
   background: transparent;
-  color: var(--text);
+  color: #0f172a;
 }
 
 .result-loading {
-  color: var(--muted);
+  color: #64748b;
   font-size: 0.9rem;
 }
 
@@ -263,7 +263,7 @@ onBeforeUnmount(() => {
 }
 
 .result-item:hover {
-  background: var(--accent-soft);
+  background: #f1f5f9;
 }
 
 .result-title {
@@ -273,7 +273,7 @@ onBeforeUnmount(() => {
 
 .result-description {
   font-size: 0.8rem;
-  color: var(--muted);
+  color: #64748b;
 }
 
 @media (max-width: 900px) {
