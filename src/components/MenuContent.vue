@@ -4,6 +4,7 @@ const emit = defineEmits([
   'toggleRank',
   'toggleTeachers',
   'toggleSearch',
+  'toggleCalendar',
   'openAuth',
 ])
 
@@ -17,6 +18,10 @@ function handleTeachersClick() {
 
 function handleSearchClick() {
   emit('toggleSearch')
+}
+
+function handleCalendarClick() {
+  emit('toggleCalendar')
 }
 </script>
 
@@ -53,6 +58,17 @@ function handleSearchClick() {
         </svg>
       </span>
       <span>Moi nauczyciele</span>
+    </button>
+
+    <button class="menu-item menu-item-calendar" @click="handleCalendarClick">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M7 2a1 1 0 011 1v1h8V3a1 1 0 112 0v1h1a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2h1V3a1 1 0 011-1zm13 7H4v10h16V9z"
+          />
+        </svg>
+      </span>
+      <span>Kalendarz</span>
     </button>
   </nav>
 </template>

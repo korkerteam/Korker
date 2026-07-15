@@ -8,6 +8,7 @@ import ProfilePage from '@/views/menu/ProfilePage.vue'
 import Ranks from '@/views/menu/Ranks.vue'
 import MyTeachers from '@/views/menu/MyTeachers.vue'
 import FindKorks from '@/views/menu/FindKorks.vue'
+import CalendarView from '@/views/menu/CalendarView.vue'
 import { toggleProfile, toggleRank } from '@/composables/menuToggle.js'
 
 defineProps({
@@ -121,6 +122,10 @@ function handleToggleSearch() {
 
   active.value = active.value === 'search' ? null : 'search'
 }
+
+function handleToggleCalendar() {
+  active.value = active.value === 'calendar' ? null : 'calendar'
+}
 </script>
 
 <template>
@@ -132,6 +137,7 @@ function handleToggleSearch() {
         @toggle-rank="handleToggleRank"
         @toggle-teachers="handleToggleTeachers"
         @toggle-search="handleToggleSearch"
+        @toggle-calendar="handleToggleCalendar"
         @open-auth="emit('openAuth')"
       />
     </div>
@@ -156,6 +162,7 @@ function handleToggleSearch() {
           @show-teacher="(t) => emit('show-teacher', t)"
           @remove-teacher="(t) => emit('remove-liked-teacher', t)"
         />
+        <CalendarView v-else-if="activePanel === 'calendar'" key="calendar" />
         <!-- Tutaj ładuje się właściwy HomePage -->
         <HomePage v-else key="home" />
       </Transition>
