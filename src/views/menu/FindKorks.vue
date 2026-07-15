@@ -25,32 +25,127 @@ const swipeStartX = ref(null)
 const swipeOffsetX = ref(0)
 const swipeRotation = ref(0)
 const cardRef = ref(null)
+const availabilityExpanded = ref(false)
 
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
 const tagOptions = ['Matura', 'Egzamin', 'Online', 'Na miejscu']
+const weekdayLabels = [
+  'Poniedziałek',
+  'Wtorek',
+  'Środa',
+  'Czwartek',
+  'Piątek',
+  'Sobota',
+  'Niedziela',
+]
+const TUTOR_POST_KEY = 'korkerTutorPost'
 
-onMounted(async () => {
-  const { data: rows, error } = await supabase
-    .from('users')
-    .select('name, surname, profile_picture, tutor_post')
-    .eq('account_type', 'tutor')
-    .not('tutor_post', 'is', null)
+function getRandomPrice() {
+  return Math.floor(Math.random() * 41) + 60
+}
 
-  if (!error && rows) {
-    tutors.value = rows
-      .filter((r) => r.tutor_post)
-      .map((r) => {
-        const tp = r.tutor_post
-        return {
-          name: [r.name, r.surname].filter(Boolean).join(' ') || 'Korepetytor',
-          subject: tp.subject || '',
-          level: tp.level || '',
-          tags: tp.tags || [],
-          image: tp.photo || r.profile_picture || null,
-          bio: tp.description || '',
-          price: tp.price || 50,
-        }
+function normalizeAvailability(availability) {
+  if (Array.isArray(availability)) {
+    return availability.reduce((acc, slot) => {
+      if (!slot?.day || !slot?.time) return acc
+      if (!acc[slot.day]) acc[slot.day] = []
+      acc[slot.day].push(slot.time)
+      return acc
+    }, {})
+  }
+
+  if (availability && typeof availability === 'object') {
+    return Object.fromEntries(
+      Object.entries(availability).filter(([, slots]) => Array.isArray(slots)),
+    )
+  }
+
+  return {}
+}
+
+function formatAvailabilityRange(slots) {
+  if (!Array.isArray(slots) || !slots.length) return 'Brak'
+
+  const parsed = slots
+    .map((slot) => {
+      const text = String(slot).trim()
+      const [startPart, endPart] = text.split('-')
+      const parseHour = (value) => {
+        const match = String(value).match(/(\d{1,2})/)
+        return match ? Number(match[1]) : null
+      }
+
+      const startHour = parseHour(startPart || '')
+      const endHour = parseHour(endPart || startPart || '')
+
+      return startHour !== null && endHour !== null ? { startHour, endHour } : null
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.startHour - b.startHour || a.endHour - b.endHour)
+
+  if (!parsed.length) return 'Brak'
+
+  const ranges = []
+  parsed.forEach((range) => {
+    if (!ranges.length) {
+      ranges.push({ ...range })
+      return
+    }
+
+    const lastRange = ranges[ranges.length - 1]
+    if (range.startHour <= lastRange.endHour) {
+      lastRange.endHour = Math.max(lastRange.endHour, range.endHour)
+    } else {
+      ranges.push({ ...range })
+    }
+  })
+
+  const formatHour = (hour) => `${String(hour).padStart(2, '0')}:00`
+  const formatRange = (startHour, endHour) => `${formatHour(startHour)}-${formatHour(endHour)}`
+
+  if (ranges.length === 1) {
+    return formatRange(ranges[0].startHour, ranges[0].endHour)
+  }
+
+  return `${formatRange(ranges[0].startHour, ranges[0].endHour)} · ${formatRange(ranges[ranges.length - 1].startHour, ranges[ranges.length - 1].endHour)}`
+}
+
+function loadTutorPost() {
+  if (typeof window === 'undefined') return null
+  try {
+    return JSON.parse(localStorage.getItem(TUTOR_POST_KEY) || 'null')
+  } catch {
+    return null
+  }
+}
+
+function getTutorsWithCustomPost() {
+  const saved = loadTutorPost()
+  const list = [...tutors]
+  if (saved && saved.name) {
+    const exists = list.some((tutor) => tutor.name === saved.name)
+    if (!exists) {
+      const customSubject = saved.subject || saved.lessonSubject || 'Korepetycje'
+      const customLevel = saved.level || saved.lessonLevel || 'Liceum'
+      const customBio =
+        saved.bio || saved.lessonDescription || 'Zapraszam na lekcje w dogodnym terminie.'
+
+      list.unshift({
+        ...saved,
+        subject: customSubject,
+        level: customLevel,
+        bio: customBio,
+        price: saved.price ?? getRandomPrice(),
+        rating: saved.rating ?? 4.5,
+        ratingCount: saved.ratingCount ?? 1,
+        weeklyAvailability: normalizeAvailability(saved.weeklyAvailability || saved.availableSlots),
+        availableSlots: saved.availableSlots || [
+          { day: 'Poniedziałek', time: '10:00', date: '2024-01-15' },
+          { day: 'Wtorek', time: '14:00', date: '2024-01-16' },
+          { day: 'Czwartek', time: '16:00', date: '2024-01-18' },
+          { day: 'Piątek', time: '18:00', date: '2024-01-19' },
+        ],
       })
   }
   console.log('Wszyscy tutorzy:', tutors.value)
@@ -254,9 +349,36 @@ function closePage() {
           </div>
 
           <div class="card-info">
-            <h3 class="tutor-name">{{ currentTutor.name }}</h3>
-            <p class="tutor-meta">{{ currentTutor.subject }} • {{ currentTutor.level }}</p>
-            <p class="tutor-price">{{ currentTutor.price }} zł/h</p>
+            <div class="tutor-main-info">
+              <div class="tutor-summary-row">
+                <div class="tutor-summary-card">
+                  <h3 class="tutor-name">{{ currentTutor.name }}</h3>
+                  <p class="tutor-meta">
+                    {{ currentTutor.subject || currentTutor.lessonSubject || 'Korepetycje' }} •
+                    {{ currentTutor.level || currentTutor.lessonLevel || 'Liceum' }}
+                  </p>
+                </div>
+                <div class="tutor-summary-card tutor-summary-price">
+                  <p class="tutor-price">{{ currentTutor.price }} zł/h</p>
+                </div>
+              </div>
+
+              <div class="bio-box" v-if="currentTutor.bio || currentTutor.lessonDescription">
+                <p>{{ currentTutor.bio || currentTutor.lessonDescription }}</p>
+              </div>
+
+              <div class="availability-box">
+                <div class="availability-panel-header">Dostępne godziny</div>
+                <div class="availability-inline-row">
+                  <div v-for="day in weekdayLabels" :key="day" class="availability-day-pill">
+                    <span class="availability-day">{{ day }}</span>
+                    <span class="availability-value">
+                      {{ formatAvailabilityRange(currentTutor?.weeklyAvailability?.[day] || []) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div class="tags-list">
               <span v-for="tag in currentTutor.tags" :key="tag" class="tag">{{ tag }}</span>
@@ -353,6 +475,20 @@ function closePage() {
 
 <style scoped>
 .find-korks-panel {
+  width: 100%;
+  max-width: 1280px;
+  min-height: 0;
+  max-height: calc(100vh - 160px);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+
+  border-radius: 16px;
+  overflow: visible;
+  margin: 0 auto;
+}
+
+<style scoped > .find-korks-panel {
   width: 100%;
   max-width: 1280px;
   min-height: 0;
@@ -556,7 +692,7 @@ function closePage() {
   flex: 1;
   height: 100%;
   max-height: 980px;
-  width: min(100%, 400px);
+  width: min(100%, 470px);
   overflow: visible;
   margin: 0 auto;
 }
@@ -672,6 +808,36 @@ function closePage() {
   margin-top: 8px;
 }
 
+.tutor-main-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.tutor-summary-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+}
+
+.tutor-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(79, 117, 199, 0.08);
+}
+
+.tutor-summary-price {
+  align-items: flex-end;
+  justify-content: center;
+}
+
 .tutor-name {
   margin: 0;
   font-size: 16px;
@@ -687,7 +853,7 @@ function closePage() {
 }
 
 .tutor-price {
-  margin: 2px 0 0;
+  margin: 0;
   font-size: 14px;
   color: #1f2937;
   font-weight: 700;
@@ -723,6 +889,65 @@ function closePage() {
   font-size: 10px;
   font-weight: 600;
   border: 1px solid rgba(79, 117, 199, 0.2);
+}
+
+.availability-box {
+  width: 100%;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(79, 117, 199, 0.14);
+  background: linear-gradient(135deg, rgba(248, 251, 255, 0.98) 0%, rgba(238, 242, 255, 0.95) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  box-sizing: border-box;
+}
+
+.availability-panel-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #102036;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.availability-inline-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.availability-day-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(79, 117, 199, 0.1);
+  backdrop-filter: blur(4px);
+  min-width: 86px;
+}
+
+.availability-day {
+  font-size: 10px;
+  font-weight: 700;
+  color: #102036;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.availability-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(79, 117, 199, 0.12);
+  color: #234;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .actions {
