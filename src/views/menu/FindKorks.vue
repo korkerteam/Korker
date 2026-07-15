@@ -21,6 +21,8 @@ const currentIndex = ref(0)
 const selectedSubjects = ref([])
 const selectedLevels = ref([])
 const selectedTags = ref([])
+const selectedCity = ref('')
+const selectedLessonPlaces = ref([])
 const swipeStartX = ref(null)
 const swipeOffsetX = ref(0)
 const swipeRotation = ref(0)
@@ -28,7 +30,9 @@ const cardRef = ref(null)
 
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
-const tagOptions = ['Matura', 'Egzamin', 'Online', 'Na miejscu']
+const tagOptions = ['Matura', 'Egzamin']
+const lessonPlaceOptions = ['Online', 'U siebie', 'U korepetytora']
+const cityOptions = ['Warszawa', 'Kraków', 'Wrocław', 'Poznań', 'Gdańsk']
 
 onMounted(async () => {
   const { data: rows, error } = await supabase
@@ -68,13 +72,17 @@ const filteredTutors = computed(() => {
     const localLevels =
       selectedLevels.value.length > 0 ? selectedLevels.value : props.filters.levels
     const allSelectedTags = [...props.filters.tags, ...selectedTags.value]
+    const allSelectedLessonPlaces = selectedLessonPlaces.value
 
     const matchesSubject = localSubjects.length === 0 || localSubjects.includes(tutor.subject)
     const matchesLevel = localLevels.length === 0 || localLevels.includes(tutor.level)
     const matchesTags =
       allSelectedTags.length === 0 || allSelectedTags.some((tag) => tutor.tags.includes(tag))
+    const matchesLessonPlaces =
+      allSelectedLessonPlaces.length === 0 || allSelectedLessonPlaces.includes(tutor.lessonPlace)
+    const matchesCity = !selectedCity.value || tutor.city === selectedCity.value
 
-    return matchesSubject && matchesLevel && matchesTags
+    return matchesSubject && matchesLevel && matchesTags && matchesLessonPlaces && matchesCity
   })
 })
 
@@ -194,7 +202,9 @@ function toggleSelection(category, value) {
       ? selectedSubjects.value
       : category === 'levels'
         ? selectedLevels.value
-        : selectedTags.value
+        : category === 'lessonPlace'
+          ? selectedLessonPlaces.value
+          : selectedTags.value
 
   const index = targetArray.indexOf(value)
   if (index > -1) {
@@ -306,6 +316,20 @@ function closePage() {
         </div>
 
         <div class="filter-group">
+          <h5>Miasto</h5>
+          <div class="filter-options city-select-group">
+            <label class="city-select-label">
+              <select v-model="selectedCity">
+                <option value="" disabled>Wybierz miasto</option>
+                <option v-for="option in cityOptions" :key="option" :value="option">
+                  {{ option }}
+                </option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="filter-group">
           <h5>Przedmioty</h5>
           <div class="filter-options">
             <label v-for="option in subjectOptions" :key="option">
@@ -327,6 +351,20 @@ function closePage() {
                 type="checkbox"
                 :checked="selectedLevels.includes(option)"
                 @change="toggleSelection('levels', option)"
+              />
+              {{ option }}
+            </label>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <h5>Miejsce lekcji</h5>
+          <div class="filter-options">
+            <label v-for="option in lessonPlaceOptions" :key="option">
+              <input
+                type="checkbox"
+                :checked="selectedLessonPlaces.includes(option)"
+                @change="toggleSelection('lessonPlace', option)"
               />
               {{ option }}
             </label>
@@ -448,6 +486,8 @@ function closePage() {
   margin-left: auto;
   align-self: flex-start;
   position: sticky;
+  pointer-events: auto;
+  z-index: 10;
 }
 
 .tags-filter-header {
@@ -485,6 +525,34 @@ function closePage() {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.city-select-group {
+  padding: 0;
+}
+
+.city-select-label {
+  display: block;
+  width: 100%;
+}
+
+.city-select-label select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(79, 117, 199, 0.12);
+  background: #f8fbff;
+  color: #1f2937;
+  font-size: 14px;
+  appearance: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.filter-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
 }
 
 .filter-options label {
