@@ -35,7 +35,6 @@ const totalUnread = computed(() =>
   conversations.value.reduce((sum, conversation) => sum + (conversation.unread || 0), 0),
 )
 const panel = ref(null)
-let unreadInterval = null
 
 function onClickOutside(e) {
   if (panel.value && !panel.value.contains(e.target) && !e.target.closest('.fab')) {
@@ -53,22 +52,27 @@ watch(chatTargetUserId, (userId) => {
   }
 })
 
+watch(
+  () => isAuthenticated.value,
+  (authenticated) => {
+    if (authenticated) {
+      loadConversations()
+    }
+  },
+  { immediate: true },
+)
+
 onMounted(() => {
   document.addEventListener('click', onClickOutside)
   setupRealtime()
-  unreadInterval = setInterval(() => {
-    if (showChat.value) return
+  if (isAuthenticated.value) {
     loadConversations()
-  }, 1000)
+  }
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', onClickOutside)
   teardownRealtime()
-  if (unreadInterval) {
-    clearInterval(unreadInterval)
-    unreadInterval = null
-  }
 })
 
 const list = computed(() => !activeUserId.value)

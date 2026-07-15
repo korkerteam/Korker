@@ -71,6 +71,15 @@ function makeContact(userId, profile) {
   }
 }
 
+function updateConversationUnread(userId, unreadCount) {
+  const idx = conversations.value.findIndex((conversation) => conversation.userId === userId)
+  if (idx < 0) return
+
+  const arr = [...conversations.value]
+  arr[idx] = { ...arr[idx], unread: unreadCount }
+  conversations.value = arr
+}
+
 async function getProfileByAuthId(authId) {
   if (profileCache.has(authId)) return profileCache.get(authId)
   const { data, error } = await supabase
@@ -347,6 +356,8 @@ export function useMessaging() {
       .eq('receiver_id', user.value.id)
       .eq('sender_id', otherUserId)
       .is('read_at', null)
+
+    updateConversationUnread(otherUserId, 0)
   }
 
   async function searchUsers(query) {
