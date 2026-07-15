@@ -1,7 +1,6 @@
 <script setup>
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { supabase } from '@/lib/supabase.js'
-import tutorImage from '@/assets/photos/received_1226459671681636_1.gif'
 
 const props = defineProps({
   filters: {
@@ -15,6 +14,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'like-teacher'])
+const tutors = ref([])
+const loading = ref(true)
+const decisions = ref({})
 const currentIndex = ref(0)
 const selectedSubjects = ref([])
 const selectedLevels = ref([])
@@ -27,244 +29,40 @@ const cardRef = ref(null)
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
 const tagOptions = ['Matura', 'Egzamin', 'Online', 'Na miejscu']
-const userTutorPost = ref(null)
-
-function getRandomPrice() {
-  return Math.floor(Math.random() * 41) + 60
-}
 
 onMounted(async () => {
-  const { data: session } = await supabase.auth.getSession()
-  if (!session?.session?.user) return
-
-  const { data: profile } = await supabase
+  const { data: rows, error } = await supabase
     .from('users')
     .select('name, surname, profile_picture, tutor_post')
-    .eq('auth_id', session.session.user.id)
-    .maybeSingle()
+    .eq('account_type', 'tutor')
+    .not('tutor_post', 'is', null)
 
-  if (profile?.tutor_post) {
-    const tp = profile.tutor_post
-    const fullName = [profile.name, profile.surname].filter(Boolean).join(' ') || 'Korepetytor'
-    userTutorPost.value = {
-      name: fullName,
-      subject: tp.subject || 'Korepetycje',
-      level: tp.level || 'Liceum',
-      tags: tp.tags || [],
-      image: tp.photo || profile.profile_picture || null,
-      bio: tp.description || 'Zapraszam na lekcje w dogodnym terminie.',
-      price: tp.price || getRandomPrice(),
-    }
+  if (!error && rows) {
+    tutors.value = rows
+      .filter((r) => r.tutor_post)
+      .map((r) => {
+        const tp = r.tutor_post
+        return {
+          name: [r.name, r.surname].filter(Boolean).join(' ') || 'Korepetytor',
+          subject: tp.subject || '',
+          level: tp.level || '',
+          tags: tp.tags || [],
+          image: tp.photo || r.profile_picture || null,
+          bio: tp.description || '',
+          price: tp.price || 50,
+        }
+      })
   }
+  console.log('Wszyscy tutorzy:', tutors.value)
+  loading.value = false
 })
-
-function getTutorsWithCustomPost() {
-  const list = [...tutors]
-  if (userTutorPost.value) {
-    const exists = list.some((tutor) => tutor.name === userTutorPost.value.name)
-    if (!exists) {
-      list.unshift(userTutorPost.value)
-    }
-  }
-  return list
-}
-
-const tutorTemplates = [
-  {
-    name: 'Anna Kowalska',
-    subject: 'Matematyka',
-    level: 'Liceum',
-    tags: ['Matura', 'Online'],
-    image: tutorImage,
-    bio: 'Pomagam przygotować się do matury z matematyki w przyjazny sposób.',
-  },
-  {
-    name: 'Piotr Nowak',
-    subject: 'Fizyka',
-    level: 'Studia',
-    tags: ['Egzamin', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Skupię się na zrozumieniu pojęć i praktycznych zadaniach.',
-  },
-  {
-    name: 'Marta Wiśniewska',
-    subject: 'Język polski',
-    level: 'Szkoła podstawowa',
-    tags: ['Online'],
-    image: tutorImage,
-    bio: 'Łączę naukę z ciekawymi ćwiczeniami i czytaniem lektur.',
-  },
-  {
-    name: 'Jakub Zieliński',
-    subject: 'Angielski',
-    level: 'Liceum',
-    tags: ['Matura', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Pomagam budować pewność siebie w mówieniu i rozumieniu tekstów.',
-  },
-  {
-    name: 'Katarzyna Sobczak',
-    subject: 'Biologia',
-    level: 'Liceum',
-    tags: ['Online', 'Matura'],
-    image: tutorImage,
-    bio: 'Przygotowuję do egzaminów i tłumaczę trudne tematy obrazowo.',
-  },
-  {
-    name: 'Maciej Płaczek',
-    subject: 'Informatyka',
-    level: 'Studia',
-    tags: ['Programowanie', 'Online'],
-    image: tutorImage,
-    bio: 'Uczę logicznego myślenia i pracy z kodem od podstaw.',
-  },
-  {
-    name: 'Natalia Wójcik',
-    subject: 'Chemia',
-    level: 'Liceum',
-    tags: ['Matura', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Wyjaśniam chemię krok po kroku i uczę skutecznie powtarzać materiał.',
-  },
-  {
-    name: 'Oliwier Kaczmarek',
-    subject: 'Historia',
-    level: 'Szkoła podstawowa',
-    tags: ['Online', 'Egzamin'],
-    image: tutorImage,
-    bio: 'Przygotowuję do sprawdzianów i uczę historii w ciekawy sposób.',
-  },
-  {
-    name: 'Patrycja Marek',
-    subject: 'Geografia',
-    level: 'Liceum',
-    tags: ['Matura', 'Online'],
-    image: tutorImage,
-    bio: 'Pomagam zapamiętywać mapy, pojęcia i schematy bez stresu.',
-  },
-  {
-    name: 'Dominik Lis',
-    subject: 'Matematyka',
-    level: 'Szkoła podstawowa',
-    tags: ['Online', 'Egzamin'],
-    image: tutorImage,
-    bio: 'Uczę matematyki spokojnie i krok po kroku.',
-  },
-  {
-    name: 'Alicja Duda',
-    subject: 'Angielski',
-    level: 'Liceum',
-    tags: ['Matura', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Pomagam poprawić słownictwo i komunikację.',
-  },
-  {
-    name: 'Tomasz Krawczyk',
-    subject: 'Fizyka',
-    level: 'Liceum',
-    tags: ['Egzamin', 'Online'],
-    image: tutorImage,
-    bio: 'Wytłumaczę trudne zagadnienia prostym językiem.',
-  },
-  {
-    name: 'Ewa Nowak',
-    subject: 'Biologia',
-    level: 'Studia',
-    tags: ['Online', 'Matura'],
-    image: tutorImage,
-    bio: 'Skupię się na nauce z materiałów i praktycznych przykładów.',
-  },
-  {
-    name: 'Marcin Zieliński',
-    subject: 'Informatyka',
-    level: 'Liceum',
-    tags: ['Programowanie', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Pomagam zrozumieć podstawy programowania i algorytmiki.',
-  },
-  {
-    name: 'Karolina Nowak',
-    subject: 'Język polski',
-    level: 'Liceum',
-    tags: ['Matura', 'Online'],
-    bio: 'Pomagam rozwijać czytanie ze zrozumieniem i wypracowania.',
-  },
-  {
-    name: 'Bartosz Wróbel',
-    subject: 'Język polski',
-    level: 'Szkoła podstawowa',
-    tags: ['Egzamin', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Uczę poprawnego pisania i wyrażania myśli w prosty sposób.',
-  },
-  {
-    name: 'Maja Kwiecień',
-    subject: 'Chemia',
-    level: 'Studia',
-    tags: ['Online', 'Egzamin'],
-    image: tutorImage,
-    bio: 'Przygotowuję do egzaminów i wyjaśniam trudne reakcje chemiczne.',
-  },
-  {
-    name: 'Rafał Szymański',
-    subject: 'Chemia',
-    level: 'Liceum',
-    tags: ['Matura', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Pomagam zrozumieć chemię od podstaw do poziomu maturalnego.',
-  },
-  {
-    name: 'Joanna Kozłowska',
-    subject: 'Historia',
-    level: 'Liceum',
-    tags: ['Matura', 'Online'],
-    image: tutorImage,
-    bio: 'Uczę historii w uporządkowany sposób i z naciskiem na daty.',
-  },
-  {
-    name: 'Kamil Baran',
-    subject: 'Historia',
-    level: 'Studia',
-    tags: ['Egzamin', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Pomagam zrozumieć kontekst historyczny i przygotować się do sprawdzianów.',
-  },
-  {
-    name: 'Sylwia Pawlak',
-    subject: 'Geografia',
-    level: 'Szkoła podstawowa',
-    tags: ['Online', 'Egzamin'],
-    image: tutorImage,
-    bio: 'Łączę naukę geografii z prostymi schematami i ćwiczeniami.',
-  },
-  {
-    name: 'Filip Jankowski',
-    subject: 'Geografia',
-    level: 'Studia',
-    tags: ['Matura', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Pomagam zrozumieć zjawiska geograficzne i przygotować się do testów.',
-  },
-]
-
-const tutors = tutorTemplates.map((tutor) => ({
-  ...tutor,
-  price: tutor.price ?? getRandomPrice(),
-}))
-
-const likedTeacherNames = computed(() => {
-  return new Set((props.likedTeachers || []).map((teacher) => teacher?.name).filter(Boolean))
-})
-
-const tutorsWithCustomPost = computed(() => getTutorsWithCustomPost())
 
 const filteredTutors = computed(() => {
-  return tutorsWithCustomPost.value.filter((tutor) => {
-    if (likedTeacherNames.value.has(tutor.name)) {
+  return tutors.value.filter((tutor) => {
+    if (decisions.value[tutor.name]) {
       return false
     }
 
-    // Local filters take precedence over global filters
     const localSubjects =
       selectedSubjects.value.length > 0 ? selectedSubjects.value : props.filters.subjects
     const localLevels =
@@ -369,13 +167,17 @@ function nextTutor() {
 
 function likeTutor() {
   if (currentTutor.value) {
+    decisions.value[currentTutor.value.name] = 'good'
     emit('like-teacher', currentTutor.value)
   }
-  nextTutor()
+  nextTick(() => console.log('Pozostali tutorzy:', filteredTutors.value))
 }
 
 function dislikeTutor() {
-  nextTutor()
+  if (currentTutor.value) {
+    decisions.value[currentTutor.value.name] = 'bad'
+  }
+  nextTick(() => console.log('Pozostali tutorzy:', filteredTutors.value))
 }
 
 function handleDecision(isLiked) {
