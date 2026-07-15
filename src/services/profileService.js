@@ -18,7 +18,7 @@ export async function fetchProfile(userId) {
 }
 
 export async function upsertProfile(
-  { name, surname, age, gender, account_type, location, profile_picture },
+  { name, surname, age, gender, account_type, city, profile_picture },
   userId,
   tutor_post = null,
 ) {
@@ -33,7 +33,7 @@ export async function upsertProfile(
     age,
     gender,
     account_type,
-    location,
+    city,
     profile_picture,
     tutor_post,
   }

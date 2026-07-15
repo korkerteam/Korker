@@ -57,7 +57,7 @@ function scrollToTop(event) {
       </div>
 
       <div class="footer__bottom">
-        <p class="footer__copyright">© 2026 Korker. Wszelkie prawa zastrzeżone.</p>
+        <p class="footer__copyright">© 2026 Korker. Wszelkie prawa ukradzione za pomocą ai.</p>
         <div class="footer__socials" aria-label="Media społecznościowe">
           <a href="#" class="footer__social" aria-label="Facebook" @click.stop="scrollToTop">
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

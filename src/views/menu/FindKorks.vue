@@ -46,7 +46,7 @@ onMounted(async () => {
           name: [r.name, r.surname].filter(Boolean).join(' ') || 'Korepetytor',
           subject: tp.subject || '',
           level: tp.level || '',
-          tags: tp.tags || [],
+          tags: tp.teachingFormats || [],
           image: tp.photo || r.profile_picture || null,
           bio: tp.description || '',
           price: tp.price || 50,
@@ -77,6 +77,10 @@ const filteredTutors = computed(() => {
     return matchesSubject && matchesLevel && matchesTags
   })
 })
+
+const allDecided = computed(
+  () => tutors.value.length > 0 && tutors.value.every((t) => decisions.value[t.name]),
+)
 
 const currentTutor = computed(() => filteredTutors.value[currentIndex.value] || null)
 
@@ -283,8 +287,14 @@ function closePage() {
         </div>
 
         <div v-else-if="!filteredTutors.length" class="empty-state-card">
-          <h3>Brak nauczycieli</h3>
-          <p>Nie ma wyników dla tych filtrów. Spróbuj zmienić tagi lub wybrać inne kryteria.</p>
+          <template v-if="allDecided">
+            <h3>Dotarłeś do końca</h3>
+            <p>Przejrzałeś już wszystkich dostępnych korepetytorów.</p>
+          </template>
+          <template v-else>
+            <h3>Brak nauczycieli</h3>
+            <p>Nie ma wyników dla tych filtrów. Spróbuj zmienić tagi lub wybrać inne kryteria.</p>
+          </template>
         </div>
       </div>
 
