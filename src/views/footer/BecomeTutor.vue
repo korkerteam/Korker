@@ -1,77 +1,70 @@
 <script setup></script>
 
 <template>
-  <main class="min-h-screen bg-slate-100 py-12">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-      <section
-        class="overflow-hidden rounded-[40px] bg-white p-8 shadow-[0_35px_80px_rgba(15,23,42,0.12)] ring-1 ring-slate-200 sm:p-12"
-      >
-        <div class="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
-          <div>
-            <span
-              class="inline-flex rounded-full bg-sky-100 px-4 py-2 text-sm font-semibold uppercase tracking-[0.24em] text-sky-700"
-              >Zacznij uczyć na Korker</span
-            >
-            <h1 class="mt-6 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-              Dołącz do grona setek nauczycieli i zdobywaj nowych uczniów każdego dnia.
-            </h1>
-            <p class="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              Przekuj swoją wiedzę w dochód. Na Korker znajdziesz uczniów, którzy potrzebują Twojej
-              pomocy i chcą uczyć się efektywnie.
-            </p>
-            <div class="mt-8 grid gap-4 sm:grid-cols-2">
-              <div class="rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm">
-                <p class="text-sm font-semibold text-slate-950">Elastyczna praca</p>
-                <p class="mt-3 text-slate-600">
-                  Ucz się kiedy chcesz i prowadź lekcje dopasowane do własnego grafiku.
-                </p>
+  <main class="page-shell">
+    <div class="page-container">
+      <section class="hero-surface">
+        <div class="hero-accent"></div>
+        <div class="hero-grid">
+          <div class="hero-text-card">
+            <div class="text-content">
+              <div class="badge">
+                <span class="badge-icon">✦</span>
+                <span class="badge-text">Zacznij uczyć na Korker</span>
               </div>
-              <div class="rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm">
-                <p class="text-sm font-semibold text-slate-950">Wzrost widoczności</p>
-                <p class="mt-3 text-slate-600">
-                  Dołącz do bazy uczniów, którzy codziennie szukają korepetytorów.
-                </p>
-              </div>
+
+              <h1 class="main-title">Zostań nauczycielem, który buduje prawdziwą markę online.</h1>
+
+              <p class="main-description">
+                Przyjmuj uczniów, prowadź lekcje i rozwijaj swój biznes w środowisku, które wygląda
+                profesjonalnie i działa jeszcze lepiej.
+              </p>
+            </div>
+
+            <div class="button-group">
+              <button class="btn btn-dark">Załóż konto</button>
+              <button class="btn btn-outline">Sprawdź jak to działa</button>
             </div>
           </div>
 
-          <div class="rounded-[32px] bg-slate-50 p-8 ring-1 ring-slate-200">
-            <div class="flex items-center gap-4 rounded-3xl bg-white p-5 shadow-sm">
-              <span
-                class="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-sky-50 text-sky-600 text-2xl"
-                >🚀</span
-              >
+          <div class="steps-card">
+            <div class="steps-header">
               <div>
-                <p class="text-sm font-semibold text-slate-950">Rozpocznij w 4 krokach</p>
-                <p class="mt-1 text-sm text-slate-600">
-                  Zbuduj profil i zacznij przyjmować rezerwacje tego samego dnia.
+                <p class="steps-subtitle">Rozpocznij w 4 krokach</p>
+                <h2 class="steps-title">
+                  Prosty proces od pierwszego kontaktu do pierwszej lekcji.
+                </h2>
+              </div>
+              <span class="steps-badge">4 kroki</span>
+            </div>
+
+            <div class="steps-list">
+              <div class="step-item">
+                <div class="step-num">01</div>
+                <h3 class="step-heading">Zarejestruj konto</h3>
+                <p class="step-description">
+                  Stwórz darmowe konto i uzupełnij podstawowe informacje.
                 </p>
               </div>
-            </div>
-            <div class="mt-8 space-y-4">
-              <div class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="text-xs font-semibold uppercase tracking-[0.24em] text-sky-600">1</div>
-                <h2 class="mt-3 text-xl font-semibold text-slate-950">Zarejestruj konto</h2>
-                <p class="mt-3 text-slate-600">Stwórz darmowe konto i wprowadź podstawowe dane.</p>
-              </div>
-              <div class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="text-xs font-semibold uppercase tracking-[0.24em] text-sky-600">2</div>
-                <h2 class="mt-3 text-xl font-semibold text-slate-950">Uzupełnij profil</h2>
-                <p class="mt-3 text-slate-600">
+
+              <div class="step-item">
+                <div class="step-num">02</div>
+                <h3 class="step-heading">Uzupełnij profil</h3>
+                <p class="step-description">
                   Dodaj przedmioty, stawki i lokalizację, aby być lepiej widocznym.
                 </p>
               </div>
-              <div class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="text-xs font-semibold uppercase tracking-[0.24em] text-sky-600">3</div>
-                <h2 class="mt-3 text-xl font-semibold text-slate-950">Ustaw dostępność</h2>
-                <p class="mt-3 text-slate-600">
-                  Wybierz godziny, w których chcesz prowadzić lekcje.
-                </p>
+
+              <div class="step-item">
+                <div class="step-num">03</div>
+                <h3 class="step-heading">Ustaw dostępność</h3>
+                <p class="step-description">Wybierz godziny, w których chcesz prowadzić lekcje.</p>
               </div>
-              <div class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="text-xs font-semibold uppercase tracking-[0.24em] text-sky-600">4</div>
-                <h2 class="mt-3 text-xl font-semibold text-slate-950">Odbieraj rezerwacje</h2>
-                <p class="mt-3 text-slate-600">
+
+              <div class="step-item">
+                <div class="step-num">04</div>
+                <h3 class="step-heading">Odbieraj rezerwacje</h3>
+                <p class="step-description">
                   Otrzymuj wiadomości od uczniów i potwierdzaj terminy bezpośrednio na platformie.
                 </p>
               </div>
@@ -79,6 +72,324 @@
           </div>
         </div>
       </section>
+
+      <section class="benefits-grid">
+        <article class="benefit-card">
+          <p class="benefit-tag">Szybki start</p>
+          <h3 class="benefit-title">Zacznij już dziś</h3>
+          <p class="benefit-description">
+            Utwórz profil i zacznij odbierać zgłoszenia od uczniów w kilka minut.
+          </p>
+        </article>
+
+        <article class="benefit-card">
+          <p class="benefit-tag">Profesjonalna komunikacja</p>
+          <h3 class="benefit-title">Bez zbędnych komplikacji</h3>
+          <p class="benefit-description">
+            Wszystko jest uporządkowane w jednym miejscu: wiadomości, terminy i rezerwacje.
+          </p>
+        </article>
+
+        <article class="benefit-card">
+          <p class="benefit-tag">Więcej zysków</p>
+          <h3 class="benefit-title">Buduj swoją przewagę</h3>
+          <p class="benefit-description">
+            Zyskuj nowych uczniów, buduj reputację i rozwijaj swoje lekcje skutecznie.
+          </p>
+        </article>
+      </section>
     </div>
   </main>
 </template>
+
+<style scoped>
+.page-shell {
+  min-height: 100vh;
+  padding: 3rem 1rem;
+  background: linear-gradient(135deg, #f8fbff 0%, #eef7ff 45%, #fdfefe 100%);
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    sans-serif;
+  box-sizing: border-box;
+}
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.hero-surface {
+  position: relative;
+  overflow: hidden;
+  border-radius: 32px;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f7fbff 50%, #eef8ff 100%);
+  box-shadow: 0 44px 110px rgba(2, 6, 23, 0.14);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.hero-accent {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top right, rgba(2, 132, 199, 0.22), transparent 32%),
+    radial-gradient(circle at bottom left, rgba(14, 165, 233, 0.16), transparent 24%);
+  pointer-events: none;
+}
+
+.hero-grid {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .hero-surface {
+    padding: 2.5rem;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1.15fr 0.85fr;
+  }
+}
+
+.hero-text-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 24px;
+  background: #ffffff;
+  padding: 2rem;
+  box-shadow: 0 20px 60px rgba(2, 6, 23, 0.08);
+}
+
+.text-content {
+  text-align: center;
+}
+
+@media (min-width: 1024px) {
+  .text-content {
+    text-align: left;
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background-color: #0284c7;
+  padding: 0.5rem 1rem;
+  color: #ffffff;
+}
+
+.badge-icon {
+  font-size: 0.85rem;
+}
+
+.badge-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.main-title {
+  margin: 1.5rem 0 1.25rem 0;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.main-description {
+  margin: 0 auto;
+  max-width: 36rem;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: #334155;
+}
+
+@media (min-width: 1024px) {
+  .main-description {
+    margin: 0;
+  }
+}
+
+.button-group {
+  margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+@media (min-width: 1024px) {
+  .button-group {
+    justify-content: flex-start;
+  }
+}
+
+.btn {
+  padding: 0.9rem 1.5rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition:
+    transform 0.2s,
+    background-color 0.2s;
+  border: none;
+  font-size: 0.95rem;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn-dark {
+  background-color: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+}
+
+.btn-dark:hover {
+  background-color: #1e293b;
+}
+
+.btn-outline {
+  background-color: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.btn-outline:hover {
+  background-color: #f8fafc;
+}
+
+.steps-card {
+  border-radius: 24px;
+  border: 1px solid #1e293b;
+  background: linear-gradient(to bottom right, #020617, #0f172a);
+  padding: 1.75rem;
+  color: #ffffff;
+}
+
+.steps-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.steps-subtitle {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #38bdf8;
+}
+
+.steps-title {
+  margin: 0.5rem 0 0 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.steps-badge {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #bae6fd;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.step-item {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: rgba(255, 255, 255, 0.04);
+  padding: 1.25rem;
+}
+
+.step-num {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #38bdf8;
+}
+
+.step-heading {
+  margin: 0.25rem 0 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.step-description {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+
+.benefits-grid {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .benefits-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.benefit-card {
+  border-radius: 20px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background-color: #ffffff;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+
+.benefit-tag {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #0284c7;
+}
+
+.benefit-title {
+  margin: 0.5rem 0 0 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.benefit-description {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #475569;
+}
+</style>
