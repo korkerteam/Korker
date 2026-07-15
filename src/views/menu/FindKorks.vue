@@ -21,6 +21,8 @@ const currentIndex = ref(0)
 const selectedSubjects = ref([])
 const selectedLevels = ref([])
 const selectedTags = ref([])
+const selectedCity = ref('')
+const selectedLessonPlaces = ref([])
 const swipeStartX = ref(null)
 const swipeOffsetX = ref(0)
 const swipeRotation = ref(0)
@@ -29,87 +31,9 @@ const availabilityExpanded = ref(false)
 
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
-const tagOptions = ['Matura', 'Egzamin', 'Online', 'Na miejscu']
-const weekdayLabels = [
-  'Poniedziałek',
-  'Wtorek',
-  'Środa',
-  'Czwartek',
-  'Piątek',
-  'Sobota',
-  'Niedziela',
-]
-const TUTOR_POST_KEY = 'korkerTutorPost'
-
-function getRandomPrice() {
-  return Math.floor(Math.random() * 41) + 60
-}
-
-function normalizeAvailability(availability) {
-  if (Array.isArray(availability)) {
-    return availability.reduce((acc, slot) => {
-      if (!slot?.day || !slot?.time) return acc
-      if (!acc[slot.day]) acc[slot.day] = []
-      acc[slot.day].push(slot.time)
-      return acc
-    }, {})
-  }
-
-  if (availability && typeof availability === 'object') {
-    return Object.fromEntries(
-      Object.entries(availability).filter(([, slots]) => Array.isArray(slots)),
-    )
-  }
-
-  return {}
-}
-
-function formatAvailabilityRange(slots) {
-  if (!Array.isArray(slots) || !slots.length) return 'Brak'
-
-  const parsed = slots
-    .map((slot) => {
-      const text = String(slot).trim()
-      const [startPart, endPart] = text.split('-')
-      const parseHour = (value) => {
-        const match = String(value).match(/(\d{1,2})/)
-        return match ? Number(match[1]) : null
-      }
-
-      const startHour = parseHour(startPart || '')
-      const endHour = parseHour(endPart || startPart || '')
-
-      return startHour !== null && endHour !== null ? { startHour, endHour } : null
-    })
-    .filter(Boolean)
-    .sort((a, b) => a.startHour - b.startHour || a.endHour - b.endHour)
-
-  if (!parsed.length) return 'Brak'
-
-  const ranges = []
-  parsed.forEach((range) => {
-    if (!ranges.length) {
-      ranges.push({ ...range })
-      return
-    }
-
-    const lastRange = ranges[ranges.length - 1]
-    if (range.startHour <= lastRange.endHour) {
-      lastRange.endHour = Math.max(lastRange.endHour, range.endHour)
-    } else {
-      ranges.push({ ...range })
-    }
-  })
-
-  const formatHour = (hour) => `${String(hour).padStart(2, '0')}:00`
-  const formatRange = (startHour, endHour) => `${formatHour(startHour)}-${formatHour(endHour)}`
-
-  if (ranges.length === 1) {
-    return formatRange(ranges[0].startHour, ranges[0].endHour)
-  }
-
-  return `${formatRange(ranges[0].startHour, ranges[0].endHour)} · ${formatRange(ranges[ranges.length - 1].startHour, ranges[ranges.length - 1].endHour)}`
-}
+const tagOptions = ['Matura', 'Egzamin']
+const lessonPlaceOptions = ['Online', 'U siebie', 'U korepetytora']
+const cityOptions = ['Warszawa', 'Kraków', 'Wrocław', 'Poznań', 'Gdańsk']
 
 function loadTutorPost() {
   if (typeof window === 'undefined') return null
@@ -163,13 +87,17 @@ const filteredTutors = computed(() => {
     const localLevels =
       selectedLevels.value.length > 0 ? selectedLevels.value : props.filters.levels
     const allSelectedTags = [...props.filters.tags, ...selectedTags.value]
+    const allSelectedLessonPlaces = selectedLessonPlaces.value
 
     const matchesSubject = localSubjects.length === 0 || localSubjects.includes(tutor.subject)
     const matchesLevel = localLevels.length === 0 || localLevels.includes(tutor.level)
     const matchesTags =
       allSelectedTags.length === 0 || allSelectedTags.some((tag) => tutor.tags.includes(tag))
+    const matchesLessonPlaces =
+      allSelectedLessonPlaces.length === 0 || allSelectedLessonPlaces.includes(tutor.lessonPlace)
+    const matchesCity = !selectedCity.value || tutor.city === selectedCity.value
 
-    return matchesSubject && matchesLevel && matchesTags
+    return matchesSubject && matchesLevel && matchesTags && matchesLessonPlaces && matchesCity
   })
 })
 
@@ -289,7 +217,9 @@ function toggleSelection(category, value) {
       ? selectedSubjects.value
       : category === 'levels'
         ? selectedLevels.value
-        : selectedTags.value
+        : category === 'lessonPlace'
+          ? selectedLessonPlaces.value
+          : selectedTags.value
 
   const index = targetArray.indexOf(value)
   if (index > -1) {
@@ -428,6 +358,20 @@ function closePage() {
         </div>
 
         <div class="filter-group">
+          <h5>Miasto</h5>
+          <div class="filter-options city-select-group">
+            <label class="city-select-label">
+              <select v-model="selectedCity">
+                <option value="" disabled>Wybierz miasto</option>
+                <option v-for="option in cityOptions" :key="option" :value="option">
+                  {{ option }}
+                </option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="filter-group">
           <h5>Przedmioty</h5>
           <div class="filter-options">
             <label v-for="option in subjectOptions" :key="option">
@@ -449,6 +393,20 @@ function closePage() {
                 type="checkbox"
                 :checked="selectedLevels.includes(option)"
                 @change="toggleSelection('levels', option)"
+              />
+              {{ option }}
+            </label>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <h5>Miejsce lekcji</h5>
+          <div class="filter-options">
+            <label v-for="option in lessonPlaceOptions" :key="option">
+              <input
+                type="checkbox"
+                :checked="selectedLessonPlaces.includes(option)"
+                @change="toggleSelection('lessonPlace', option)"
               />
               {{ option }}
             </label>
@@ -584,6 +542,8 @@ function closePage() {
   margin-left: auto;
   align-self: flex-start;
   position: sticky;
+  pointer-events: auto;
+  z-index: 10;
 }
 
 .tags-filter-header {
@@ -621,6 +581,34 @@ function closePage() {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.city-select-group {
+  padding: 0;
+}
+
+.city-select-label {
+  display: block;
+  width: 100%;
+}
+
+.city-select-label select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(79, 117, 199, 0.12);
+  background: #f8fbff;
+  color: #1f2937;
+  font-size: 14px;
+  appearance: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.filter-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
 }
 
 .filter-options label {
