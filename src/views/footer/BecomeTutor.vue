@@ -1,7 +1,9 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth.js'
 
+const router = useRouter()
 const { isAuthenticated, openAuthModal } = useAuth()
 const accountMessage = ref('')
 
@@ -13,6 +15,10 @@ function handleCreateAccount() {
 
   accountMessage.value = ''
   openAuthModal()
+}
+
+function goToEditProfile() {
+  router.push({ name: 'profil' })
 }
 </script>
 
@@ -44,6 +50,14 @@ function handleCreateAccount() {
               <button class="btn btn-outline" type="button">Sprawdź jak to działa</button>
             </div>
             <p v-if="accountMessage" class="account-message">{{ accountMessage }}</p>
+            <button
+              v-if="isAuthenticated && accountMessage"
+              class="btn btn-outline profile-edit-btn"
+              type="button"
+              @click="goToEditProfile"
+            >
+              Edytuj profil
+            </button>
           </div>
 
           <div class="steps-card">
@@ -270,6 +284,11 @@ function handleCreateAccount() {
   font-size: 0.95rem;
   color: var(--accent-strong);
   font-weight: 600;
+}
+
+.profile-edit-btn {
+  margin-top: 0.75rem;
+  align-self: flex-start;
 }
 
 @media (min-width: 1024px) {
