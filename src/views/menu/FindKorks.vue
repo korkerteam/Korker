@@ -457,17 +457,21 @@ function closePage() {
             id="dislike-button"
             class="btn-dislike"
             type="button"
+            aria-label="Nie pasuje"
             @click.stop.prevent="handleDecision(false)"
           >
-            Nie pasuje
+            <span aria-hidden="true">✕</span>
+            <span class="visually-hidden">Nie pasuje</span>
           </button>
           <button
             id="like-button"
             class="btn-like"
             type="button"
+            aria-label="Lubię"
             @click.stop.prevent="handleDecision(true)"
           >
-            Lubię
+            <span aria-hidden="true">✔</span>
+            <span class="visually-hidden">Lubię</span>
           </button>
         </div>
 
@@ -570,17 +574,19 @@ function closePage() {
   padding: 0;
   display: flex;
   flex-direction: row;
-  gap: 0;
+  gap: 24px;
   overflow: hidden;
-  align-items: stretch;
+  align-items: flex-start;
+  justify-content: space-between;
 }
 
 .tutor-section {
+  order: 0;
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 24px 0 24px 0;
   min-height: 0;
 }
 
@@ -610,12 +616,19 @@ function closePage() {
 }
 
 .tags-filter-section {
-  width: min(280px, 35%);
-  min-width: 240px;
-  padding: 20px;
-  border-left: 1.5px solid rgba(79, 117, 199, 0.1);
+  order: 1;
+  width: min(280px, 32%);
+  min-width: 260px;
+  max-height: calc(100vh - 270px);
+  padding: 24px;
+  border-radius: 28px;
   overflow-y: auto;
-  background: linear-gradient(135deg, rgba(248, 251, 255, 0.4) 0%, rgba(238, 242, 255, 0.4) 100%);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.08);
+  margin-left: auto;
+  align-self: flex-start;
+  position: sticky;
 }
 
 .tags-filter-header {
@@ -652,24 +665,31 @@ function closePage() {
 .filter-options {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
 }
 
 .filter-options label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: 6px;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
   cursor: pointer;
   user-select: none;
-  transition: all 0.2s ease;
-  font-size: 13px;
-  color: #374151;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
+  font-size: 14px;
+  color: #1f2937;
+  background: #f8fbff;
+  border: 1px solid rgba(79, 117, 199, 0.12);
 }
 
 .filter-options label:hover {
-  background: rgba(79, 117, 199, 0.08);
+  background: rgba(79, 117, 199, 0.13);
+  border-color: rgba(79, 117, 199, 0.2);
+  transform: translateX(2px);
 }
 
 .filter-options input[type='checkbox'] {
@@ -723,14 +743,14 @@ function closePage() {
 }
 
 .card-image {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  display: block;
   width: 100%;
   height: 460px;
   border-radius: 20px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.8);
+  padding: 0;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
   transform: translateX(var(--swipe-offset, 0px)) rotate(var(--swipe-rotation, 0deg));
   transition:
     transform 0.2s ease,
@@ -740,13 +760,20 @@ function closePage() {
   transform-origin: center center;
 }
 
+.swipe-image-wrapper {
+  width: 100%;
+  height: 100%;
+}
+
 .card-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 16px;
-  border: 1px solid rgba(79, 117, 199, 0.1);
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  object-position: center;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  display: block;
   -webkit-user-drag: none;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -755,6 +782,11 @@ function closePage() {
   -webkit-touch-callout: none;
   pointer-events: auto;
   cursor: pointer;
+}
+
+.card-image:hover {
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+  filter: saturate(1.05);
 }
 
 .swipe-image:hover {
@@ -825,33 +857,59 @@ function closePage() {
 
 .actions {
   display: flex;
-  gap: 6px;
-  margin-top: 10px;
+  justify-content: space-between;
+  gap: 200px;
+  margin-top: 16px;
   position: relative;
   z-index: 2;
 }
 
 .btn-like,
 .btn-dislike {
-  flex: 1;
+  width: 100px;
+  height: 100px;
+  min-width: 72px;
+  min-height: 72px;
   border: none;
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-weight: 600;
-  font-size: 11px;
+  border-radius: 999px;
+  padding: 0;
+  font-weight: 700;
+  font-size: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
+}
+
+.btn-like:hover,
+.btn-dislike:hover {
+  transform: translateY(-2px);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .btn-like {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  background: #22c55e;
   color: white;
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  font-size: 36px;
 }
 
 .btn-like:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(34, 197, 94, 0.2);
 }
 
 .btn-dislike {
@@ -862,7 +920,6 @@ function closePage() {
 
 .btn-dislike:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
 }
 
 .empty-state {
