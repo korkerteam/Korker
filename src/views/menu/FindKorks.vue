@@ -21,10 +21,13 @@ const currentIndex = ref(0)
 const selectedSubjects = ref([])
 const selectedLevels = ref([])
 const selectedTags = ref([])
+const selectedCity = ref('')
+const selectedLessonPlaces = ref([])
 const swipeStartX = ref(null)
 const swipeOffsetX = ref(0)
 const swipeRotation = ref(0)
 const cardRef = ref(null)
+const availabilityExpanded = ref(false)
 
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
@@ -68,13 +71,17 @@ const filteredTutors = computed(() => {
     const localLevels =
       selectedLevels.value.length > 0 ? selectedLevels.value : props.filters.levels
     const allSelectedTags = [...props.filters.tags, ...selectedTags.value]
+    const allSelectedLessonPlaces = selectedLessonPlaces.value
 
     const matchesSubject = localSubjects.length === 0 || localSubjects.includes(tutor.subject)
     const matchesLevel = localLevels.length === 0 || localLevels.includes(tutor.level)
     const matchesTags =
       allSelectedTags.length === 0 || allSelectedTags.some((tag) => tutor.tags.includes(tag))
+    const matchesLessonPlaces =
+      allSelectedLessonPlaces.length === 0 || allSelectedLessonPlaces.includes(tutor.lessonPlace)
+    const matchesCity = !selectedCity.value || tutor.city === selectedCity.value
 
-    return matchesSubject && matchesLevel && matchesTags
+    return matchesSubject && matchesLevel && matchesTags && matchesLessonPlaces && matchesCity
   })
 })
 
@@ -174,14 +181,14 @@ function likeTutor() {
     decisions.value[currentTutor.value.name] = 'good'
     emit('like-teacher', currentTutor.value)
   }
-  nextTick(() => console.log('Pozostali tutorzy:', filteredTutors.value))
+  nextTutor()
 }
 
 function dislikeTutor() {
   if (currentTutor.value) {
     decisions.value[currentTutor.value.name] = 'bad'
   }
-  nextTick(() => console.log('Pozostali tutorzy:', filteredTutors.value))
+  nextTutor()
 }
 
 function handleDecision(isLiked) {
@@ -198,7 +205,9 @@ function toggleSelection(category, value) {
       ? selectedSubjects.value
       : category === 'levels'
         ? selectedLevels.value
-        : selectedTags.value
+        : category === 'lessonPlace'
+          ? selectedLessonPlaces.value
+          : selectedTags.value
 
   const index = targetArray.indexOf(value)
   if (index > -1) {
@@ -233,7 +242,19 @@ function closePage() {
             '--swipe-rotation': `${swipeRotation}deg`,
           }"
         >
-          <div class="card-image">
+          <div
+            class="card-image"
+            :class="[
+              swipeOffsetX < -120 ? 'swiping-left' : '',
+              swipeOffsetX > 120 ? 'swiping-right' : '',
+            ]"
+          >
+            <div class="swipe-indicator dislike" aria-hidden="true" v-if="swipeOffsetX < -120">
+              <span>✕</span>
+            </div>
+            <div class="swipe-indicator like" aria-hidden="true" v-if="swipeOffsetX > 120">
+              <span>✔</span>
+            </div>
             <div v-if="currentTutor.image" class="swipe-image-wrapper">
               <img
                 class="swipe-image"
@@ -246,9 +267,36 @@ function closePage() {
           </div>
 
           <div class="card-info">
-            <h3 class="tutor-name">{{ currentTutor.name }}</h3>
-            <p class="tutor-meta">{{ currentTutor.subject }} • {{ currentTutor.level }}</p>
-            <p class="tutor-price">{{ currentTutor.price }} zł/h</p>
+            <div class="tutor-main-info">
+              <div class="tutor-summary-row">
+                <div class="tutor-summary-card">
+                  <h3 class="tutor-name">{{ currentTutor.name }}</h3>
+                  <p class="tutor-meta">
+                    {{ currentTutor.subject || currentTutor.lessonSubject || 'Korepetycje' }} •
+                    {{ currentTutor.level || currentTutor.lessonLevel || 'Liceum' }}
+                  </p>
+                </div>
+                <div class="tutor-summary-card tutor-summary-price">
+                  <p class="tutor-price">{{ currentTutor.price }} zł/h</p>
+                </div>
+              </div>
+
+              <div class="bio-box" v-if="currentTutor.bio || currentTutor.lessonDescription">
+                <p>{{ currentTutor.bio || currentTutor.lessonDescription }}</p>
+              </div>
+
+              <div class="availability-box">
+                <div class="availability-panel-header">Dostępne godziny</div>
+                <div class="availability-inline-row">
+                  <div v-for="day in weekdayLabels" :key="day" class="availability-day-pill">
+                    <span class="availability-day">{{ day }}</span>
+                    <span class="availability-value">
+                      {{ formatAvailabilityRange(currentTutor?.weeklyAvailability?.[day] || []) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div class="tags-list">
               <span v-for="tag in currentTutor.tags" :key="tag" class="tag">{{ tag }}</span>
@@ -304,6 +352,20 @@ function closePage() {
         </div>
 
         <div class="filter-group">
+          <h5>Miasto</h5>
+          <div class="filter-options city-select-group">
+            <label class="city-select-label">
+              <select v-model="selectedCity">
+                <option value="" disabled>Wybierz miasto</option>
+                <option v-for="option in cityOptions" :key="option" :value="option">
+                  {{ option }}
+                </option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="filter-group">
           <h5>Przedmioty</h5>
           <div class="filter-options">
             <label v-for="option in subjectOptions" :key="option">
@@ -332,6 +394,20 @@ function closePage() {
         </div>
 
         <div class="filter-group">
+          <h5>Miejsce lekcji</h5>
+          <div class="filter-options">
+            <label v-for="option in lessonPlaceOptions" :key="option">
+              <input
+                type="checkbox"
+                :checked="selectedLessonPlaces.includes(option)"
+                @change="toggleSelection('lessonPlace', option)"
+              />
+              {{ option }}
+            </label>
+          </div>
+        </div>
+
+        <div class="filter-group">
           <h5>Tagi</h5>
           <div class="filter-options">
             <label v-for="option in tagOptions" :key="option">
@@ -351,6 +427,20 @@ function closePage() {
 
 <style scoped>
 .find-korks-panel {
+  width: 100%;
+  max-width: 1280px;
+  min-height: 0;
+  max-height: calc(100vh - 160px);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+
+  border-radius: 16px;
+  overflow: visible;
+  margin: 0 auto;
+}
+
+<style scoped > .find-korks-panel {
   width: 100%;
   max-width: 1280px;
   min-height: 0;
@@ -446,6 +536,8 @@ function closePage() {
   margin-left: auto;
   align-self: flex-start;
   position: sticky;
+  pointer-events: auto;
+  z-index: 10;
 }
 
 .tags-filter-header {
@@ -483,6 +575,34 @@ function closePage() {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.city-select-group {
+  padding: 0;
+}
+
+.city-select-label {
+  display: block;
+  width: 100%;
+}
+
+.city-select-label select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(79, 117, 199, 0.12);
+  background: #f8fbff;
+  color: #1f2937;
+  font-size: 14px;
+  appearance: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.filter-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
 }
 
 .filter-options label {
@@ -554,12 +674,13 @@ function closePage() {
   flex: 1;
   height: 100%;
   max-height: 980px;
-  width: min(100%, 400px);
+  width: min(100%, 470px);
   overflow: visible;
   margin: 0 auto;
 }
 
 .card-image {
+  position: relative;
   display: block;
   width: 100%;
   height: 460px;
@@ -580,8 +701,58 @@ function closePage() {
 .swipe-image-wrapper {
   width: 100%;
   height: 100%;
+  transition: opacity 0.2s ease;
 }
 
+.card-image.swiping-left .swipe-image-wrapper,
+.card-image.swiping-right .swipe-image-wrapper {
+  opacity: 0.4;
+}
+
+.swipe-indicator {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 92px;
+  font-weight: 800;
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  transform: scale(0.94);
+}
+
+.swipe-indicator span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  border-radius: 999px;
+  border: 3px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(2px);
+}
+
+.swipe-indicator.dislike {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.18);
+}
+
+.swipe-indicator.like {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.18);
+}
+
+.card-image.swiping-left .swipe-indicator.dislike,
+.card-image.swiping-right .swipe-indicator.like {
+  opacity: 1;
+  transform: scale(1.02);
+}
 .card-image img {
   width: 100%;
   height: 100%;
@@ -619,6 +790,36 @@ function closePage() {
   margin-top: 8px;
 }
 
+.tutor-main-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.tutor-summary-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+}
+
+.tutor-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(79, 117, 199, 0.08);
+}
+
+.tutor-summary-price {
+  align-items: flex-end;
+  justify-content: center;
+}
+
 .tutor-name {
   margin: 0;
   font-size: 16px;
@@ -634,7 +835,7 @@ function closePage() {
 }
 
 .tutor-price {
-  margin: 2px 0 0;
+  margin: 0;
   font-size: 14px;
   color: #1f2937;
   font-weight: 700;
@@ -670,6 +871,65 @@ function closePage() {
   font-size: 10px;
   font-weight: 600;
   border: 1px solid rgba(79, 117, 199, 0.2);
+}
+
+.availability-box {
+  width: 100%;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(79, 117, 199, 0.14);
+  background: linear-gradient(135deg, rgba(248, 251, 255, 0.98) 0%, rgba(238, 242, 255, 0.95) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  box-sizing: border-box;
+}
+
+.availability-panel-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #102036;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.availability-inline-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.availability-day-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(79, 117, 199, 0.1);
+  backdrop-filter: blur(4px);
+  min-width: 86px;
+}
+
+.availability-day {
+  font-size: 10px;
+  font-weight: 700;
+  color: #102036;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.availability-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(79, 117, 199, 0.12);
+  color: #234;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .actions {

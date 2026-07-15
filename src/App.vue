@@ -69,7 +69,7 @@ function removeLikedTeacher(teacher) {
       </div>
 
       <div class="search-block">
-        <SearchBar />
+        <SearchBar @select-teacher="showTeacherProfile" />
         <LoginButton @login="openAuthModal" />
       </div>
     </div>

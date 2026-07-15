@@ -20,10 +20,35 @@ const profile = reactive({
 
 const teachingFormats = ['Stacjonarnie', 'Z dojazdem', 'Online']
 const subjectOptions = ['Matematyka', 'Język polski', 'Angielski', 'Fizyka']
+const weeklyDayLabels = [
+  'Poniedziałek',
+  'Wtorek',
+  'Środa',
+  'Czwartek',
+  'Piątek',
+  'Sobota',
+  'Niedziela',
+]
+const weeklyTimeSlots = [
+  '08:00-09:00',
+  '09:00-10:00',
+  '10:00-11:00',
+  '11:00-12:00',
+  '12:00-13:00',
+  '13:00-14:00',
+  '14:00-15:00',
+  '15:00-16:00',
+  '16:00-17:00',
+  '17:00-18:00',
+  '18:00-19:00',
+  '19:00-20:00',
+]
+const TUTOR_POST_KEY = 'korkerTutorPost'
 
 const isEditing = ref(false)
 const saving = ref(false)
 const loading = ref(true)
+const availabilityExpanded = ref(false)
 const saveError = ref('')
 const pendingAvatarFile = ref(null)
 const pendingLessonPhotoFile = ref(null)
@@ -45,6 +70,7 @@ const draft = reactive({
   lessonSubject: '',
   lessonLevel: 'Liceum',
   lessonDescription: '',
+  weeklyAvailability: {},
 })
 
 const strictestFormat = computed(() => {
@@ -82,6 +108,117 @@ function fromDb(data) {
   profile.flatNumber = ''
 }
 
+function loadTutorPost() {
+  if (typeof window === 'undefined') return null
+  try {
+    return JSON.parse(localStorage.getItem(TUTOR_POST_KEY) || 'null')
+  } catch {
+    return null
+  }
+}
+
+function saveTutorPost(post) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(TUTOR_POST_KEY, JSON.stringify(post))
+}
+
+function removeTutorPost() {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(TUTOR_POST_KEY)
+}
+
+function createDefaultWeeklyAvailability() {
+  return {
+    Poniedziałek: ['10:00-11:00'],
+    Wtorek: ['14:00-15:00'],
+    Środa: [],
+    Czwartek: ['16:00-17:00'],
+    Piątek: ['18:00-19:00'],
+    Sobota: [],
+    Niedziela: [],
+  }
+}
+
+function normalizeWeeklyAvailability(value) {
+  if (Array.isArray(value)) {
+    const grouped = Object.fromEntries(weeklyDayLabels.map((day) => [day, []]))
+    value.forEach((slot) => {
+      if (!slot?.day || !slot?.time) return
+      if (!grouped[slot.day]) grouped[slot.day] = []
+      grouped[slot.day].push(slot.time)
+    })
+    return grouped
+  }
+
+  if (value && typeof value === 'object') {
+    const normalized = Object.fromEntries(weeklyDayLabels.map((day) => [day, []]))
+    weeklyDayLabels.forEach((day) => {
+      const slots = Array.isArray(value[day]) ? value[day] : []
+      normalized[day] = [...slots]
+    })
+    return normalized
+  }
+
+  return createDefaultWeeklyAvailability()
+}
+
+function buildAvailabilitySlots(availability) {
+  return Object.entries(availability || {}).flatMap(([day, slots]) =>
+    (Array.isArray(slots) ? slots : []).map((time) => ({ day, time })),
+  )
+}
+
+function toggleAvailabilitySlot(day, slot) {
+  if (!draft.weeklyAvailability) {
+    draft.weeklyAvailability = {}
+  }
+
+  if (!draft.weeklyAvailability[day]) {
+    draft.weeklyAvailability[day] = []
+  }
+
+  const slots = draft.weeklyAvailability[day]
+  const index = slots.indexOf(slot)
+  if (index > -1) {
+    slots.splice(index, 1)
+  } else {
+    slots.push(slot)
+  }
+}
+
+function isAvailabilitySelected(day, slot) {
+  return (draft.weeklyAvailability?.[day] || []).includes(slot)
+}
+
+function getAvailabilitySummary(day) {
+  const slots = draft.weeklyAvailability?.[day] || []
+  return slots.length ? slots.join(', ') : 'Brak godzin'
+}
+
+function copyMondayToWeekdays() {
+  const mondaySlots = [...(draft.weeklyAvailability?.['Poniedziałek'] || [])]
+  if (!mondaySlots.length) return
+
+  const weekdays = ['Wtorek', 'Środa', 'Czwartek', 'Piątek']
+  weekdays.forEach((day) => {
+    draft.weeklyAvailability[day] = [...mondaySlots]
+  })
+}
+
+function applySavedTutorPost() {
+  const saved = loadTutorPost()
+  if (saved) {
+    draft.lessonPhoto = saved.lessonPhoto || ''
+    draft.lessonPrice = saved.lessonPrice || ''
+    draft.lessonTags = saved.lessonTags || []
+    draft.lessonSubject = saved.lessonSubject || ''
+    draft.lessonLevel = saved.lessonLevel || 'Liceum'
+    draft.lessonDescription = saved.lessonDescription || ''
+    draft.weeklyAvailability = normalizeWeeklyAvailability(
+      saved.weeklyAvailability || saved.availableSlots,
+    )
+  } else {
+    draft.weeklyAvailability = createDefaultWeeklyAvailability()
 function applySavedTutorPost(data) {
   if (data?.tutor_post) {
     const tp = data.tutor_post
@@ -444,6 +581,34 @@ function toggleTeachingFormat(format) {
               <span class="field-label">Stawka za lekcję (zł/h)<span class="req">*</span></span>
               <input v-model="draft.lessonPrice" type="number" min="10" placeholder="50" />
             </label>
+            <div class="availability-section">
+              <div class="availability-header">
+                <span class="field-label">Dostępne godziny w tygodniu</span>
+                <span class="availability-hint"
+                  >Kliknij godziny, w których chcesz prowadzić lekcje.</span
+                >
+                <button class="availability-copy-btn" type="button" @click="copyMondayToWeekdays">
+                  Kopiuj z poniedziałku na wtorek–piątek
+                </button>
+              </div>
+              <div class="availability-grid">
+                <div v-for="day in weeklyDayLabels" :key="day" class="availability-day-card">
+                  <div class="availability-day-title">{{ day }}</div>
+                  <div class="availability-slot-list">
+                    <button
+                      v-for="slot in weeklyTimeSlots"
+                      :key="`${day}-${slot}`"
+                      type="button"
+                      class="availability-slot"
+                      :class="{ selected: isAvailabilitySelected(day, slot) }"
+                      @click="toggleAvailabilitySlot(day, slot)"
+                    >
+                      {{ slot }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
             <label class="field-row">
               <span class="field-label">Opis oferty</span>
               <textarea
@@ -900,6 +1065,116 @@ function toggleTeachingFormat(format) {
   gap: 16px;
   font-size: 13px;
   color: #374151;
+}
+
+.availability-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.availability-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.availability-hint {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.availability-copy-btn {
+  align-self: flex-start;
+  border: 1px solid rgba(79, 117, 199, 0.2);
+  background: #eef2ff;
+  color: #1f2937;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.availability-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.availability-day-card {
+  border: 1px solid rgba(79, 117, 199, 0.15);
+  border-radius: 12px;
+  padding: 10px;
+  background: #f8fafc;
+}
+
+.availability-day-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #102036;
+  margin-bottom: 8px;
+}
+
+.availability-slot-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.availability-slot {
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #374151;
+  padding: 6px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.availability-slot.selected {
+  background: #eef2ff;
+  border-color: #4f75c7;
+  color: #1f2937;
+}
+
+.availability-toggle {
+  border: none;
+  background: transparent;
+  color: #4f75c7;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.availability-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: -2px;
+}
+
+.availability-day-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: #374151;
+  background: #f8fafc;
+  border: 1px solid rgba(79, 117, 199, 0.12);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.availability-day {
+  font-weight: 600;
+  color: #102036;
+}
+
+.availability-times {
+  text-align: right;
+  color: #4b5563;
 }
 
 .offer-label {

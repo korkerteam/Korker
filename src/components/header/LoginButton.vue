@@ -115,13 +115,13 @@ function handleProfileClick() {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 20px;
+  padding: 13px 22px;
   border: none;
   border-radius: 999px;
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));
   color: #ffffff;
   font-family: Inter, system-ui, sans-serif;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 14px 36px rgba(79, 117, 199, 0.16);

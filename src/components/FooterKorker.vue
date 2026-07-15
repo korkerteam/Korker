@@ -59,21 +59,42 @@ function scrollToTop(event) {
       <div class="footer__bottom">
         <p class="footer__copyright">© 2026 Korker. Wszelkie prawa ukradzione za pomocą ai.</p>
         <div class="footer__socials" aria-label="Media społecznościowe">
-          <a href="#" class="footer__social" aria-label="Facebook" @click.stop="scrollToTop">
+          <a
+            href="https://www.facebook.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="footer__social"
+            aria-label="Facebook"
+            @click.stop="scrollToTop"
+          >
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path
                 d="M22 12a10 10 0 10-11.53 9.87v-6.99h-2.14v-2.88h2.14V9.41c0-2.11 1.26-3.28 3.18-3.28.92 0 1.89.16 1.89.16v2.08h-1.07c-1.06 0-1.39.66-1.39 1.34v1.61h2.37l-.38 2.88h-1.99V22A10 10 0 0022 12z"
               />
             </svg>
           </a>
-          <a href="#" class="footer__social" aria-label="Instagram" @click.stop="scrollToTop">
+          <a
+            href="https://www.instagram.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="footer__social"
+            aria-label="Instagram"
+            @click.stop="scrollToTop"
+          >
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path
                 d="M7.75 2h8.5A5.75 5.75 0 0122 7.75v8.5A5.75 5.75 0 0116.25 22h-8.5A5.75 5.75 0 012 16.25v-8.5A5.75 5.75 0 017.75 2zm0 1.5A4.25 4.25 0 003.5 7.75v8.5A4.25 4.25 0 007.75 20.5h8.5a4.25 4.25 0 004.25-4.25v-8.5A4.25 4.25 0 0016.25 3.5h-8.5zm8.75 2.5a.75.75 0 110 1.5.75.75 0 010-1.5zm-4.25 1.25a5.25 5.25 0 110 10.5 5.25 5.25 0 010-10.5zm0 1.5a3.75 3.75 0 100 7.5 3.75 3.75 0 000-7.5z"
               />
             </svg>
           </a>
-          <a href="#" class="footer__social" aria-label="LinkedIn" @click.stop="scrollToTop">
+          <a
+            href="https://www.linkedin.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="footer__social"
+            aria-label="LinkedIn"
+            @click.stop="scrollToTop"
+          >
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path
                 d="M4.98 3.5a2.49 2.49 0 100 4.98 2.49 2.49 0 000-4.98zM3 8.93h3.95V21H3V8.93zm7.55 0h3.79v1.64h.05a4.17 4.17 0 013.75-2.06c4.01 0 4.75 2.64 4.75 6.07V21h-3.95v-5.3c0-1.26-.02-2.88-1.76-2.88-1.76 0-2.03 1.37-2.03 2.79V21h-3.95V8.93z"
