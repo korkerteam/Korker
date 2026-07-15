@@ -1,5 +1,5 @@
 <script setup>
-import { ref, provide } from 'vue'
+import { ref, provide, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import HeaderKorker from './components/HeaderKorker.vue'
 import SearchBar from './components/header/SearchBar.vue'
@@ -22,6 +22,9 @@ const likedTeachers = ref([])
 const currentTeacher = ref(null)
 const showMissingFilterNotice = ref(false)
 const homeTrigger = ref(0)
+const isDarkMode = ref(false)
+const isHighContrast = ref(false)
+const showSettingsMenu = ref(false)
 provide('homeTrigger', homeTrigger)
 
 // --- GLOBALNY STAN CZATU (DO PRZEKAZYWANIA MIĘDZY KOMPONENTAMI) ---
@@ -59,6 +62,46 @@ function removeLikedTeacher(teacher) {
     currentTeacher.value = null
   }
 }
+
+function applyTheme(nextValue) {
+  const theme = nextValue ? 'dark' : 'light'
+  document.documentElement.setAttribute('data-theme', theme)
+  document.documentElement.style.colorScheme = theme
+  isDarkMode.value = nextValue
+  localStorage.setItem('korker-theme', theme)
+}
+
+function applyAccessibility(nextValue) {
+  const contrast = nextValue ? 'high' : 'default'
+  document.documentElement.setAttribute('data-contrast', contrast)
+  document.documentElement.style.setProperty('--contrast-mode', contrast)
+  isHighContrast.value = nextValue
+  localStorage.setItem('korker-high-contrast', String(nextValue))
+}
+
+function toggleTheme() {
+  applyTheme(!isDarkMode.value)
+}
+
+function toggleHighContrast() {
+  applyAccessibility(!isHighContrast.value)
+}
+
+function toggleSettingsMenu() {
+  showSettingsMenu.value = !showSettingsMenu.value
+}
+
+function closeSettingsMenu() {
+  showSettingsMenu.value = false
+}
+
+onMounted(() => {
+  const savedTheme = localStorage.getItem('korker-theme')
+  const savedContrast = localStorage.getItem('korker-high-contrast')
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+  applyTheme(savedTheme ? savedTheme === 'dark' : prefersDark)
+  applyAccessibility(savedContrast === 'true')
+})
 </script>
 
 <template>
@@ -102,6 +145,39 @@ function removeLikedTeacher(teacher) {
 
     <div class="Mapa">
       <MapPage />
+    </div>
+
+    <button
+      class="settings-fab"
+      type="button"
+      :title="'Ustawienia motywu'"
+      :aria-label="'Ustawienia motywu'"
+      @click="toggleSettingsMenu"
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6Zm7.2 3.8a7.3 7.3 0 0 0-.1-1.2l1.7-1.3-1.7-3-2 .8a7.3 7.3 0 0 0-2.1-1.2L14.1 3h-4.2l-.6 2.2a7.3 7.3 0 0 0-2.1 1.2l-2-.8-1.7 3 1.7 1.3a7.3 7.3 0 0 0 0 2.4l-1.7 1.3 1.7 3 2-.8c.7.5 1.4.9 2.1 1.2l.6 2.2h4.2l.6-2.2c.7-.3 1.4-.7 2.1-1.2l2 .8 1.7-3-1.7-1.3c.1-.4.1-.8.1-1.2Z"
+          fill="currentColor"
+        />
+      </svg>
+    </button>
+
+    <div v-if="showSettingsMenu" class="settings-menu-backdrop" @click="closeSettingsMenu">
+      <div class="settings-menu" @click.stop>
+        <div class="settings-menu-title">Ustawienia</div>
+
+        <label class="setting-row" :class="{ active: isDarkMode }">
+          <span class="setting-label">Tryb ciemny</span>
+          <input type="checkbox" :checked="isDarkMode" @change="toggleTheme" />
+          <span class="setting-slider"></span>
+        </label>
+
+        <label class="setting-row" :class="{ active: isHighContrast }">
+          <span class="setting-label">Wysoki kontrast</span>
+          <input type="checkbox" :checked="isHighContrast" @change="toggleHighContrast" />
+          <span class="setting-slider"></span>
+        </label>
+      </div>
     </div>
 
     <FooterKorker />
@@ -153,5 +229,113 @@ function removeLikedTeacher(teacher) {
   right: 16px;
   bottom: 10%;
   z-index: 5;
+}
+
+.settings-fab {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 1200;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--primary-color);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(79, 117, 199, 0.35);
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.25s ease;
+}
+
+.settings-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 8px 28px rgba(79, 117, 199, 0.5);
+}
+
+.settings-fab:active {
+  transform: scale(0.92);
+}
+
+.settings-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1190;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 0 0 96px 24px;
+  background: rgba(8, 12, 24, 0.18);
+}
+
+.settings-menu {
+  background: var(--surface-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 14px 16px;
+  min-width: 220px;
+  box-shadow: 0 16px 44px rgba(15, 23, 42, 0.18);
+}
+
+.settings-menu-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--text-color);
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.92rem;
+  margin-top: 8px;
+}
+
+.setting-row input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.setting-slider {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--border-color);
+  transition: background 0.2s ease;
+}
+
+.setting-slider::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  transition: transform 0.2s ease;
+}
+
+.setting-row.active .setting-slider {
+  background: var(--primary-color);
+}
+
+.setting-row.active .setting-slider::before {
+  transform: translateX(20px);
+}
+
+.setting-label {
+  color: var(--muted-text-color);
+  flex: 1;
 }
 </style>

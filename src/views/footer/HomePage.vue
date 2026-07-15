@@ -213,6 +213,14 @@ const lessons = ref([
   backdrop-filter: blur(18px);
 }
 
+:root[data-contrast='high'] .dashboard-top {
+  border-color: #000000;
+}
+
+:root[data-theme='dark'][data-contrast='high'] .dashboard-top {
+  border-color: #ffffff;
+}
+
 .dashboard-welcome {
   margin: 0 0 10px;
   color: var(--accent-strong);
@@ -256,7 +264,7 @@ const lessons = ref([
 }
 
 .dashboard-action:hover {
-  background: linear-gradient(135deg, #3d60c9, #2f54be);
+  background: linear-gradient(135deg, var(--accent-strong) 0%, var(--accent) 100%);
   transform: translateY(-2px);
 }
 
@@ -284,6 +292,14 @@ const lessons = ref([
   border-radius: 32px;
   padding: 28px;
   box-shadow: 0 26px 60px rgba(15, 23, 42, 0.08);
+}
+
+:root[data-contrast='high'] .dashboard-card {
+  border-color: #000000;
+}
+
+:root[data-theme='dark'][data-contrast='high'] .dashboard-card {
+  border-color: #ffffff;
 }
 
 .clickable-card {
@@ -407,7 +423,7 @@ const lessons = ref([
 .notif-status-dot {
   width: 10px;
   height: 10px;
-  background: #2563eb;
+  background: var(--accent-strong);
   border-radius: 50%;
   margin-top: 6px;
 }

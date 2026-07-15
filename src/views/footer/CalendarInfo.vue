@@ -94,16 +94,23 @@
   width: 100%;
   display: flex;
   justify-content: center;
+  color: var(--text);
 }
 
 .calendar-card {
   width: 100%;
   max-width: 760px;
-  background: #ffffff;
+  background: var(--surface-strong);
   border-radius: 28px;
   padding: 24px;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--border);
+}
+
+:root[data-theme='dark'] .calendar-card {
+  background: #111827;
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #f8fafc;
 }
 
 .calendar-top {
@@ -126,25 +133,25 @@
   display: grid;
   place-items: center;
   border-radius: 18px;
-  background: #f8fafc;
-  color: #0f172a;
+  background: var(--surface-soft);
+  color: var(--text);
   font-weight: 900;
 }
 
 .calendar-month-label {
   font-size: 1.4rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .calendar-meta {
-  color: #475569;
+  color: var(--muted);
   font-size: 0.95rem;
 }
 
 .calendar-today {
   border: none;
-  background: #2563eb;
+  background: var(--accent-strong);
   color: white;
   padding: 12px 20px;
   border-radius: 16px;
@@ -162,11 +169,11 @@
 
 .nav-button,
 .calendar-select {
-  border: 1px solid #dbeafe;
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 12px 16px;
-  background: #f8fbff;
-  color: #0f172a;
+  background: var(--surface-soft);
+  color: var(--text);
   font-weight: 700;
   cursor: pointer;
 }
@@ -182,7 +189,7 @@
 }
 
 .weekday {
-  color: #64748b;
+  color: var(--muted);
   font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -192,8 +199,8 @@
 .day {
   min-height: 72px;
   border-radius: 20px;
-  background: #f8fbff;
-  color: #0f172a;
+  background: var(--surface-soft);
+  color: var(--text);
   display: grid;
   place-items: center;
   font-weight: 700;
@@ -205,7 +212,7 @@
 }
 
 .day.active {
-  background: #2563eb;
+  background: var(--accent-strong);
   color: white;
 }
 

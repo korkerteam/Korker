@@ -139,7 +139,7 @@ function selectUser(userId) {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: var(--primary-color);
+  background: var(--accent);
   color: #fff;
   flex-shrink: 0;
   min-height: 64px;
@@ -190,14 +190,14 @@ function selectUser(userId) {
   transition: background 0.2s;
 }
 .icon-btn-small:hover {
-  background: #e8edf5;
+  background: rgba(138, 180, 255, 0.16);
 }
 .empty-state {
   display: flex;
   align-items: center;
   justify-content: center;
   flex: 1;
-  color: #9ca3af;
+  color: var(--muted);
   font-size: 16px;
   padding: 40px 20px;
 }
@@ -213,9 +213,10 @@ function selectUser(userId) {
   gap: 8px;
   padding: 12px 16px;
   margin: 8px 12px;
-  background: #fff;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 20px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-soft);
   flex-shrink: 0;
 }
 .search-icon {
@@ -226,12 +227,12 @@ function selectUser(userId) {
   border: none;
   background: transparent;
   font-size: 16px;
-  color: #1a1a2e;
+  color: var(--text);
   outline: none;
   font-family: inherit;
 }
 .search-input::placeholder {
-  color: #9ca3af;
+  color: var(--muted);
 }
 .search-results {
   flex: 1;
@@ -269,13 +270,14 @@ function selectUser(userId) {
   cursor: pointer;
   text-align: left;
   transition: background 0.15s;
-  border-bottom: 1px solid #e8edf5;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
 }
 .contact-item:hover {
-  background: #e8edf5;
+  background: rgba(138, 180, 255, 0.12);
 }
 .contact-item:active {
-  background: #d1dcee;
+  background: rgba(138, 180, 255, 0.2);
 }
 .contact-item-left {
   display: flex;
@@ -291,11 +293,13 @@ function selectUser(userId) {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: #f8fafc;
   font-size: 20px;
   font-weight: 700;
   flex-shrink: 0;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 .avatar-img {
   width: 100%;
@@ -310,14 +314,14 @@ function selectUser(userId) {
 .contact-item-name {
   font-size: 17px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .contact-item-last {
   font-size: 15px;
-  color: #9ca3af;
+  color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -333,7 +337,7 @@ function selectUser(userId) {
 }
 .contact-time {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--muted);
   white-space: nowrap;
 }
 .unread-badge {

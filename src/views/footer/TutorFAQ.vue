@@ -72,7 +72,14 @@ const toggleFAQ = (index) => {
   align-items: center;
   justify-content: center;
   padding: 0.4rem 1rem 0.2rem;
-  background: linear-gradient(135deg, #fdfefe 0%, #f2f8ff 45%, #f7fbff 100%);
+  background-color: var(--bg-color);
+  background-image: linear-gradient(
+    135deg,
+    var(--surface-soft) 0%,
+    var(--surface) 45%,
+    var(--surface-strong) 100%
+  );
+  color: var(--text);
   font-family:
     system-ui,
     -apple-system,
@@ -100,9 +107,15 @@ const toggleFAQ = (index) => {
   gap: 1rem;
   border-radius: 30px;
   padding: 1rem;
-  background: linear-gradient(135deg, #ffffff 0%, #f7fbff 50%, #eef8ff 100%);
-  box-shadow: 0 28px 80px rgba(2, 6, 23, 0.12);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  background-color: var(--surface-strong);
+  background-image: linear-gradient(
+    135deg,
+    var(--surface-strong) 0%,
+    var(--surface-soft) 50%,
+    var(--surface) 100%
+  );
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
 }
 
 @media (min-width: 900px) {
@@ -121,8 +134,8 @@ const toggleFAQ = (index) => {
   display: inline-flex;
   align-items: center;
   border-radius: 9999px;
-  background: #e0f2fe;
-  color: #0369a1;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
   padding: 0.45rem 0.8rem;
   font-size: 0.78rem;
   font-weight: 700;
@@ -135,7 +148,7 @@ const toggleFAQ = (index) => {
   font-size: clamp(1.8rem, 3.2vw, 2.6rem);
   line-height: 1.08;
   font-weight: 900;
-  color: #0f172a;
+  color: var(--text);
   letter-spacing: -0.02em;
 }
 
@@ -144,7 +157,7 @@ const toggleFAQ = (index) => {
   max-width: 40rem;
   font-size: 1rem;
   line-height: 1.7;
-  color: #475569;
+  color: var(--muted);
 }
 
 .hero-panel {
@@ -157,10 +170,10 @@ const toggleFAQ = (index) => {
   align-items: center;
   gap: 0.75rem;
   border-radius: 9999px;
-  background: #f8fafc;
-  border: 1px solid #dbeafe;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
   padding: 0.7rem 1rem;
-  color: #334155;
+  color: var(--text);
   font-weight: 600;
 }
 
@@ -171,8 +184,8 @@ const toggleFAQ = (index) => {
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background: #e0f2fe;
-  color: #0369a1;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 .faq-list {
@@ -183,9 +196,9 @@ const toggleFAQ = (index) => {
 
 .faq-card {
   border-radius: 20px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  background: #ffffff;
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  box-shadow: var(--shadow-soft);
   overflow: hidden;
 }
 
@@ -205,7 +218,7 @@ const toggleFAQ = (index) => {
 .faq-question {
   font-size: 1rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .faq-toggle {
@@ -215,20 +228,20 @@ const toggleFAQ = (index) => {
   width: 2rem;
   height: 2rem;
   border-radius: 9999px;
-  background: #e0f2fe;
-  color: #0369a1;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
   font-size: 1rem;
   flex-shrink: 0;
 }
 
 .faq-toggle.open {
-  background: #0369a1;
+  background: var(--accent-strong);
   color: #ffffff;
 }
 
 .faq-answer {
   padding: 0 1.1rem 1rem;
-  color: #475569;
+  color: var(--muted);
   line-height: 1.7;
 }
 </style>

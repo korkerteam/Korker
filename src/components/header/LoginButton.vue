@@ -57,9 +57,9 @@ function handleProfileClick() {
   gap: 10px;
   padding: 10px 16px;
   border-radius: 999px;
-  background-color: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(79, 117, 199, 0.18);
-  box-shadow: 0 18px 45px rgba(79, 117, 199, 0.1);
+  background-color: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
 }
 
 .user-avatar {
@@ -81,7 +81,7 @@ function handleProfileClick() {
   font-family: Inter, system-ui, sans-serif;
   font-size: 0.92rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--text);
   max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -96,8 +96,8 @@ function handleProfileClick() {
   height: 32px;
   border: none;
   border-radius: 50%;
-  background: rgba(15, 23, 42, 0.05);
-  color: #475569;
+  background: var(--accent-soft);
+  color: var(--muted);
   cursor: pointer;
   transition:
     background 0.18s,
@@ -106,8 +106,8 @@ function handleProfileClick() {
 }
 
 .logout-btn:hover {
-  background: rgba(79, 117, 199, 0.12);
-  color: #1f2937;
+  background: rgba(79, 117, 199, 0.16);
+  color: var(--text);
   transform: translateY(-1px);
 }
 

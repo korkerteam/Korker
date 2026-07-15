@@ -174,10 +174,10 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--surface-strong);
   border-radius: 999px;
-  border: 1px solid rgba(79, 117, 199, 0.18);
-  box-shadow: 0 18px 42px rgba(79, 117, 199, 0.08);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
 }
 
 .search-input {
@@ -185,7 +185,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--surface-soft);
   border-radius: 999px;
   flex: 1 1 auto;
 }
@@ -201,6 +201,7 @@ onBeforeUnmount(() => {
   padding: 6px 0;
   width: 100%;
   background: transparent;
+  color: var(--text);
 }
 
 .submit-btn {

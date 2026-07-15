@@ -65,9 +65,9 @@ const loading = ref(false)
   width: 100%;
   max-width: 1120px;
   margin: 0 auto;
-  background: #ffffff;
+  background: var(--surface-strong);
   border-radius: 16px;
-  box-shadow: 0 6px 18px rgba(31, 41, 55, 0.06);
+  box-shadow: var(--shadow-soft);
   overflow: hidden;
   font-family: sans-serif;
   min-height: 0;
@@ -78,8 +78,8 @@ const loading = ref(false)
 
 .ranks-header {
   padding: 18px 20px;
-  background: linear-gradient(90deg, rgba(79, 117, 199, 0.06), rgba(79, 117, 199, 0.03));
-  border-bottom: 1px solid rgba(79, 117, 199, 0.08);
+  background: var(--surface-soft);
+  border-bottom: 1px solid var(--border);
 }
 
 .ranks-header h3 {
@@ -133,7 +133,7 @@ const loading = ref(false)
 }
 
 .ranks-list li:hover {
-  background: rgba(79, 117, 199, 0.04);
+  background: var(--accent-soft);
 }
 
 .rank {
@@ -150,11 +150,11 @@ const loading = ref(false)
 
 .name {
   font-weight: 700;
-  color: #111827;
+  color: var(--text);
 }
 
 .subject {
-  color: #6b7280;
+  color: var(--muted);
   font-size: 13px;
   font-weight: 600;
 }

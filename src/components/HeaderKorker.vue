@@ -24,11 +24,11 @@ function goHome() {
   font-family: Horizon, 'Inter', system-ui, sans-serif;
   font-size: 2.15rem;
   font-weight: 800;
-  color: var(--accent);
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(79, 117, 199, 0.2);
+  color: var(--logo-color, #4f75c7);
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
   border-radius: 24px;
-  box-shadow: 0 20px 50px rgba(79, 117, 199, 0.12);
+  box-shadow: var(--shadow-soft);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition:
     transform 180ms ease,

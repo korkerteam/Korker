@@ -502,22 +502,22 @@ function closePage() {
   max-width: 480px;
   padding: 28px;
   border-radius: 24px;
-  background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
-  border: 1px solid rgba(79, 117, 199, 0.18);
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
   text-align: center;
   box-sizing: border-box;
 }
 
 .empty-state-card h3 {
   margin: 0 0 10px;
-  color: #123;
+  color: var(--text);
   font-size: 22px;
 }
 
 .empty-state-card p {
   margin: 0;
-  color: #475569;
+  color: var(--muted);
   line-height: 1.6;
   font-size: 15px;
 }
@@ -530,9 +530,9 @@ function closePage() {
   padding: 24px;
   border-radius: 28px;
   overflow-y: auto;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.08);
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
   margin-left: auto;
   align-self: flex-start;
   position: sticky;
@@ -550,7 +550,7 @@ function closePage() {
   margin: 0;
   font-size: 14px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -566,7 +566,7 @@ function closePage() {
   margin: 0 0 8px;
   font-size: 12px;
   font-weight: 600;
-  color: #4b5563;
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -618,14 +618,14 @@ function closePage() {
     border-color 0.2s ease,
     transform 0.15s ease;
   font-size: 14px;
-  color: #1f2937;
-  background: #f8fbff;
-  border: 1px solid rgba(79, 117, 199, 0.12);
+  color: var(--text);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
 }
 
 .filter-options label:hover {
-  background: rgba(79, 117, 199, 0.13);
-  border-color: rgba(79, 117, 199, 0.2);
+  background: var(--accent-soft);
+  border-color: var(--border);
   transform: translateX(2px);
 }
 
@@ -633,7 +633,7 @@ function closePage() {
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: #4f75c7;
+  accent-color: var(--accent-strong);
 }
 
 .tutor-section {
@@ -667,8 +667,8 @@ function closePage() {
   user-select: none;
   -webkit-user-drag: none;
   -webkit-touch-callout: none;
-  background: linear-gradient(135deg, rgba(248, 251, 255, 0.98) 0%, rgba(238, 242, 255, 0.95) 100%);
-  border: 1px solid rgba(79, 117, 199, 0.12);
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
   border-radius: 24px;
   padding: 24px;
   flex: 1;
@@ -686,9 +686,9 @@ function closePage() {
   height: 460px;
   border-radius: 20px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--surface-soft);
   padding: 0;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-soft);
   transform: translateX(var(--swipe-offset, 0px)) rotate(var(--swipe-rotation, 0deg));
   transition:
     transform 0.2s ease,
@@ -824,27 +824,27 @@ function closePage() {
   margin: 0;
   font-size: 16px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text);
 }
 
 .tutor-meta {
   margin: 0;
   font-size: 12px;
-  color: #4b5563;
+  color: var(--muted);
   font-weight: 500;
 }
 
 .tutor-price {
   margin: 0;
   font-size: 14px;
-  color: #1f2937;
+  color: var(--text);
   font-weight: 700;
 }
 
 .bio-box {
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(79, 117, 199, 0.1);
-  border-left: 3px solid #4f75c7;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
   border-radius: 8px;
   padding: 10px;
 }
@@ -853,7 +853,7 @@ function closePage() {
   margin: 0;
   font-size: 13px;
   line-height: 1.5;
-  color: #374151;
+  color: var(--text);
 }
 
 .tags-list {
@@ -864,13 +864,13 @@ function closePage() {
 
 .tag {
   display: inline-block;
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  color: #0c4a6e;
+  background: var(--accent-soft);
+  color: var(--text);
   padding: 3px 8px;
   border-radius: 12px;
   font-size: 10px;
   font-weight: 600;
-  border: 1px solid rgba(79, 117, 199, 0.2);
+  border: 1px solid var(--border);
 }
 
 .availability-box {
