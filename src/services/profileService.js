@@ -20,6 +20,7 @@ export async function fetchProfile(userId) {
 export async function upsertProfile(
   { name, surname, age, gender, account_type, location, profile_picture },
   userId,
+  tutor_post = null,
 ) {
   const uid = await resolveUserId(userId)
   if (!uid) throw new Error('Not authenticated')
@@ -34,6 +35,7 @@ export async function upsertProfile(
     account_type,
     location,
     profile_picture,
+    tutor_post,
   }
 
   if (existing) {
