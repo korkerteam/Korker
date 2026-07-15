@@ -229,7 +229,19 @@ function closePage() {
             '--swipe-rotation': `${swipeRotation}deg`,
           }"
         >
-          <div class="card-image">
+          <div
+            class="card-image"
+            :class="[
+              swipeOffsetX < -120 ? 'swiping-left' : '',
+              swipeOffsetX > 120 ? 'swiping-right' : '',
+            ]"
+          >
+            <div class="swipe-indicator dislike" aria-hidden="true" v-if="swipeOffsetX < -120">
+              <span>✕</span>
+            </div>
+            <div class="swipe-indicator like" aria-hidden="true" v-if="swipeOffsetX > 120">
+              <span>✔</span>
+            </div>
             <div v-if="currentTutor.image" class="swipe-image-wrapper">
               <img
                 class="swipe-image"
@@ -550,6 +562,7 @@ function closePage() {
 }
 
 .card-image {
+  position: relative;
   display: block;
   width: 100%;
   height: 460px;
@@ -570,8 +583,58 @@ function closePage() {
 .swipe-image-wrapper {
   width: 100%;
   height: 100%;
+  transition: opacity 0.2s ease;
 }
 
+.card-image.swiping-left .swipe-image-wrapper,
+.card-image.swiping-right .swipe-image-wrapper {
+  opacity: 0.4;
+}
+
+.swipe-indicator {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 92px;
+  font-weight: 800;
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  transform: scale(0.94);
+}
+
+.swipe-indicator span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  border-radius: 999px;
+  border: 3px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(2px);
+}
+
+.swipe-indicator.dislike {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.18);
+}
+
+.swipe-indicator.like {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.18);
+}
+
+.card-image.swiping-left .swipe-indicator.dislike,
+.card-image.swiping-right .swipe-indicator.like {
+  opacity: 1;
+  transform: scale(1.02);
+}
 .card-image img {
   width: 100%;
   height: 100%;
