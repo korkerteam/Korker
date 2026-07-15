@@ -205,20 +205,6 @@ function copyMondayToWeekdays() {
   })
 }
 
-function applySavedTutorPost() {
-  const saved = loadTutorPost()
-  if (saved) {
-    draft.lessonPhoto = saved.lessonPhoto || ''
-    draft.lessonPrice = saved.lessonPrice || ''
-    draft.lessonTags = saved.lessonTags || []
-    draft.lessonSubject = saved.lessonSubject || ''
-    draft.lessonLevel = saved.lessonLevel || 'Liceum'
-    draft.lessonDescription = saved.lessonDescription || ''
-    draft.weeklyAvailability = normalizeWeeklyAvailability(
-      saved.weeklyAvailability || saved.availableSlots,
-    )
-  } else {
-    draft.weeklyAvailability = createDefaultWeeklyAvailability()
 function applySavedTutorPost(data) {
   if (data?.tutor_post) {
     const tp = data.tutor_post
