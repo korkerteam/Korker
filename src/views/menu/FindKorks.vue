@@ -21,6 +21,7 @@ const selectedTags = ref([])
 const swipeStartX = ref(null)
 const swipeOffsetX = ref(0)
 const swipeRotation = ref(0)
+const cardRef = ref(null)
 
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
@@ -307,9 +308,15 @@ function startSwipe(event) {
     return
   }
 
+  event.preventDefault?.()
   swipeStartX.value = getSwipeClientX(event)
   swipeOffsetX.value = 0
   swipeRotation.value = 0
+
+  // Capture pointer to track movement even outside the card
+  if (cardRef.value && event.pointerId !== undefined) {
+    cardRef.value.setPointerCapture(event.pointerId)
+  }
 }
 
 function moveSwipe(event) {
@@ -327,6 +334,11 @@ function moveSwipe(event) {
 
 function endSwipe(event) {
   if (swipeStartX.value === null) return
+
+  // Release pointer capture
+  if (cardRef.value && event.pointerId !== undefined) {
+    cardRef.value.releasePointerCapture(event.pointerId)
+  }
 
   const currentX = getSwipeClientX(event)
   const delta = currentX - swipeStartX.value
@@ -398,11 +410,13 @@ function closePage() {
       <div class="tutor-section">
         <div
           v-if="filteredTutors.length && currentTutor"
+          ref="cardRef"
           class="tutor-card"
           @pointerdown="startSwipe"
           @pointermove="moveSwipe"
           @pointerup="endSwipe"
           @pointercancel="endSwipe"
+          @dragstart.prevent
           :style="{
             '--swipe-offset': `${swipeOffsetX}px`,
             '--swipe-rotation': `${swipeRotation}deg`,
@@ -410,7 +424,13 @@ function closePage() {
         >
           <div class="card-image">
             <div v-if="currentTutor.image" class="swipe-image-wrapper">
-              <img class="swipe-image" :src="currentTutor.image" :alt="currentTutor.name" />
+              <img
+                class="swipe-image"
+                :src="currentTutor.image"
+                :alt="currentTutor.name"
+                draggable="false"
+                @dragstart.prevent
+              />
             </div>
           </div>
 
@@ -683,6 +703,13 @@ function closePage() {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  touch-action: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
   background: linear-gradient(135deg, rgba(248, 251, 255, 0.98) 0%, rgba(238, 242, 255, 0.95) 100%);
   border: 1px solid rgba(79, 117, 199, 0.12);
   border-radius: 24px;
@@ -721,7 +748,11 @@ function closePage() {
   border: 1px solid rgba(79, 117, 199, 0.1);
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
   -webkit-user-drag: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
   user-select: none;
+  -webkit-touch-callout: none;
   pointer-events: auto;
   cursor: pointer;
 }
