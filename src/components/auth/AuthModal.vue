@@ -170,9 +170,9 @@ async function handleSubmit() {
   width: 100%;
   max-width: fit-content;
   padding: 32px 24px 28px;
-  background: #ffffff;
+  background: var(--surface-strong);
   border-radius: 24px;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow-soft);
   max-height: 90vh;
   overflow-y: auto;
 }
@@ -189,7 +189,7 @@ async function handleSubmit() {
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: #888;
+  color: var(--muted);
   cursor: pointer;
   transition:
     background 0.15s,
@@ -197,8 +197,8 @@ async function handleSubmit() {
 }
 
 .close-btn:hover {
-  background: #f0f0f0;
-  color: #333;
+  background: var(--accent-soft);
+  color: var(--text);
 }
 
 .modal-title {
@@ -206,7 +206,7 @@ async function handleSubmit() {
   font-family: Inter, system-ui, sans-serif;
   font-size: 22px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text);
   text-align: center;
 }
 
@@ -231,19 +231,19 @@ async function handleSubmit() {
 .field label {
   font-size: 13px;
   font-weight: 600;
-  color: #555;
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .field input {
   padding: 12px 16px;
-  border: 1.5px solid #e0e0e0;
+  border: 1.5px solid var(--border);
   border-radius: 12px;
   font-family: Inter, system-ui, sans-serif;
   font-size: 15px;
-  color: #1a1a1a;
-  background: #fafafa;
+  color: var(--text);
+  background: var(--surface-soft);
   outline: none;
   transition:
     border-color 0.2s,
@@ -253,11 +253,11 @@ async function handleSubmit() {
 .field input:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(79, 117, 199, 0.12);
-  background: #fff;
+  background: var(--surface-strong);
 }
 
 .field input::placeholder {
-  color: #aaa;
+  color: var(--muted);
 }
 
 .msg {
@@ -312,7 +312,7 @@ async function handleSubmit() {
   margin: 20px 0 0;
   font-size: 14px;
   text-align: center;
-  color: #666;
+  color: var(--muted);
 }
 
 .toggle-link {

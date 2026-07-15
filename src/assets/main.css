@@ -25,6 +25,56 @@
   --radius-sm: 18px;
 }
 
+:root[data-contrast='high'] {
+  --bg-color: #ffffff;
+  --surface: #ffffff;
+  --surface-strong: #ffffff;
+  --surface-soft: #ffffff;
+  --text: #000000;
+  --muted: #000000;
+  --border: #000000;
+  --accent: #f2b500;
+  --accent-strong: #ffcf33;
+  --accent-soft: #fff4c7;
+  --primary-color: #f2b500;
+  --primary-color-hover: #e0a400;
+  --shadow: 0 0 0 2px #000000;
+  --shadow-soft: 0 0 0 2px #000000;
+}
+
+:root[data-theme='dark'][data-contrast='high'] {
+  --bg-color: #000000;
+  --surface: #000000;
+  --surface-strong: #000000;
+  --surface-soft: #111111;
+  --text: #ffffff;
+  --muted: #ffffff;
+  --border: #ffffff;
+  --accent: #ffcf33;
+  --accent-strong: #ffd84d;
+  --accent-soft: #332600;
+  --primary-color: #ffcf33;
+  --primary-color-hover: #ffd84d;
+  --shadow: 0 0 0 2px #ffffff;
+  --shadow-soft: 0 0 0 2px #ffffff;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg-color: #0f172a;
+  --surface: rgba(15, 23, 42, 0.9);
+  --surface-strong: #111827;
+  --surface-soft: rgba(30, 41, 59, 0.85);
+  --text: #f8fafc;
+  --muted: #cbd5e1;
+  --border: rgba(148, 163, 184, 0.22);
+  --accent: #8ab4ff;
+  --accent-strong: #9ec2ff;
+  --accent-soft: rgba(138, 180, 255, 0.16);
+  --shadow: 0 30px 80px rgba(2, 6, 23, 0.5);
+  --shadow-soft: 0 16px 42px rgba(2, 6, 23, 0.35);
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -63,6 +113,126 @@ body::before {
   opacity: 0.14;
   z-index: -1;
   pointer-events: none;
+}
+
+:root[data-theme='dark'] body::before {
+  opacity: 0.06;
+}
+
+:root[data-theme='dark'] .main-layout,
+:root[data-theme='dark'] .main-content-area,
+:root[data-theme='dark'] .top-row {
+  color: var(--text);
+}
+
+:root[data-theme='dark'] input,
+:root[data-theme='dark'] textarea,
+:root[data-theme='dark'] select {
+  background: var(--surface-strong);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+:root[data-theme='dark'] section,
+:root[data-theme='dark'] article,
+:root[data-theme='dark'] .card,
+:root[data-theme='dark'] .panel,
+:root[data-theme='dark'] .box,
+:root[data-theme='dark'] .container,
+:root[data-theme='dark'] .section {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+:root[data-theme='dark'] ::selection {
+  background: rgba(138, 180, 255, 0.24);
+}
+
+:root[data-theme='dark'] body,
+:root[data-theme='dark'] .main-layout,
+:root[data-theme='dark'] .main-content-area,
+:root[data-theme='dark'] .top-row,
+:root[data-theme='dark'] .search-block {
+  color: var(--text);
+}
+
+:root[data-theme='dark'] .header-button,
+:root[data-theme='dark'] .searchbar,
+:root[data-theme='dark'] .search-input,
+:root[data-theme='dark'] .results-list,
+:root[data-theme='dark'] .dashboard-top,
+:root[data-theme='dark'] .dashboard-card,
+:root[data-theme='dark'] .notifications-dropdown,
+:root[data-theme='dark'] .modal-content,
+:root[data-theme='dark'] .teacher-card-modal,
+:root[data-theme='dark'] .notice-card,
+:root[data-theme='dark'] .modal-card {
+  background: var(--surface-strong);
+  color: var(--text);
+  border-color: var(--border);
+  box-shadow: var(--shadow-soft);
+}
+
+:root[data-theme='dark'] .search-input input,
+:root[data-theme='dark'] .field input,
+:root[data-theme='dark'] .field textarea {
+  background: var(--surface-soft);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+:root[data-theme='dark'] .dashboard-title,
+:root[data-theme='dark'] .dashboard-card h3,
+:root[data-theme='dark'] .dashboard-card strong,
+:root[data-theme='dark'] .timeline-details h4,
+:root[data-theme='dark'] .modal-header h3,
+:root[data-theme='dark'] .modal-title,
+:root[data-theme='dark'] .teacher-modal-header h3,
+:root[data-theme='dark'] .notice-card h3,
+:root[data-theme='dark'] .field label,
+:root[data-theme='dark'] .toggle-text,
+:root[data-theme='dark'] .close-x {
+  color: var(--text);
+}
+
+:root[data-theme='dark'] .dashboard-card p,
+:root[data-theme='dark'] .dashboard-card span,
+:root[data-theme='dark'] .timeline-details .teacher,
+:root[data-theme='dark'] .timeline-meta .time,
+:root[data-theme='dark'] .result-description,
+:root[data-theme='dark'] .result-loading,
+:root[data-theme='dark'] .notif-time,
+:root[data-theme='dark'] .notifications-empty,
+:root[data-theme='dark'] .notice-card p,
+:root[data-theme='dark'] .field input::placeholder,
+:root[data-theme='dark'] .field label {
+  color: var(--muted);
+}
+
+:root[data-theme='dark'] .result-item,
+:root[data-theme='dark'] .result-title,
+:root[data-theme='dark'] .notif-text,
+:root[data-theme='dark'] .dropdown-header h4,
+:root[data-theme='dark'] .teacher-modal-body,
+:root[data-theme='dark'] .modal-body,
+:root[data-theme='dark'] .timeline-details .teacher {
+  color: var(--text);
+}
+
+:root[data-theme='dark'] .result-item:hover,
+:root[data-theme='dark'] .notifications-list li:hover {
+  background: rgba(138, 180, 255, 0.12);
+}
+
+:root[data-theme='dark'] .notifications-list li.unread {
+  background: rgba(138, 180, 255, 0.16);
+}
+
+:root[data-theme='dark'] .action-secondary {
+  background: rgba(15, 23, 42, 0.8);
+  color: var(--text);
+  border-color: var(--border);
 }
 
 button,

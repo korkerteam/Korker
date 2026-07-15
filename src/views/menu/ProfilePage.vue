@@ -504,15 +504,16 @@ function toggleLessonTag(tag) {
 
 <style scoped>
 .profile-card {
-  background: #ffffff;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
   border-radius: 16px;
   width: 100%;
   max-width: 720px;
   padding: 32px;
   margin: 0 auto;
-  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.15);
+  box-shadow: var(--shadow-soft);
   font-family: Inter, system-ui, sans-serif;
-  color: #1f2937;
+  color: var(--text);
   min-height: 0;
   max-height: calc(100vh - 180px);
   overflow: auto;
@@ -535,21 +536,22 @@ function toggleLessonTag(tag) {
   height: 64px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #eef2ff;
+  border: 3px solid var(--border);
   display: block;
+  background: var(--surface-soft);
 }
 
 .avatar-letter {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--primary-color);
+  background-color: var(--accent);
   color: #ffffff;
   font-size: 22px;
   font-weight: 700;
   font-family: Inter, system-ui, sans-serif;
   flex-shrink: 0;
-  border: 3px solid #eef2ff;
+  border: 3px solid var(--border);
 }
 
 .avatar-editable {
@@ -591,18 +593,20 @@ function toggleLessonTag(tag) {
   font-size: 20px;
   font-weight: 700;
   margin: 0;
-  color: #1f2937;
+  color: var(--text);
 }
 
 .name-input {
   width: 100%;
   padding: 10px 14px;
-  border: 1.5px solid #d1d5db;
+  border: 1.5px solid var(--border);
   border-radius: 8px;
   font-size: 15px;
   font-family: inherit;
   outline: none;
   transition: border-color 0.2s;
+  background: var(--surface);
+  color: var(--text);
 }
 
 .name-input:focus {
@@ -612,7 +616,7 @@ function toggleLessonTag(tag) {
 
 .divider {
   height: 1px;
-  background: #e5e7eb;
+  background: var(--border);
   margin: 20px 0;
 }
 
@@ -640,7 +644,7 @@ function toggleLessonTag(tag) {
 
 .field-label {
   font-weight: 600;
-  color: #374151;
+  color: var(--muted);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -651,12 +655,13 @@ function toggleLessonTag(tag) {
 .field-row textarea {
   width: 100%;
   padding: 10px 14px;
-  border: 1.5px solid #d1d5db;
+  border: 1.5px solid var(--border);
   border-radius: 8px;
   font-size: 14px;
   font-family: inherit;
   outline: none;
-  background: #ffffff;
+  background: var(--surface);
+  color: var(--text);
   box-sizing: border-box;
   transition:
     border-color 0.2s,
@@ -686,10 +691,11 @@ function toggleLessonTag(tag) {
   align-items: center;
   gap: 6px;
   padding: 8px 10px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border);
   border-radius: 999px;
   font-size: 13px;
-  background: #f8fafc;
+  background: var(--surface-soft);
+  color: var(--text);
   cursor: pointer;
   transition:
     background 0.2s,
@@ -708,10 +714,10 @@ function toggleLessonTag(tag) {
 }
 
 .subject-option {
-  border: 1.5px solid #d1d5db;
+  border: 1.5px solid var(--border);
   border-radius: 999px;
-  background: #f8fafc;
-  color: #102036;
+  background: var(--surface-soft);
+  color: var(--text);
   padding: 10px 12px;
   cursor: pointer;
   font-size: 13px;
@@ -720,13 +726,13 @@ function toggleLessonTag(tag) {
 }
 
 .subject-option.selected {
-  background: #eef2ff;
-  border-color: #4f75c7;
-  color: #1f2937;
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text);
 }
 
 .subject-option:hover {
-  background: #e2e8f0;
+  background: rgba(138, 180, 255, 0.16);
 }
 
 .lesson-photo-row {
@@ -758,12 +764,12 @@ function toggleLessonTag(tag) {
 .tutor-offer-header {
   margin-top: 12px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text);
 }
 
 .tutor-offer-view {
-  background: #f8fafc;
-  border: 1px solid rgba(79, 117, 199, 0.1);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px;
   display: grid;
@@ -773,7 +779,7 @@ function toggleLessonTag(tag) {
 .tutor-offer-view h4 {
   margin: 0;
   font-size: 15px;
-  color: #1f2937;
+  color: var(--text);
 }
 
 .offer-row {
@@ -781,35 +787,35 @@ function toggleLessonTag(tag) {
   justify-content: space-between;
   gap: 16px;
   font-size: 13px;
-  color: #374151;
+  color: var(--muted);
 }
 
 .offer-label {
   font-weight: 600;
-  color: #4b5563;
+  color: var(--muted);
 }
 
 .offer-value {
   text-align: right;
-  color: #102036;
+  color: var(--text);
 }
 
 .offer-photo-preview {
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(79, 117, 199, 0.15);
+  border: 1px solid var(--border);
 }
 
 .info-label {
   font-weight: 600;
-  color: #374151;
+  color: var(--muted);
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .info-value {
-  color: #1f2937;
+  color: var(--text);
   font-size: 15px;
   font-weight: 500;
 }
@@ -839,7 +845,7 @@ function toggleLessonTag(tag) {
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #4368b5;
+  background: var(--accent);
 }
 
 .btn-primary:disabled {
@@ -866,12 +872,12 @@ function toggleLessonTag(tag) {
 }
 
 .btn-secondary {
-  background: #eef2ff;
-  color: #1f2937;
+  background: var(--accent-soft);
+  color: var(--text);
 }
 
 .btn-secondary:hover {
-  background: #dbe0f5;
+  background: rgba(138, 180, 255, 0.2);
 }
 
 .edit-btn {

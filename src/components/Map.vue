@@ -96,13 +96,15 @@ const toggleMap = () => {
   height: 56px;
   border-radius: 50%;
   border: none;
-  background: var(--primary-color);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
   color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 20px rgba(79, 117, 199, 0.35);
+  box-shadow:
+    0 0 0 1px rgba(51, 102, 255, 0.18),
+    0 10px 28px rgba(51, 102, 255, 0.28);
   transition:
     transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 0.25s ease;
@@ -110,7 +112,9 @@ const toggleMap = () => {
 
 .map-fab:hover {
   transform: scale(1.08);
-  box-shadow: 0 8px 28px rgba(79, 117, 199, 0.5);
+  box-shadow:
+    0 0 0 1px rgba(51, 102, 255, 0.22),
+    0 14px 34px rgba(51, 102, 255, 0.38);
 }
 
 .map-fab:active {
@@ -130,6 +134,11 @@ const toggleMap = () => {
   height: 200px;
   border-style: solid;
   border-width: 4px;
+  border-color: var(--accent-strong);
+  border-radius: 18px;
   overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(51, 102, 255, 0.16),
+    0 0 24px rgba(51, 102, 255, 0.24);
 }
 </style>

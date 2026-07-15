@@ -92,7 +92,13 @@
   align-items: center;
   justify-content: center;
   padding: 0.4rem 1rem 0.2rem;
-  background: linear-gradient(135deg, #f8fbff 0%, #eef7ff 45%, #fdfefe 100%);
+  background: linear-gradient(
+    135deg,
+    var(--bg-color) 0%,
+    var(--surface-soft) 45%,
+    var(--surface-strong) 100%
+  );
+  color: var(--text);
   font-family:
     system-ui,
     -apple-system,
@@ -120,9 +126,14 @@
   overflow: hidden;
   border-radius: 30px;
   padding: 1rem;
-  background: linear-gradient(135deg, #ffffff 0%, #f7fbff 50%, #eef8ff 100%);
-  box-shadow: 0 28px 80px rgba(2, 6, 23, 0.12);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: linear-gradient(
+    135deg,
+    var(--surface-strong) 0%,
+    var(--surface-soft) 50%,
+    var(--surface) 100%
+  );
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
 }
 
 .hero-accent {
@@ -157,9 +168,10 @@
   flex-direction: column;
   justify-content: space-between;
   border-radius: 22px;
-  background: #ffffff;
+  background: var(--surface-strong);
   padding: 1.4rem;
-  box-shadow: 0 16px 44px rgba(2, 6, 23, 0.07);
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--border);
 }
 
 .text-content {
@@ -177,7 +189,7 @@
   align-items: center;
   gap: 0.5rem;
   border-radius: 9999px;
-  background-color: #0284c7;
+  background-color: var(--accent);
   padding: 0.5rem 1rem;
   color: #ffffff;
 }
@@ -199,7 +211,7 @@
   font-weight: 900;
   line-height: 1.08;
   letter-spacing: -0.02em;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .main-description {
@@ -207,7 +219,7 @@
   max-width: 36rem;
   font-size: 1.05rem;
   line-height: 1.7;
-  color: #334155;
+  color: var(--muted);
 }
 
 @media (min-width: 1024px) {
@@ -232,11 +244,11 @@
 
 .feature-pill {
   border-radius: 9999px;
-  border: 1px solid #cbd5e1;
-  background: #f8fafc;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
   padding: 0.7rem 1rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .benefits-card {

@@ -159,8 +159,9 @@ async function handleSend(content, files) {
   max-width: min(40vw, 600px);
   height: 100vh;
   height: 100dvh;
-  background: #f5f7fa;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  background: var(--surface-strong);
+  color: var(--text);
+  box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
   overflow: hidden;

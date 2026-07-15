@@ -122,8 +122,8 @@ function getObjectUrl(file) {
 <style scoped>
 .input-area {
   padding: 10px 14px 14px;
-  border-top: 1px solid #e8edf5;
-  background: #f5f7fa;
+  border-top: 1px solid var(--border);
+  background: var(--surface-strong);
   flex-shrink: 0;
 }
 .file-chips {
@@ -136,8 +136,8 @@ function getObjectUrl(file) {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 6px 10px;
   font-size: 13px;
@@ -162,10 +162,10 @@ function getObjectUrl(file) {
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 120px;
-  color: #1a1a2e;
+  color: var(--text);
 }
 .file-chip-size {
-  color: #9ca3af;
+  color: var(--muted);
   flex-shrink: 0;
 }
 .file-chip-remove {
@@ -173,8 +173,8 @@ function getObjectUrl(file) {
   height: 18px;
   border-radius: 50%;
   border: none;
-  background: #e8edf5;
-  color: #9ca3af;
+  background: var(--surface-soft);
+  color: var(--muted);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -192,10 +192,11 @@ function getObjectUrl(file) {
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  background: #fff;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 20px;
   padding: 4px 4px 4px 12px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-soft);
   transition: box-shadow 0.2s;
 }
 .input-row:focus-within {
@@ -207,7 +208,7 @@ function getObjectUrl(file) {
   border-radius: 50%;
   border: none;
   background: transparent;
-  color: #9ca3af;
+  color: var(--muted);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -216,8 +217,8 @@ function getObjectUrl(file) {
   transition: all 0.15s;
 }
 .input-attach:hover {
-  background: #e8edf5;
-  color: var(--primary-color);
+  background: rgba(138, 180, 255, 0.16);
+  color: var(--accent);
 }
 .file-input-hidden {
   display: none;
@@ -227,7 +228,7 @@ function getObjectUrl(file) {
   border: none;
   background: transparent;
   font-size: 16px;
-  color: #1a1a2e;
+  color: var(--text);
   resize: none;
   padding: 10px 0;
   outline: none;
@@ -237,7 +238,7 @@ function getObjectUrl(file) {
   font-family: inherit;
 }
 .input-textarea::placeholder {
-  color: #9ca3af;
+  color: var(--muted);
 }
 .input-send {
   width: 40px;
@@ -261,7 +262,8 @@ function getObjectUrl(file) {
   transform: scale(0.92);
 }
 .input-send:disabled {
-  background: #d1dcee;
+  background: var(--border);
+  color: var(--muted);
   cursor: default;
   transform: none;
 }

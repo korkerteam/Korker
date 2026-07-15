@@ -134,11 +134,11 @@ function goBack() {
 .teacher-panel {
   width: 100%;
   max-width: 760px;
-  background: #ffffff;
+  background: var(--surface-strong);
   border-radius: 16px;
   padding: 0;
-  box-shadow: 0 18px 40px rgba(20, 40, 80, 0.08);
-  border: 1px solid rgba(79, 117, 199, 0.08);
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--border);
   font-family: Inter, system-ui, sans-serif;
   min-height: 0;
   max-height: calc(100vh - 180px);
@@ -156,17 +156,17 @@ function goBack() {
 .teacher-header h3 {
   margin: 0;
   font-size: 20px;
-  color: #123;
+  color: var(--text);
 }
 .teacher-header .sub {
   margin: 6px 0 0;
-  color: #5b6b84;
+  color: var(--muted);
   font-size: 13px;
 }
 
 .teacher-header {
   padding: 18px;
-  border-bottom: 1px solid rgba(79, 117, 199, 0.08);
+  border-bottom: 1px solid var(--border);
 }
 
 .teacher-card-list {
@@ -194,8 +194,8 @@ function goBack() {
   gap: 12px;
   padding: 12px;
   border-radius: 12px;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.01), rgba(0, 0, 0, 0.02));
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
   margin-bottom: 8px;
 }
 
@@ -203,7 +203,7 @@ function goBack() {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6b8ef0, #4f75c7);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
   color: white;
   display: inline-flex;
   align-items: center;
@@ -230,11 +230,11 @@ function goBack() {
 
 .meta .name {
   font-weight: 700;
-  color: #102036;
+  color: var(--text);
 }
 .meta .details {
   font-size: 13px;
-  color: #556778;
+  color: var(--muted);
   margin-top: 4px;
 }
 
@@ -255,26 +255,26 @@ function goBack() {
 }
 .btn.ghost {
   background: transparent;
-  border: 1px solid rgba(17, 24, 39, 0.06);
-  color: #203040;
+  border: 1px solid var(--border);
+  color: var(--text);
 }
 
 .empty-state {
-  color: #6b7280;
+  color: var(--muted);
   padding: 24px;
   text-align: center;
 }
 
 .profile-header {
   padding: 12px 18px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  border-top: 1px solid rgba(79, 117, 199, 0.08);
+  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
 }
 
 .back-button {
   background: transparent;
   border: none;
-  color: #4f75c7;
+  color: var(--accent-strong);
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
@@ -283,7 +283,7 @@ function goBack() {
 }
 
 .back-button:hover {
-  color: #3d5a9f;
+  color: var(--accent);
 }
 
 .profile-content {
@@ -313,7 +313,7 @@ function goBack() {
   width: 240px;
   height: 240px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #6b8ef0, #4f75c7);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -332,28 +332,28 @@ function goBack() {
   margin: 0;
   font-size: 24px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text);
 }
 
 .profile-meta {
   margin: 0;
-  color: #4b5563;
+  color: var(--muted);
   font-size: 14px;
   font-weight: 500;
 }
 
 .bio-section {
-  background: linear-gradient(135deg, rgba(248, 251, 255, 0.5) 0%, rgba(238, 242, 255, 0.5) 100%);
-  border: 1px solid rgba(79, 117, 199, 0.1);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 12px;
-  border-left: 3px solid #4f75c7;
+  border-left: 3px solid var(--accent);
 }
 
 .profile-bio {
   margin: 0;
   line-height: 1.6;
-  color: #374151;
+  color: var(--text);
   font-size: 14px;
 }
 
@@ -366,7 +366,7 @@ function goBack() {
 .tags-label {
   font-size: 12px;
   font-weight: 600;
-  color: #4b5563;
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -379,13 +379,13 @@ function goBack() {
 
 .tag {
   display: inline-block;
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  color: #0c4a6e;
+  background: var(--accent-soft);
+  color: var(--text);
   padding: 4px 10px;
   border-radius: 16px;
   font-size: 12px;
   font-weight: 600;
-  border: 1px solid rgba(79, 117, 199, 0.2);
+  border: 1px solid var(--border);
 }
 
 .remove-button {

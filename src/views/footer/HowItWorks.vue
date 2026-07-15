@@ -78,7 +78,9 @@
   padding: 48px 24px;
   background:
     radial-gradient(circle at top left, rgba(79, 117, 199, 0.14), transparent 24%),
-    radial-gradient(circle at bottom right, rgba(82, 93, 225, 0.12), transparent 18%), #f8fbff;
+    radial-gradient(circle at bottom right, rgba(82, 93, 225, 0.12), transparent 18%),
+    var(--bg-color);
+  color: var(--text);
 }
 
 .hero {
@@ -97,8 +99,8 @@
   display: inline-flex;
   align-items: center;
   padding: 10px 16px;
-  background: rgba(79, 117, 199, 0.12);
-  color: #3366ff;
+  background: var(--accent-soft);
+  color: var(--accent);
   font-size: 0.82rem;
   font-weight: 700;
   border-radius: 999px;
@@ -110,13 +112,13 @@
   margin: 0;
   font-size: clamp(2.4rem, 4vw, 4.2rem);
   line-height: 1.02;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .hero-copy p {
   margin: 0;
   max-width: 640px;
-  color: #475569;
+  color: var(--muted);
   font-size: 1.05rem;
   line-height: 1.85;
 }
@@ -126,9 +128,9 @@
   gap: 20px;
   padding: 30px;
   border-radius: 32px;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.08);
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
 }
 
 .preview-card {
@@ -137,9 +139,9 @@
   gap: 16px;
   padding: 18px 20px;
   border-radius: 24px;
-  background: white;
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
 }
 
 .preview-card-icon {
@@ -148,8 +150,8 @@
   width: 52px;
   height: 52px;
   border-radius: 18px;
-  background: rgba(79, 117, 199, 0.1);
-  color: #3366ff;
+  background: var(--accent-soft);
+  color: var(--accent);
   font-size: 1.4rem;
 }
 
@@ -157,12 +159,12 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .preview-card-content p {
   margin: 8px 0 0;
-  color: #64748b;
+  color: var(--muted);
   font-size: 0.95rem;
   line-height: 1.75;
 }
@@ -180,13 +182,13 @@
 .section-head h2 {
   margin: 0;
   font-size: clamp(2rem, 3vw, 2.4rem);
-  color: #0f172a;
+  color: var(--text);
 }
 
 .section-head p {
   margin: 14px auto 0;
   max-width: 640px;
-  color: #64748b;
+  color: var(--muted);
   font-size: 1rem;
   line-height: 1.8;
 }
@@ -202,9 +204,9 @@
   overflow: hidden;
   border-radius: 28px;
   padding: 28px;
-  background: white;
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
   transition:
     transform 0.25s ease,
     box-shadow 0.25s ease;
@@ -212,7 +214,7 @@
 
 .step-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.14);
+  box-shadow: var(--shadow);
 }
 
 .step-badge {
@@ -221,8 +223,8 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  background: rgba(79, 117, 199, 0.1);
-  color: #3366ff;
+  background: var(--accent-soft);
+  color: var(--accent);
   border-radius: 16px;
   font-weight: 800;
   margin-bottom: 18px;
@@ -231,12 +233,12 @@
 .step-card h3 {
   margin: 0 0 12px;
   font-size: 1.05rem;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .step-card p {
   margin: 0;
-  color: #64748b;
+  color: var(--muted);
   font-size: 0.96rem;
   line-height: 1.75;
 }

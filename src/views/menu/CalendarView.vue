@@ -151,11 +151,19 @@ function selectDay(day) {
 
 .calendar-card,
 .lessons-card {
-  background: #ffffff;
+  background: var(--surface-strong);
   border-radius: 28px;
   padding: 24px;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+:root[data-theme='dark'] .calendar-card,
+:root[data-theme='dark'] .lessons-card {
+  background: #111827;
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #f8fafc;
 }
 
 .calendar-top {
@@ -168,26 +176,26 @@ function selectDay(day) {
 
 .calendar-weekday {
   margin: 0 0 6px;
-  color: #475569;
+  color: var(--muted);
   font-weight: 700;
 }
 
 h2 {
   margin: 0;
   font-size: 1.6rem;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .calendar-meta,
 .lessons-label {
   margin: 4px 0 0;
-  color: #64748b;
+  color: var(--muted);
   font-size: 0.95rem;
 }
 
 .calendar-button {
   border: none;
-  background: #2563eb;
+  background: var(--accent-strong);
   color: white;
   padding: 12px 22px;
   border-radius: 16px;
@@ -202,7 +210,7 @@ h2 {
 }
 
 .weekday {
-  color: #64748b;
+  color: var(--muted);
   font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -212,12 +220,12 @@ h2 {
 .day {
   min-height: 72px;
   border-radius: 20px;
-  background: #f8fbff;
-  color: #0f172a;
+  background: var(--surface-soft);
+  color: var(--text);
   display: grid;
   place-items: center;
   font-weight: 700;
-  border: 1px solid transparent;
+  border: 1px solid var(--border);
 }
 
 .day.clickable {
@@ -233,7 +241,7 @@ h2 {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #2563eb;
+  background: var(--accent-strong);
   display: block;
   margin-top: 6px;
 }
@@ -245,7 +253,7 @@ h2 {
 }
 
 .day.active {
-  background: #2563eb;
+  background: var(--accent-strong);
   color: white;
 }
 
@@ -263,7 +271,7 @@ h2 {
 }
 
 .lessons-count {
-  color: #2563eb;
+  color: var(--accent-strong);
   font-weight: 700;
 }
 
@@ -277,36 +285,36 @@ h2 {
   gap: 10px;
   padding: 18px;
   border-radius: 20px;
-  background: #f8fafc;
-  border: 1px solid rgba(37, 99, 235, 0.12);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
 }
 
 .lesson-time {
   margin: 0;
   font-size: 0.95rem;
-  color: #2563eb;
+  color: var(--accent-strong);
   font-weight: 700;
 }
 
 .lesson-title {
   margin: 2px 0 0;
   font-size: 1rem;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .lesson-meta {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  color: #475569;
+  color: var(--muted);
   font-size: 0.95rem;
 }
 
 .lesson-empty {
   padding: 24px;
   border-radius: 20px;
-  background: #f8fafc;
-  color: #64748b;
+  background: var(--surface-soft);
+  color: var(--muted);
   font-weight: 600;
 }
 

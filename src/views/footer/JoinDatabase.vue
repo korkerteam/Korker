@@ -66,7 +66,14 @@
   align-items: center;
   justify-content: center;
   padding: 0.4rem 1rem 0.2rem;
-  background: linear-gradient(135deg, #fdfefe 0%, #f2f8ff 45%, #f7fbff 100%);
+  background-color: var(--bg-color);
+  background-image: linear-gradient(
+    135deg,
+    var(--surface-soft) 0%,
+    var(--surface) 45%,
+    var(--surface-strong) 100%
+  );
+  color: var(--text);
   font-family:
     system-ui,
     -apple-system,
@@ -94,9 +101,10 @@
   gap: 0.9rem;
   border-radius: 34px;
   padding: 1rem;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(243, 248, 255, 0.95) 100%);
-  box-shadow: 0 30px 90px rgba(15, 23, 42, 0.12);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background-color: var(--surface-strong);
+  background-image: linear-gradient(135deg, var(--surface-strong) 0%, var(--surface-soft) 100%);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
 }
 
 @media (min-width: 1024px) {
@@ -115,8 +123,8 @@
   display: inline-flex;
   align-items: center;
   border-radius: 9999px;
-  background: #e0f2fe;
-  color: #0369a1;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
   padding: 0.45rem 0.8rem;
   font-size: 0.78rem;
   font-weight: 700;
@@ -129,7 +137,7 @@
   font-size: clamp(1.9rem, 3.5vw, 2.8rem);
   line-height: 1.08;
   font-weight: 900;
-  color: #0f172a;
+  color: var(--text);
   letter-spacing: -0.02em;
 }
 
@@ -138,7 +146,7 @@
   margin: 0;
   font-size: 1.03rem;
   line-height: 1.7;
-  color: #475569;
+  color: var(--muted);
 }
 
 .hero-actions {
@@ -153,7 +161,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  background: linear-gradient(135deg, #2563eb 0%, #38bdf8 100%);
+  background: linear-gradient(135deg, var(--accent-strong) 0%, var(--accent) 100%);
   color: #ffffff;
   padding: 0.85rem 1.1rem;
   font-weight: 700;
@@ -165,9 +173,9 @@
   display: inline-flex;
   align-items: center;
   border-radius: 9999px;
-  background: #f8fafc;
-  border: 1px solid #dbeafe;
-  color: #334155;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  color: var(--text);
   padding: 0.7rem 1rem;
   font-size: 0.92rem;
   font-weight: 600;
@@ -182,9 +190,10 @@
   width: 100%;
   border-radius: 24px;
   padding: 1.25rem;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  color: #f8fafc;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  background: linear-gradient(135deg, var(--surface-strong) 0%, var(--surface-soft) 100%);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
 }
 
 .quote-label {
@@ -193,14 +202,14 @@
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #7dd3fc;
+  color: var(--accent-strong);
 }
 
 blockquote {
   margin: 0;
   font-size: 1.05rem;
   line-height: 1.7;
-  color: #e2e8f0;
+  color: var(--muted);
 }
 
 .stats-row {
@@ -212,19 +221,20 @@ blockquote {
 .stats-row > div {
   border-radius: 16px;
   padding: 0.8rem 0.9rem;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
 }
 
 .stats-row strong {
   display: block;
   font-size: 1.2rem;
   margin-bottom: 0.25rem;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .stats-row span {
   font-size: 0.9rem;
-  color: #cbd5e1;
+  color: var(--muted);
 }
 
 .info-grid {
@@ -242,27 +252,34 @@ blockquote {
 .info-card {
   border-radius: 22px;
   padding: 1.2rem;
-  background: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  color: var(--text);
 }
 
 .card-accent {
-  background: linear-gradient(135deg, #f8fbff 0%, #eef7ff 100%);
-  border-color: rgba(37, 99, 235, 0.16);
+  background: linear-gradient(135deg, var(--surface-soft) 0%, var(--accent-soft) 100%);
+  border-color: var(--border);
 }
 
 .info-card h2 {
   margin: 0 0 0.55rem;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text);
+}
+
+.info-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
 }
 
 .info-card p {
   margin: 0;
   font-size: 0.95rem;
   line-height: 1.65;
-  color: #475569;
+  color: var(--muted);
 }
 </style>

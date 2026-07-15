@@ -100,7 +100,7 @@ function handleDelete(id) {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: var(--primary-color);
+  background: var(--accent);
   color: #fff;
   flex-shrink: 0;
   min-height: 64px;
@@ -170,7 +170,7 @@ function handleDelete(id) {
   align-items: center;
   justify-content: center;
   flex: 1;
-  color: #9ca3af;
+  color: var(--muted);
   font-size: 16px;
   padding: 20px;
 }
@@ -181,6 +181,7 @@ function handleDelete(id) {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  background: var(--surface-soft);
 }
 .message-scroll::-webkit-scrollbar {
   width: 5px;

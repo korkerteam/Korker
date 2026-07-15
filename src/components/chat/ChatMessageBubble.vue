@@ -204,8 +204,9 @@ function formatSize(bytes) {
   overflow-wrap: break-word;
 }
 .bubble-them {
-  background: #e8edf5;
-  color: #1a1a2e;
+  background: var(--surface-strong);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-bottom-left-radius: 5px;
 }
 .bubble-mine {
@@ -215,7 +216,7 @@ function formatSize(bytes) {
 }
 .msg-time {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--muted);
   padding: 0 4px;
 }
 .msg-time-right {
@@ -237,7 +238,7 @@ function formatSize(bytes) {
   border-radius: 50%;
   border: none;
   background: transparent;
-  color: #9ca3af;
+  color: var(--muted);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -246,8 +247,8 @@ function formatSize(bytes) {
   flex-shrink: 0;
 }
 .action-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #555;
+  background: rgba(138, 180, 255, 0.16);
+  color: var(--text);
 }
 .delete-confirm {
   display: flex;

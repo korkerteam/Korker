@@ -33,16 +33,10 @@ function stringToColor(str) {
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash)
   }
-  const colors = [
-    '#4f75c7',
-    '#e056fd',
-    '#42b883',
-    '#10b981',
-    '#f59e0b',
-    '#ef4444',
-    '#8b5cf6',
-    '#ec4899',
-  ]
+  const isHighContrast = document.documentElement.getAttribute('data-contrast') === 'high'
+  const colors = isHighContrast
+    ? ['#f2b500', '#ffcf33', '#ffd84d', '#ffde66', '#ffe27f', '#f9dc76', '#f7d96e', '#fce491']
+    : ['#4f75c7', '#5b8cff', '#3b82f6', '#2563eb', '#1d4ed8', '#60a5fa', '#8ab4ff', '#93c5fd']
   return colors[Math.abs(hash) % colors.length]
 }
 

@@ -32,11 +32,11 @@ const emit = defineEmits(['close'])
   background: rgba(10, 20, 40, 0.4);
 }
 .teacher-card-modal {
-  background: #fff;
+  background: var(--surface-strong);
   padding: 20px;
   border-radius: 14px;
   width: min(520px, 90vw);
-  box-shadow: 0 20px 50px rgba(16, 32, 64, 0.25);
+  box-shadow: var(--shadow-soft);
   position: relative;
   max-height: 85vh;
   overflow-y: auto;
@@ -50,7 +50,7 @@ const emit = defineEmits(['close'])
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6b8ef0, var(--primary-color));
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
   color: #fff;
   display: inline-flex;
   align-items: center;
@@ -60,7 +60,7 @@ const emit = defineEmits(['close'])
 }
 .teacher-modal-body {
   margin-top: 12px;
-  color: #233;
+  color: var(--text);
 }
 .close-x {
   position: absolute;

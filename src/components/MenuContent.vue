@@ -106,8 +106,17 @@ function handleCalendarClick() {
     background 0.22s ease;
 }
 
+:root[data-contrast='high'] .menu-item {
+  background: linear-gradient(135deg, #f2b500 0%, #ffcf33 100%);
+  color: #1f2937;
+}
+
 .menu-item:hover {
   background: linear-gradient(180deg, #4b79e2 0%, #2e60be 100%);
+}
+
+:root[data-contrast='high'] .menu-item:hover {
+  background: linear-gradient(135deg, #ffcf33 0%, #f2b500 100%);
 }
 
 .icon {
@@ -119,9 +128,17 @@ function handleCalendarClick() {
   background: rgba(255, 255, 255, 0.16);
 }
 
+:root[data-contrast='high'] .icon {
+  background: rgba(31, 41, 55, 0.12);
+}
+
 .icon svg {
   width: 20px;
   height: 20px;
   fill: #ffffff;
+}
+
+:root[data-contrast='high'] .icon svg {
+  fill: #1f2937;
 }
 </style>
