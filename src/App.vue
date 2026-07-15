@@ -235,7 +235,7 @@ onMounted(() => {
   position: fixed;
   bottom: 24px;
   left: 24px;
-  z-index: 1200;
+  z-index: 1300;
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -264,29 +264,30 @@ onMounted(() => {
 .settings-menu-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1190;
+  z-index: 1250;
   display: flex;
   align-items: flex-end;
   justify-content: flex-start;
   padding: 0 0 96px 24px;
-  background: rgba(8, 12, 24, 0.18);
+  background: rgba(2, 6, 23, 0.28);
+  backdrop-filter: blur(4px);
 }
 
 .settings-menu {
-  background: var(--surface-color);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
+  background: var(--surface-strong);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: 18px;
   padding: 14px 16px;
   min-width: 220px;
-  box-shadow: 0 16px 44px rgba(15, 23, 42, 0.18);
+  box-shadow: var(--shadow-soft);
 }
 
 .settings-menu-title {
   font-size: 0.95rem;
   font-weight: 700;
   margin-bottom: 10px;
-  color: var(--text-color);
+  color: var(--text);
 }
 
 .setting-row {

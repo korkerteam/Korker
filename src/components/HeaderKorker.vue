@@ -36,10 +36,59 @@ function goHome() {
     opacity 180ms ease;
 }
 
+:root[data-theme='dark'] .header-button {
+  background: linear-gradient(135deg, #4f75c7 0%, #3366ff 100%);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 10px 28px rgba(51, 102, 255, 0.28);
+}
+
+:root[data-theme='dark'][data-contrast='high'] .header-button {
+  background: linear-gradient(135deg, #4f75c7 0%, #3366ff 100%);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 10px 28px rgba(51, 102, 255, 0.28);
+}
+
+:root[data-contrast='high']:not([data-theme='dark']) .header-button {
+  background: var(--surface-strong);
+  color: #ffcf33;
+  border-color: #000000;
+  box-shadow: 0 0 0 2px #000000;
+}
+
+:root[data-theme='dark'][data-contrast='high'] .logo-text,
+:root[data-theme='dark'][data-contrast='high'] .header-button {
+  color: #ffffff;
+}
+
+:root[data-contrast='high']:not([data-theme='dark']) .logo-text,
+:root[data-contrast='high']:not([data-theme='dark']) .header-button {
+  color: #4f75c7;
+}
+
+:root[data-theme='dark'] .logo-text,
+:root[data-theme='dark'] .header-button {
+  color: #ffffff;
+}
+
 .logo-image {
   width: 66px;
   height: 66px;
   object-fit: contain;
+  filter: none;
+}
+
+:root[data-theme='dark'] .logo-image {
+  filter: brightness(0) invert(1);
+}
+
+:root[data-contrast='high']:not([data-theme='dark']) .logo-image {
+  filter: brightness(1.15) saturate(2.2) hue-rotate(8deg);
+}
+
+:root[data-theme='dark'][data-contrast='high'] .logo-image {
+  filter: brightness(0) invert(1);
 }
 
 .logo-text {
