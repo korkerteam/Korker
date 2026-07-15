@@ -31,45 +31,29 @@ const availabilityExpanded = ref(false)
 
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
-const tagOptions = ['Matura', 'Egzamin']
-const lessonPlaceOptions = ['Online', 'U siebie', 'U korepetytora']
-const cityOptions = ['Warszawa', 'Kraków', 'Wrocław', 'Poznań', 'Gdańsk']
+const tagOptions = ['Matura', 'Egzamin', 'Online', 'Na miejscu']
 
-function loadTutorPost() {
-  if (typeof window === 'undefined') return null
-  try {
-    return JSON.parse(localStorage.getItem(TUTOR_POST_KEY) || 'null')
-  } catch {
-    return null
-  }
-}
+onMounted(async () => {
+  const { data: rows, error } = await supabase
+    .from('users')
+    .select('name, surname, profile_picture, tutor_post')
+    .eq('account_type', 'tutor')
+    .not('tutor_post', 'is', null)
 
-function getTutorsWithCustomPost() {
-  const saved = loadTutorPost()
-  const list = [...tutors]
-  if (saved && saved.name) {
-    const exists = list.some((tutor) => tutor.name === saved.name)
-    if (!exists) {
-      const customSubject = saved.subject || saved.lessonSubject || 'Korepetycje'
-      const customLevel = saved.level || saved.lessonLevel || 'Liceum'
-      const customBio =
-        saved.bio || saved.lessonDescription || 'Zapraszam na lekcje w dogodnym terminie.'
-
-      list.unshift({
-        ...saved,
-        subject: customSubject,
-        level: customLevel,
-        bio: customBio,
-        price: saved.price ?? getRandomPrice(),
-        rating: saved.rating ?? 4.5,
-        ratingCount: saved.ratingCount ?? 1,
-        weeklyAvailability: normalizeAvailability(saved.weeklyAvailability || saved.availableSlots),
-        availableSlots: saved.availableSlots || [
-          { day: 'Poniedziałek', time: '10:00', date: '2024-01-15' },
-          { day: 'Wtorek', time: '14:00', date: '2024-01-16' },
-          { day: 'Czwartek', time: '16:00', date: '2024-01-18' },
-          { day: 'Piątek', time: '18:00', date: '2024-01-19' },
-        ],
+  if (!error && rows) {
+    tutors.value = rows
+      .filter((r) => r.tutor_post)
+      .map((r) => {
+        const tp = r.tutor_post
+        return {
+          name: [r.name, r.surname].filter(Boolean).join(' ') || 'Korepetytor',
+          subject: tp.subject || '',
+          level: tp.level || '',
+          tags: tp.teachingFormats || [],
+          image: tp.photo || r.profile_picture || null,
+          bio: tp.description || '',
+          price: tp.price || 50,
+        }
       })
   }
   console.log('Wszyscy tutorzy:', tutors.value)
@@ -100,6 +84,10 @@ const filteredTutors = computed(() => {
     return matchesSubject && matchesLevel && matchesTags && matchesLessonPlaces && matchesCity
   })
 })
+
+const allDecided = computed(
+  () => tutors.value.length > 0 && tutors.value.every((t) => decisions.value[t.name]),
+)
 
 const currentTutor = computed(() => filteredTutors.value[currentIndex.value] || null)
 
@@ -347,8 +335,14 @@ function closePage() {
         </div>
 
         <div v-else-if="!filteredTutors.length" class="empty-state-card">
-          <h3>Brak nauczycieli</h3>
-          <p>Nie ma wyników dla tych filtrów. Spróbuj zmienić tagi lub wybrać inne kryteria.</p>
+          <template v-if="allDecided">
+            <h3>Dotarłeś do końca</h3>
+            <p>Przejrzałeś już wszystkich dostępnych korepetytorów.</p>
+          </template>
+          <template v-else>
+            <h3>Brak nauczycieli</h3>
+            <p>Nie ma wyników dla tych filtrów. Spróbuj zmienić tagi lub wybrać inne kryteria.</p>
+          </template>
         </div>
       </div>
 
