@@ -29,29 +29,51 @@ const weeklyDayLabels = [
   'Sobota',
   'Niedziela',
 ]
-const weeklyTimeSlots = [
-  '08:00-09:00',
-  '09:00-10:00',
-  '10:00-11:00',
-  '11:00-12:00',
-  '12:00-13:00',
-  '13:00-14:00',
-  '14:00-15:00',
-  '15:00-16:00',
-  '16:00-17:00',
-  '17:00-18:00',
-  '18:00-19:00',
-  '19:00-20:00',
-]
-const TUTOR_POST_KEY = 'korkerTutorPost'
+const weeklyTimeSlots = Array.from(
+  { length: 24 },
+  (_, h) => `${String(h).padStart(2, '0')}:00-${String((h + 1) % 24).padStart(2, '0')}:00`,
+)
+
+const mirrorWeekdays = ref(false)
+const showAllHours = ref(false)
+const extraRowsVisible = ref(false)
+const gridWrapRef = ref(null)
+const visibleHours = computed(() => {
+  if (showAllHours.value || extraRowsVisible.value) return Array.from({ length: 24 }, (_, h) => h)
+  return [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+})
+
+function toggleShowAllHours() {
+  const wrap = gridWrapRef.value
+  if (!wrap) return
+  if (showAllHours.value) {
+    const fullH = wrap.scrollHeight
+    showAllHours.value = false
+    extraRowsVisible.value = false
+    wrap.style.maxHeight = fullH + 'px'
+    void wrap.offsetHeight
+    wrap.style.maxHeight = '420px'
+  } else {
+    extraRowsVisible.value = true
+    wrap.style.maxHeight = '420px'
+    showAllHours.value = true
+    void wrap.offsetHeight
+    wrap.style.maxHeight = wrap.scrollHeight + 'px'
+    setTimeout(() => {
+      wrap.style.maxHeight = ''
+    }, 380)
+  }
+}
 
 const isEditing = ref(false)
 const saving = ref(false)
 const loading = ref(true)
-const availabilityExpanded = ref(false)
 const saveError = ref('')
 const pendingAvatarFile = ref(null)
 const pendingLessonPhotoFile = ref(null)
+const isDragging = ref(false)
+const dragMode = ref(null)
+const focusedCell = ref(null)
 let originalProfilePicture = ''
 let originalLessonPhoto = ''
 const draft = reactive({
@@ -108,101 +130,92 @@ function fromDb(data) {
   profile.flatNumber = ''
 }
 
-function loadTutorPost() {
-  if (typeof window === 'undefined') return null
-  try {
-    return JSON.parse(localStorage.getItem(TUTOR_POST_KEY) || 'null')
-  } catch {
-    return null
-  }
+function initWeeklyAvailability() {
+  return Object.fromEntries(weeklyDayLabels.map((d) => [d, []]))
 }
 
-function saveTutorPost(post) {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(TUTOR_POST_KEY, JSON.stringify(post))
+function getSlotLabel(hour) {
+  return `${String(hour).padStart(2, '0')}:00-${String((hour + 1) % 24).padStart(2, '0')}:00`
 }
 
-function removeTutorPost() {
-  if (typeof window === 'undefined') return
-  localStorage.removeItem(TUTOR_POST_KEY)
+function isCellSelected(day, hour) {
+  return (draft.weeklyAvailability?.[day] || []).includes(getSlotLabel(hour))
 }
 
-function createDefaultWeeklyAvailability() {
-  return {
-    Poniedziałek: ['10:00-11:00'],
-    Wtorek: ['14:00-15:00'],
-    Środa: [],
-    Czwartek: ['16:00-17:00'],
-    Piątek: ['18:00-19:00'],
-    Sobota: [],
-    Niedziela: [],
-  }
-}
-
-function normalizeWeeklyAvailability(value) {
-  if (Array.isArray(value)) {
-    const grouped = Object.fromEntries(weeklyDayLabels.map((day) => [day, []]))
-    value.forEach((slot) => {
-      if (!slot?.day || !slot?.time) return
-      if (!grouped[slot.day]) grouped[slot.day] = []
-      grouped[slot.day].push(slot.time)
-    })
-    return grouped
-  }
-
-  if (value && typeof value === 'object') {
-    const normalized = Object.fromEntries(weeklyDayLabels.map((day) => [day, []]))
-    weeklyDayLabels.forEach((day) => {
-      const slots = Array.isArray(value[day]) ? value[day] : []
-      normalized[day] = [...slots]
-    })
-    return normalized
-  }
-
-  return createDefaultWeeklyAvailability()
-}
-
-function buildAvailabilitySlots(availability) {
-  return Object.entries(availability || {}).flatMap(([day, slots]) =>
-    (Array.isArray(slots) ? slots : []).map((time) => ({ day, time })),
-  )
-}
-
-function toggleAvailabilitySlot(day, slot) {
-  if (!draft.weeklyAvailability) {
-    draft.weeklyAvailability = {}
-  }
-
-  if (!draft.weeklyAvailability[day]) {
-    draft.weeklyAvailability[day] = []
-  }
-
+function setCellState(day, hour, selected) {
+  if (!draft.weeklyAvailability) draft.weeklyAvailability = initWeeklyAvailability()
+  if (!draft.weeklyAvailability[day]) draft.weeklyAvailability[day] = []
+  const slot = getSlotLabel(hour)
   const slots = draft.weeklyAvailability[day]
-  const index = slots.indexOf(slot)
-  if (index > -1) {
-    slots.splice(index, 1)
-  } else {
-    slots.push(slot)
+  const idx = slots.indexOf(slot)
+  if (selected && idx === -1) slots.push(slot)
+  if (!selected && idx > -1) slots.splice(idx, 1)
+}
+
+function clearAvailability() {
+  draft.weeklyAvailability = initWeeklyAvailability()
+}
+
+function toggleCell(day, hour, skipMirror) {
+  const wasSelected = isCellSelected(day, hour)
+  setCellState(day, hour, !wasSelected)
+  if (!skipMirror && mirrorWeekdays.value) {
+    const dayIdx = weeklyDayLabels.indexOf(day)
+    if (dayIdx >= 0 && dayIdx <= 4) {
+      for (let i = 0; i <= 4; i++) {
+        if (i === dayIdx) continue
+        setCellState(weeklyDayLabels[i], hour, !wasSelected)
+      }
+    }
   }
 }
 
-function isAvailabilitySelected(day, slot) {
-  return (draft.weeklyAvailability?.[day] || []).includes(slot)
+function onCellMouseDown(day, hour) {
+  isDragging.value = true
+  const wasSelected = isCellSelected(day, hour)
+  dragMode.value = wasSelected ? 'deselect' : 'select'
+  toggleCell(day, hour)
 }
 
-function getAvailabilitySummary(day) {
-  const slots = draft.weeklyAvailability?.[day] || []
-  return slots.length ? slots.join(', ') : 'Brak godzin'
+function onCellMouseEnter(day, hour) {
+  if (!isDragging.value) return
+  if (mirrorWeekdays.value) {
+    const dayIdx = weeklyDayLabels.indexOf(day)
+    if (dayIdx >= 0 && dayIdx <= 4) {
+      for (let i = 0; i <= 4; i++) {
+        const d = weeklyDayLabels[i]
+        if (dragMode.value === 'select' && !isCellSelected(d, hour)) setCellState(d, hour, true)
+        if (dragMode.value === 'deselect' && isCellSelected(d, hour)) setCellState(d, hour, false)
+      }
+      return
+    }
+  }
+  if (dragMode.value === 'select' && !isCellSelected(day, hour)) toggleCell(day, hour, true)
+  if (dragMode.value === 'deselect' && isCellSelected(day, hour)) toggleCell(day, hour, true)
 }
 
-function copyMondayToWeekdays() {
-  const mondaySlots = [...(draft.weeklyAvailability?.['Poniedziałek'] || [])]
-  if (!mondaySlots.length) return
+function onGridMouseUp() {
+  isDragging.value = false
+  dragMode.value = null
+}
 
-  const weekdays = ['Wtorek', 'Środa', 'Czwartek', 'Piątek']
-  weekdays.forEach((day) => {
-    draft.weeklyAvailability[day] = [...mondaySlots]
-  })
+function onCellKeydown(e, day, hour) {
+  const idx = weeklyDayLabels.indexOf(day)
+  let nextDay = idx
+  let nextHour = hour
+  if (e.key === 'ArrowRight') nextDay = Math.min(idx + 1, 6)
+  else if (e.key === 'ArrowLeft') nextDay = Math.max(idx - 1, 0)
+  else if (e.key === 'ArrowDown') nextHour = Math.min(hour + 1, 23)
+  else if (e.key === 'ArrowUp') nextHour = Math.max(hour - 1, 0)
+  else if (e.key === ' ' || e.key === 'Enter') {
+    e.preventDefault()
+    toggleCell(day, hour)
+    return
+  } else return
+  e.preventDefault()
+  focusedCell.value = `${weeklyDayLabels[nextDay]}-${nextHour}`
+  const el = document.querySelector(`[data-cell="${focusedCell.value}"]`)
+  el?.focus()
 }
 
 function applySavedTutorPost(data) {
@@ -222,6 +235,12 @@ function applySavedTutorPost(data) {
     draft.street = tp.street || draft.street || ''
     draft.homeNumber = tp.homeNumber || draft.homeNumber || ''
     draft.flatNumber = tp.flatNumber || draft.flatNumber || ''
+    draft.weeklyAvailability = Object.fromEntries(
+      weeklyDayLabels.map((d) => [
+        d,
+        Array.isArray(tp.weeklyAvailability?.[d]) ? [...tp.weeklyAvailability[d]] : [],
+      ]),
+    )
   }
 }
 
@@ -334,7 +353,6 @@ async function saveProfile() {
         subject: draft.lessonSubject || '',
         level: draft.lessonLevel || 'Liceum',
         price: Number(draft.lessonPrice) || null,
-        tags: [...draft.teachingFormats],
         description: draft.lessonDescription || '',
         photo: draft.lessonPhoto || null,
         teachingFormats: [...draft.teachingFormats],
@@ -342,6 +360,15 @@ async function saveProfile() {
         street: draft.street || '',
         homeNumber: draft.homeNumber || '',
         flatNumber: draft.flatNumber || '',
+        weeklyAvailability: Object.fromEntries(
+          weeklyDayLabels.map((d) => [d, [...(draft.weeklyAvailability?.[d] || [])]]),
+        ),
+        avail_hours: weeklyDayLabels.map((d) =>
+          (draft.weeklyAvailability?.[d] || []).reduce((mask, slot) => {
+            const h = parseInt(slot.split(':')[0], 10)
+            return mask | (1 << h)
+          }, 0),
+        ),
       }
     }
 
@@ -568,31 +595,54 @@ function toggleTeachingFormat(format) {
               <input v-model="draft.lessonPrice" type="number" min="10" placeholder="50" />
             </label>
             <div class="availability-section">
-              <div class="availability-header">
+              <div class="av-header-row">
                 <span class="field-label">Dostępne godziny w tygodniu</span>
-                <span class="availability-hint"
-                  >Kliknij godziny, w których chcesz prowadzić lekcje.</span
-                >
-                <button class="availability-copy-btn" type="button" @click="copyMondayToWeekdays">
-                  Kopiuj z poniedziałku na wtorek–piątek
-                </button>
+                <label class="mirror-toggle">
+                  <input type="checkbox" v-model="mirrorWeekdays" />
+                  <span class="mirror-label">Lustro (Pn–Pt)</span>
+                </label>
               </div>
-              <div class="availability-grid">
-                <div v-for="day in weeklyDayLabels" :key="day" class="availability-day-card">
-                  <div class="availability-day-title">{{ day }}</div>
-                  <div class="availability-slot-list">
-                    <button
-                      v-for="slot in weeklyTimeSlots"
-                      :key="`${day}-${slot}`"
-                      type="button"
-                      class="availability-slot"
-                      :class="{ selected: isAvailabilitySelected(day, slot) }"
-                      @click="toggleAvailabilitySlot(day, slot)"
-                    >
-                      {{ slot }}
-                    </button>
+              <div ref="gridWrapRef" class="av-grid-wrap" :class="{ expanded: showAllHours }">
+                <div class="av-grid" @mouseup="onGridMouseUp" @mouseleave="onGridMouseUp">
+                  <div class="av-header-cell av-corner"></div>
+                  <div
+                    v-for="day in weeklyDayLabels"
+                    :key="day"
+                    class="av-header-cell av-day-header"
+                  >
+                    {{ day }}
                   </div>
+                  <template v-for="hour in visibleHours" :key="hour">
+                    <div class="av-header-cell av-time-header">
+                      {{ String(hour).padStart(2, '0') }}:00
+                    </div>
+                    <div
+                      v-for="day in weeklyDayLabels"
+                      :key="`${day}-${hour}`"
+                      :data-cell="`${day}-${hour}`"
+                      class="av-cell"
+                      :class="{ selected: isCellSelected(day, hour) }"
+                      @mousedown.prevent="onCellMouseDown(day, hour)"
+                      @mouseenter="onCellMouseEnter(day, hour)"
+                      @keydown="onCellKeydown($event, day, hour)"
+                      tabindex="0"
+                      role="checkbox"
+                      :aria-checked="isCellSelected(day, hour)"
+                    ></div>
+                  </template>
                 </div>
+              </div>
+              <div class="av-actions-row">
+                <button type="button" class="btn btn-text av-action-btn" @click="clearAvailability">
+                  Wyczyść
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-text av-action-btn"
+                  @click="toggleShowAllHours"
+                >
+                  {{ showAllHours ? 'Pokaż mniej' : 'Pokaż więcej godzin' }}
+                </button>
               </div>
             </div>
             <label class="field-row">
@@ -732,7 +782,7 @@ function toggleTeachingFormat(format) {
   border: 1px solid var(--border);
   border-radius: 16px;
   width: 100%;
-  max-width: 720px;
+  max-width: 1000px;
   padding: 32px;
   margin: 0 auto;
   box-shadow: var(--shadow-soft);
@@ -1062,111 +1112,128 @@ function toggleTeachingFormat(format) {
 .availability-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   margin-top: 6px;
 }
 
-.availability-header {
+.av-header-row {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.availability-hint {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.availability-copy-btn {
-  align-self: flex-start;
-  border: 1px solid rgba(79, 117, 199, 0.2);
-  background: #eef2ff;
-  color: #1f2937;
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.availability-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.availability-day-card {
-  border: 1px solid rgba(79, 117, 199, 0.15);
-  border-radius: 12px;
-  padding: 10px;
-  background: #f8fafc;
-}
-
-.availability-day-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #102036;
-  margin-bottom: 8px;
-}
-
-.availability-slot-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.availability-slot {
-  border: 1px solid #d1d5db;
-  border-radius: 999px;
-  background: #ffffff;
-  color: #374151;
-  padding: 6px 8px;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.availability-slot.selected {
-  background: #eef2ff;
-  border-color: #4f75c7;
-  color: #1f2937;
-}
-
-.availability-toggle {
-  border: none;
-  background: transparent;
-  color: #4f75c7;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0;
-}
-
-.availability-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: -2px;
-}
-
-.availability-day-row {
-  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  font-size: 12px;
-  color: #374151;
-  background: #f8fafc;
-  border: 1px solid rgba(79, 117, 199, 0.12);
-  border-radius: 10px;
-  padding: 8px 10px;
 }
 
-.availability-day {
+.mirror-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.mirror-toggle input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.mirror-label {
+  font-size: 11px;
   font-weight: 600;
-  color: #102036;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.availability-times {
-  text-align: right;
-  color: #4b5563;
+.av-grid-wrap {
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.av-grid {
+  display: grid;
+  grid-template-columns: 44px repeat(7, 1fr);
+  grid-auto-rows: 22px;
+  gap: 2px;
+  overflow: auto;
+  max-height: inherit;
+  padding: 4px;
+  background: #f3f4f6;
+  user-select: none;
+  overflow: hidden;
+}
+
+.av-header-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  background: #fff;
+  border-radius: 3px;
+  padding: 2px;
+  position: sticky;
+  z-index: 2;
+}
+
+.av-corner {
+  top: 0;
+  left: 0;
+  z-index: 3;
+  background: transparent;
+}
+
+.av-day-header {
+  top: 0;
+  z-index: 2;
+  background: #f9fafb;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 9px;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.av-time-header {
+  left: 0;
+  z-index: 1;
+  background: transparent;
+  color: #9ca3af;
+}
+
+.av-cell {
+  border-radius: 3px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: background 0.08s;
+  outline: none;
+  min-width: 0;
+}
+
+.av-cell.selected {
+  background: #4f75c7;
+  border-color: #4f75c7;
+}
+
+.av-cell:hover {
+  background: #dbeafe;
+  border-color: #93b4e8;
+}
+
+.av-cell.selected:hover {
+  background: #3d64b0;
+  border-color: #3d64b0;
+}
+
+.av-cell:focus-visible {
+  box-shadow: 0 0 0 2px rgba(79, 117, 199, 0.5);
 }
 
 .offer-label {
@@ -1324,5 +1391,27 @@ function toggleTeachingFormat(format) {
 
 .name-input-label {
   width: 100%;
+}
+
+.av-actions-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.av-action-btn {
+  font-size: 12px;
+  padding: 6px 14px;
+  color: #4f75c7;
+  background: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.av-action-btn:hover {
+  background: #f3f4f6;
 }
 </style>

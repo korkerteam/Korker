@@ -193,7 +193,7 @@ function formatSize(bytes) {
 .bubble-row {
   display: flex;
   align-items: flex-end;
-  gap: 6px;
+  flex-direction: column;
 }
 .bubble {
   padding: 12px 18px;
@@ -233,8 +233,6 @@ function formatSize(bytes) {
   opacity: 1;
 }
 .action-btn {
-  width: 28px;
-  height: 28px;
   border-radius: 50%;
   border: none;
   background: transparent;
@@ -290,6 +288,7 @@ function formatSize(bytes) {
 }
 .bubble-text {
   white-space: pre-wrap;
+  word-break: break-all;
 }
 .attachments-grid {
   display: flex;
