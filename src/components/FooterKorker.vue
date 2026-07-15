@@ -29,7 +29,6 @@ function scrollToTop(event) {
             </li>
             <li><router-link to="/jak-to-dziala">Jak to działa</router-link></li>
             <li><router-link to="/kalendarz">Zintegrowany kalendarz</router-link></li>
-            <li><router-link to="/cennik">Cennik</router-link></li>
           </ul>
         </div>
 
