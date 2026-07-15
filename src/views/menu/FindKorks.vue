@@ -1,6 +1,6 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
-import tutorImage from '@/assets/photos/received_1226459671681636_1.gif'
+import { computed, ref, watch, onMounted, nextTick } from 'vue'
+import { supabase } from '@/lib/supabase.js'
 
 const props = defineProps({
   filters: {
@@ -14,6 +14,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'like-teacher'])
+const tutors = ref([])
+const loading = ref(true)
+const decisions = ref({})
 const currentIndex = ref(0)
 const selectedSubjects = ref([])
 const selectedLevels = ref([])
@@ -144,207 +147,17 @@ function getTutorsWithCustomPost() {
           { day: 'Piątek', time: '18:00', date: '2024-01-19' },
         ],
       })
-    }
   }
-  return list
-}
-
-const tutorTemplates = [
-  {
-    name: 'Anna Kowalska',
-    subject: 'Matematyka',
-    level: 'Liceum',
-    tags: ['Matura', 'Online'],
-    image: tutorImage,
-    bio: 'Pomagam przygotować się do matury z matematyki w przyjazny sposób.',
-  },
-  {
-    name: 'Piotr Nowak',
-    subject: 'Fizyka',
-    level: 'Studia',
-    tags: ['Egzamin', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Skupię się na zrozumieniu pojęć i praktycznych zadaniach.',
-  },
-  {
-    name: 'Marta Wiśniewska',
-    subject: 'Język polski',
-    level: 'Szkoła podstawowa',
-    tags: ['Online'],
-    image: tutorImage,
-    bio: 'Łączę naukę z ciekawymi ćwiczeniami i czytaniem lektur.',
-  },
-  {
-    name: 'Jakub Zieliński',
-    subject: 'Angielski',
-    level: 'Liceum',
-    tags: ['Matura', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Pomagam budować pewność siebie w mówieniu i rozumieniu tekstów.',
-  },
-  {
-    name: 'Katarzyna Sobczak',
-    subject: 'Biologia',
-    level: 'Liceum',
-    tags: ['Online', 'Matura'],
-    image: tutorImage,
-    bio: 'Przygotowuję do egzaminów i tłumaczę trudne tematy obrazowo.',
-  },
-  {
-    name: 'Maciej Płaczek',
-    subject: 'Informatyka',
-    level: 'Studia',
-    tags: ['Programowanie', 'Online'],
-    image: tutorImage,
-    bio: 'Uczę logicznego myślenia i pracy z kodem od podstaw.',
-  },
-  {
-    name: 'Natalia Wójcik',
-    subject: 'Chemia',
-    level: 'Liceum',
-    tags: ['Matura', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Wyjaśniam chemię krok po kroku i uczę skutecznie powtarzać materiał.',
-  },
-  {
-    name: 'Oliwier Kaczmarek',
-    subject: 'Historia',
-    level: 'Szkoła podstawowa',
-    tags: ['Online', 'Egzamin'],
-    image: tutorImage,
-    bio: 'Przygotowuję do sprawdzianów i uczę historii w ciekawy sposób.',
-  },
-  {
-    name: 'Patrycja Marek',
-    subject: 'Geografia',
-    level: 'Liceum',
-    tags: ['Matura', 'Online'],
-    image: tutorImage,
-    bio: 'Pomagam zapamiętywać mapy, pojęcia i schematy bez stresu.',
-  },
-  {
-    name: 'Dominik Lis',
-    subject: 'Matematyka',
-    level: 'Szkoła podstawowa',
-    tags: ['Online', 'Egzamin'],
-    image: tutorImage,
-    bio: 'Uczę matematyki spokojnie i krok po kroku.',
-  },
-  {
-    name: 'Alicja Duda',
-    subject: 'Angielski',
-    level: 'Liceum',
-    tags: ['Matura', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Pomagam poprawić słownictwo i komunikację.',
-  },
-  {
-    name: 'Tomasz Krawczyk',
-    subject: 'Fizyka',
-    level: 'Liceum',
-    tags: ['Egzamin', 'Online'],
-    image: tutorImage,
-    bio: 'Wytłumaczę trudne zagadnienia prostym językiem.',
-  },
-  {
-    name: 'Ewa Nowak',
-    subject: 'Biologia',
-    level: 'Studia',
-    tags: ['Online', 'Matura'],
-    image: tutorImage,
-    bio: 'Skupię się na nauce z materiałów i praktycznych przykładów.',
-  },
-  {
-    name: 'Marcin Zieliński',
-    subject: 'Informatyka',
-    level: 'Liceum',
-    tags: ['Programowanie', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Pomagam zrozumieć podstawy programowania i algorytmiki.',
-  },
-  {
-    name: 'Karolina Nowak',
-    subject: 'Język polski',
-    level: 'Liceum',
-    tags: ['Matura', 'Online'],
-    bio: 'Pomagam rozwijać czytanie ze zrozumieniem i wypracowania.',
-  },
-  {
-    name: 'Bartosz Wróbel',
-    subject: 'Język polski',
-    level: 'Szkoła podstawowa',
-    tags: ['Egzamin', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Uczę poprawnego pisania i wyrażania myśli w prosty sposób.',
-  },
-  {
-    name: 'Maja Kwiecień',
-    subject: 'Chemia',
-    level: 'Studia',
-    tags: ['Online', 'Egzamin'],
-    image: tutorImage,
-    bio: 'Przygotowuję do egzaminów i wyjaśniam trudne reakcje chemiczne.',
-  },
-  {
-    name: 'Rafał Szymański',
-    subject: 'Chemia',
-    level: 'Liceum',
-    tags: ['Matura', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Pomagam zrozumieć chemię od podstaw do poziomu maturalnego.',
-  },
-  {
-    name: 'Joanna Kozłowska',
-    subject: 'Historia',
-    level: 'Liceum',
-    tags: ['Matura', 'Online'],
-    image: tutorImage,
-    bio: 'Uczę historii w uporządkowany sposób i z naciskiem na daty.',
-  },
-  {
-    name: 'Kamil Baran',
-    subject: 'Historia',
-    level: 'Studia',
-    tags: ['Egzamin', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Pomagam zrozumieć kontekst historyczny i przygotować się do sprawdzianów.',
-  },
-  {
-    name: 'Sylwia Pawlak',
-    subject: 'Geografia',
-    level: 'Szkoła podstawowa',
-    tags: ['Online', 'Egzamin'],
-    image: tutorImage,
-    bio: 'Łączę naukę geografii z prostymi schematami i ćwiczeniami.',
-  },
-  {
-    name: 'Filip Jankowski',
-    subject: 'Geografia',
-    level: 'Studia',
-    tags: ['Matura', 'Na miejscu'],
-    image: tutorImage,
-    bio: 'Pomagam zrozumieć zjawiska geograficzne i przygotować się do testów.',
-  },
-]
-
-const tutors = tutorTemplates.map((tutor) => ({
-  ...tutor,
-  price: tutor.price ?? getRandomPrice(),
-}))
-
-const likedTeacherNames = computed(() => {
-  return new Set((props.likedTeachers || []).map((teacher) => teacher?.name).filter(Boolean))
+  console.log('Wszyscy tutorzy:', tutors.value)
+  loading.value = false
 })
 
-const tutorsWithCustomPost = computed(() => getTutorsWithCustomPost())
-
 const filteredTutors = computed(() => {
-  return tutorsWithCustomPost.value.filter((tutor) => {
-    if (likedTeacherNames.value.has(tutor.name)) {
+  return tutors.value.filter((tutor) => {
+    if (decisions.value[tutor.name]) {
       return false
     }
 
-    // Local filters take precedence over global filters
     const localSubjects =
       selectedSubjects.value.length > 0 ? selectedSubjects.value : props.filters.subjects
     const localLevels =
@@ -449,12 +262,16 @@ function nextTutor() {
 
 function likeTutor() {
   if (currentTutor.value) {
+    decisions.value[currentTutor.value.name] = 'good'
     emit('like-teacher', currentTutor.value)
   }
   nextTutor()
 }
 
 function dislikeTutor() {
+  if (currentTutor.value) {
+    decisions.value[currentTutor.value.name] = 'bad'
+  }
   nextTutor()
 }
 
@@ -507,7 +324,19 @@ function closePage() {
             '--swipe-rotation': `${swipeRotation}deg`,
           }"
         >
-          <div class="card-image">
+          <div
+            class="card-image"
+            :class="[
+              swipeOffsetX < -120 ? 'swiping-left' : '',
+              swipeOffsetX > 120 ? 'swiping-right' : '',
+            ]"
+          >
+            <div class="swipe-indicator dislike" aria-hidden="true" v-if="swipeOffsetX < -120">
+              <span>✕</span>
+            </div>
+            <div class="swipe-indicator like" aria-hidden="true" v-if="swipeOffsetX > 120">
+              <span>✔</span>
+            </div>
             <div v-if="currentTutor.image" class="swipe-image-wrapper">
               <img
                 class="swipe-image"
@@ -572,7 +401,8 @@ function closePage() {
             aria-label="Nie pasuje"
             @click.stop.prevent="handleDecision(false)"
           >
-            ✕
+            <span aria-hidden="true">✕</span>
+            <span class="visually-hidden">Nie pasuje</span>
           </button>
           <button
             id="like-button"
@@ -581,7 +411,8 @@ function closePage() {
             aria-label="Lubię"
             @click.stop.prevent="handleDecision(true)"
           >
-            ♥
+            <span aria-hidden="true">✔</span>
+            <span class="visually-hidden">Lubię</span>
           </button>
         </div>
 
@@ -698,17 +529,19 @@ function closePage() {
   padding: 0;
   display: flex;
   flex-direction: row;
-  gap: 0;
+  gap: 24px;
   overflow: hidden;
-  align-items: stretch;
+  align-items: flex-start;
+  justify-content: space-between;
 }
 
 .tutor-section {
+  order: 0;
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 24px 0 24px 0;
   min-height: 0;
 }
 
@@ -738,12 +571,19 @@ function closePage() {
 }
 
 .tags-filter-section {
-  width: min(280px, 35%);
-  min-width: 240px;
-  padding: 20px;
-  border-left: 1.5px solid rgba(79, 117, 199, 0.1);
+  order: 1;
+  width: min(280px, 32%);
+  min-width: 260px;
+  max-height: calc(100vh - 270px);
+  padding: 24px;
+  border-radius: 28px;
   overflow-y: auto;
-  background: linear-gradient(135deg, rgba(248, 251, 255, 0.4) 0%, rgba(238, 242, 255, 0.4) 100%);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.08);
+  margin-left: auto;
+  align-self: flex-start;
+  position: sticky;
 }
 
 .tags-filter-header {
@@ -780,24 +620,31 @@ function closePage() {
 .filter-options {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
 }
 
 .filter-options label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: 6px;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
   cursor: pointer;
   user-select: none;
-  transition: all 0.2s ease;
-  font-size: 13px;
-  color: #374151;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
+  font-size: 14px;
+  color: #1f2937;
+  background: #f8fbff;
+  border: 1px solid rgba(79, 117, 199, 0.12);
 }
 
 .filter-options label:hover {
-  background: rgba(79, 117, 199, 0.08);
+  background: rgba(79, 117, 199, 0.13);
+  border-color: rgba(79, 117, 199, 0.2);
+  transform: translateX(2px);
 }
 
 .filter-options input[type='checkbox'] {
@@ -851,14 +698,15 @@ function closePage() {
 }
 
 .card-image {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position: relative;
+  display: block;
   width: 100%;
   height: 460px;
   border-radius: 20px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.8);
+  padding: 0;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
   transform: translateX(var(--swipe-offset, 0px)) rotate(var(--swipe-rotation, 0deg));
   transition:
     transform 0.2s ease,
@@ -868,13 +716,70 @@ function closePage() {
   transform-origin: center center;
 }
 
+.swipe-image-wrapper {
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.2s ease;
+}
+
+.card-image.swiping-left .swipe-image-wrapper,
+.card-image.swiping-right .swipe-image-wrapper {
+  opacity: 0.4;
+}
+
+.swipe-indicator {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 92px;
+  font-weight: 800;
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  transform: scale(0.94);
+}
+
+.swipe-indicator span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  border-radius: 999px;
+  border: 3px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(2px);
+}
+
+.swipe-indicator.dislike {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.18);
+}
+
+.swipe-indicator.like {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.18);
+}
+
+.card-image.swiping-left .swipe-indicator.dislike,
+.card-image.swiping-right .swipe-indicator.like {
+  opacity: 1;
+  transform: scale(1.02);
+}
 .card-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 16px;
-  border: 1px solid rgba(79, 117, 199, 0.1);
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  object-position: center;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  display: block;
   -webkit-user-drag: none;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -883,6 +788,11 @@ function closePage() {
   -webkit-touch-callout: none;
   pointer-events: auto;
   cursor: pointer;
+}
+
+.card-image:hover {
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+  filter: saturate(1.05);
 }
 
 .swipe-image:hover {
@@ -1042,36 +952,59 @@ function closePage() {
 
 .actions {
   display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 12px;
+  justify-content: space-between;
+  gap: 200px;
+  margin-top: 16px;
   position: relative;
   z-index: 2;
 }
 
 .btn-like,
 .btn-dislike {
-  width: 56px;
-  height: 56px;
+  width: 100px;
+  height: 100px;
+  min-width: 72px;
+  min-height: 72px;
   border: none;
-  border-radius: 50%;
+  border-radius: 999px;
   padding: 0;
   font-weight: 700;
-  font-size: 24px;
+  font-size: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
+}
+
+.btn-like:hover,
+.btn-dislike:hover {
+  transform: translateY(-2px);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .btn-like {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  background: #22c55e;
   color: white;
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  font-size: 36px;
 }
 
 .btn-like:hover {
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 10px 24px rgba(34, 197, 94, 0.24);
+  transform: translateY(-1px);
 }
 
 .btn-dislike {
@@ -1081,8 +1014,7 @@ function closePage() {
 }
 
 .btn-dislike:hover {
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 10px 24px rgba(239, 68, 68, 0.24);
+  transform: translateY(-1px);
 }
 
 .empty-state {

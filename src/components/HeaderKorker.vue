@@ -20,9 +20,9 @@ function goHome() {
   display: inline-flex;
   align-items: center;
   gap: 14px;
-  padding: 16px 24px;
+  padding: 18px 28px;
   font-family: Horizon, 'Inter', system-ui, sans-serif;
-  font-size: 2rem;
+  font-size: 2.15rem;
   font-weight: 800;
   color: var(--accent);
   background: rgba(255, 255, 255, 0.96);
@@ -37,8 +37,8 @@ function goHome() {
 }
 
 .logo-image {
-  width: 60px;
-  height: 60px;
+  width: 66px;
+  height: 66px;
   object-fit: contain;
 }
 

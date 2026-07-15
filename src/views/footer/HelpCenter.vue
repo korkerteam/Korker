@@ -1,84 +1,243 @@
 <script setup></script>
 
 <template>
-  <main class="min-h-screen bg-slate-50 py-10">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-      <section
-        class="overflow-hidden rounded-[32px] bg-white p-8 shadow-[0_28px_80px_rgba(15,23,42,0.08)] ring-1 ring-slate-200 sm:p-10"
-      >
-        <div class="sm:flex sm:items-start sm:justify-between sm:gap-8">
-          <div class="max-w-2xl">
-            <p class="text-sm font-semibold uppercase tracking-[0.22em] text-sky-600">
-              Centrum Pomocy Korker
-            </p>
-            <h1 class="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-              Masz pytania? Znajdziesz tu wszystkie odpowiedzi.
-            </h1>
-            <p class="mt-4 text-base leading-7 text-slate-600">
-              Szybko znajdź pomoc, poradniki i odpowiedzi w jednym, przejrzystym miejscu.
-            </p>
-          </div>
-          <div
-            class="mt-6 inline-flex items-center gap-3 rounded-3xl bg-slate-100 px-5 py-3 text-sm font-medium text-slate-700 sm:mt-0"
-          >
-            <span
-              class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-50 text-sky-600"
-              >🛠️</span
-            >
-            Pomoc dla uczniów i korepetytorów.
-          </div>
+  <main class="page-shell">
+    <div class="page-container">
+      <section class="hero-surface">
+        <div class="hero-copy">
+          <div class="eyebrow">Centrum Pomocy Korker</div>
+          <h1>Masz pytania? Znajdziesz tu wszystkie odpowiedzi.</h1>
+          <p>Szybko znajdź pomoc, poradniki i odpowiedzi w jednym, przejrzystym miejscu.</p>
         </div>
 
-        <div class="mt-10 space-y-8">
-          <div class="rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm">
-            <div class="relative">
-              <input
-                type="search"
-                placeholder="Szukaj tematu pomocy..."
-                class="w-full rounded-3xl border border-slate-200 bg-white px-5 py-4 pr-14 text-slate-900 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-100"
-              />
-              <span
-                class="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-slate-400"
-                >🔎</span
-              >
-            </div>
-          </div>
-
-          <div class="grid gap-6 lg:grid-cols-3">
-            <article class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-              <div
-                class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600"
-              >
-                🎓
-              </div>
-              <h2 class="mt-5 text-lg font-semibold text-slate-950">Dla Uczniów</h2>
-              <p class="mt-3 text-slate-600">
-                Jak rezerwować lekcje, płatności i odwoływanie zajęć.
-              </p>
-            </article>
-
-            <article class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-              <div
-                class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600"
-              >
-                👩‍🏫
-              </div>
-              <h2 class="mt-5 text-lg font-semibold text-slate-950">Dla Korepetytorów</h2>
-              <p class="mt-3 text-slate-600">Zarządzanie kalendarzem, cennik, profil i opinie.</p>
-            </article>
-
-            <article class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-              <div
-                class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600"
-              >
-                🖥️
-              </div>
-              <h2 class="mt-5 text-lg font-semibold text-slate-950">Kwestie Techniczne</h2>
-              <p class="mt-3 text-slate-600">Konto, czat, powiadomienia i lekcje online.</p>
-            </article>
+        <div class="hero-panel">
+          <div class="info-pill">
+            <span class="info-icon">🛠️</span>
+            <span>Pomoc dla uczniów i korepetytorów</span>
           </div>
         </div>
+      </section>
+
+      <section class="search-card">
+        <div class="search-field">
+          <input type="search" placeholder="Szukaj tematu pomocy..." />
+          <span class="search-icon">🔎</span>
+        </div>
+      </section>
+
+      <section class="cards-grid">
+        <article class="info-card">
+          <div class="icon-wrap">🎓</div>
+          <h2>Dla Uczniów</h2>
+          <p>Jak rezerwować lekcje, płatności i odwoływanie zajęć.</p>
+        </article>
+
+        <article class="info-card">
+          <div class="icon-wrap">👩‍🏫</div>
+          <h2>Dla Korepetytorów</h2>
+          <p>Zarządzanie kalendarzem, cennik, profil i opinie.</p>
+        </article>
+
+        <article class="info-card">
+          <div class="icon-wrap">🖥️</div>
+          <h2>Kwestie Techniczne</h2>
+          <p>Konto, czat, powiadomienia i lekcje online.</p>
+        </article>
       </section>
     </div>
   </main>
 </template>
+
+<style scoped>
+.page-shell {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 1rem 0.2rem;
+  background: linear-gradient(135deg, #fdfefe 0%, #f2f8ff 45%, #f7fbff 100%);
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    sans-serif;
+  box-sizing: border-box;
+}
+
+.page-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hero-surface {
+  display: grid;
+  gap: 1rem;
+  border-radius: 30px;
+  padding: 1rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f7fbff 50%, #eef8ff 100%);
+  box-shadow: 0 28px 80px rgba(2, 6, 23, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+@media (min-width: 900px) {
+  .hero-surface {
+    grid-template-columns: 1.2fr 0.8fr;
+    align-items: center;
+    padding: 1.25rem;
+  }
+}
+
+.hero-copy {
+  padding: 0.5rem;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.hero-copy h1 {
+  margin: 1rem 0 0.8rem;
+  font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+  line-height: 1.08;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.hero-copy p {
+  margin: 0;
+  max-width: 40rem;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #475569;
+}
+
+.hero-panel {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.info-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 9999px;
+  background: #f8fafc;
+  border: 1px solid #dbeafe;
+  padding: 0.7rem 1rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+.info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.search-card {
+  margin-top: 0.75rem;
+  border-radius: 22px;
+  padding: 0.9rem;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+}
+
+.search-field {
+  position: relative;
+}
+
+.search-field input {
+  width: 100%;
+  border: 1px solid #dbeafe;
+  border-radius: 9999px;
+  padding: 0.85rem 3rem 0.85rem 1rem;
+  font-size: 0.95rem;
+  color: #0f172a;
+  background: #f8fbff;
+  outline: none;
+}
+
+.search-field input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+.search-icon {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #0369a1;
+}
+
+.cards-grid {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 0.75rem;
+}
+
+@media (min-width: 900px) {
+  .cards-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.info-card {
+  border-radius: 20px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: #ffffff;
+  padding: 1rem;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+}
+
+.icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 14px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 1.1rem;
+}
+
+.info-card h2 {
+  margin: 0.8rem 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.info-card p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: #475569;
+}
+</style>
