@@ -1,4 +1,20 @@
-<script setup></script>
+<script setup>
+import { ref } from 'vue'
+import { useAuth } from '@/composables/useAuth.js'
+
+const { isAuthenticated, openAuthModal } = useAuth()
+const accountMessage = ref('')
+
+function handleCreateAccount() {
+  if (isAuthenticated.value) {
+    accountMessage.value = 'Masz już konto — możesz przejść dalej i uzupełnić profil.'
+    return
+  }
+
+  accountMessage.value = ''
+  openAuthModal()
+}
+</script>
 
 <template>
   <main class="page-shell">
@@ -22,9 +38,12 @@
             </div>
 
             <div class="button-group">
-              <button class="btn btn-dark">Załóż konto</button>
-              <button class="btn btn-outline">Sprawdź jak to działa</button>
+              <button class="btn btn-dark" type="button" @click="handleCreateAccount">
+                Załóż konto
+              </button>
+              <button class="btn btn-outline" type="button">Sprawdź jak to działa</button>
             </div>
+            <p v-if="accountMessage" class="account-message">{{ accountMessage }}</p>
           </div>
 
           <div class="steps-card">
@@ -244,6 +263,13 @@
   flex-wrap: wrap;
   gap: 0.75rem;
   justify-content: center;
+}
+
+.account-message {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  color: var(--accent-strong);
+  font-weight: 600;
 }
 
 @media (min-width: 1024px) {
