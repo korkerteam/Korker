@@ -1,178 +1,333 @@
 <script setup>
 import { computed, ref } from 'vue'
 
-const days = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd']
-const hours = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00']
+const monthLabel = 'lipiec 2026'
+const weekdayLabels = ['Po', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Ni']
+const selectedDay = ref(15)
 
-const selectedSlots = ref([])
-const selectedDay = ref(days[0])
+const calendarCells = [
+  null,
+  null,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23,
+  24,
+  25,
+  26,
+  27,
+  28,
+  29,
+  30,
+  31,
+]
 
-const daySlots = computed(() => {
-  return hours.map((hour) => ({
-    hour,
-    selected: selectedSlots.value.includes(`${selectedDay.value}-${hour}`),
-  }))
-})
+const lessonsByDay = {
+  15: [
+    { time: '10:00', title: 'Matematyka - algebra', student: 'Marta', location: 'Online' },
+    { time: '13:00', title: 'Angielski - konwersacje', student: 'Kamil', location: 'Studio' },
+  ],
+  16: [{ time: '09:00', title: 'Fizyka - kinetyka', student: 'Ola', location: 'Online' }],
+  18: [
+    {
+      time: '17:00',
+      title: 'Język polski - analiza tekstu',
+      student: 'Bartek',
+      location: 'Studio',
+    },
+  ],
+}
 
-function toggleSlot(hour) {
-  const key = `${selectedDay.value}-${hour}`
-  const exists = selectedSlots.value.includes(key)
+const selectedLessons = computed(() => lessonsByDay[selectedDay.value] || [])
+const selectedDateLabel = computed(() => `Środa, ${selectedDay.value} lipca 2026`)
 
-  if (exists) {
-    selectedSlots.value = selectedSlots.value.filter((slot) => slot !== key)
-  } else {
-    selectedSlots.value = [...selectedSlots.value, key]
-  }
+function hasLessons(day) {
+  return day !== null && Array.isArray(lessonsByDay[day]) && lessonsByDay[day].length > 0
+}
+
+function selectDay(day) {
+  if (day === null) return
+  selectedDay.value = day
 }
 </script>
 
 <template>
-  <section class="calendar-view">
-    <div class="panel-card">
-      <div class="eyebrow">Kalendarz</div>
-      <h2>Wybierz dni i godziny swoich lekcji</h2>
-      <p>
-        Kliknij w dostępne sloty, aby oznaczyć, kiedy chcesz prowadzić lekcje. Zaznaczone terminy
-        będą widoczne poniżej.
-      </p>
+  <section class="calendar-view-simple">
+    <div class="calendar-layout">
+      <div class="calendar-card">
+        <div class="calendar-top">
+          <div>
+            <p class="calendar-weekday">Śr</p>
+            <h2>{{ monthLabel }}</h2>
+            <p class="calendar-meta">Dzień 196, Tydzień 29</p>
+          </div>
+          <button class="calendar-button">Dzisiaj</button>
+        </div>
 
-      <div class="day-switcher">
-        <button
-          v-for="day in days"
-          :key="day"
-          class="day-chip"
-          :class="{ active: selectedDay === day }"
-          @click="selectedDay = day"
-        >
-          {{ day }}
-        </button>
+        <div class="calendar-grid">
+          <div class="weekday" v-for="weekday in weekdayLabels" :key="weekday">
+            {{ weekday }}
+          </div>
+
+          <button
+            v-for="(day, index) in calendarCells"
+            :key="index"
+            class="day"
+            :class="{
+              empty: day === null,
+              active: day === selectedDay,
+              clickable: day !== null,
+              hasLesson: hasLessons(day),
+            }"
+            :disabled="day === null"
+            @click="selectDay(day)"
+          >
+            <span>{{ day || '' }}</span>
+            <span v-if="hasLessons(day)" class="lesson-dot" />
+          </button>
+        </div>
       </div>
 
-      <div class="slot-grid">
-        <button
-          v-for="slot in daySlots"
-          :key="slot.hour"
-          class="slot-btn"
-          :class="{ selected: slot.selected }"
-          @click="toggleSlot(slot.hour)"
-        >
-          {{ slot.hour }}
-        </button>
-      </div>
+      <div class="lessons-card">
+        <div class="lessons-header">
+          <div>
+            <p class="lessons-label">Zaplanowane lekcje</p>
+            <h3>{{ selectedDateLabel }}</h3>
+          </div>
+          <span class="lessons-count">{{ selectedLessons.length }} zajęcia</span>
+        </div>
 
-      <div class="summary-card">
-        <h3>Wybrane terminy</h3>
-        <p v-if="selectedSlots.length === 0">Jeszcze nie wybrałeś żadnego slotu.</p>
-        <ul v-else>
-          <li v-for="slot in selectedSlots" :key="slot">{{ slot }}</li>
-        </ul>
+        <div v-if="selectedLessons.length > 0" class="lesson-list">
+          <article v-for="lesson in selectedLessons" :key="lesson.time" class="lesson-item">
+            <div>
+              <p class="lesson-time">{{ lesson.time }}</p>
+              <p class="lesson-title">{{ lesson.title }}</p>
+            </div>
+            <div class="lesson-meta">
+              <span>{{ lesson.student }}</span>
+              <span>{{ lesson.location }}</span>
+            </div>
+          </article>
+        </div>
+
+        <div v-else class="lesson-empty">Brak zaplanowanych lekcji tego dnia.</div>
       </div>
     </div>
   </section>
 </template>
 
 <style scoped>
-.calendar-view {
+.calendar-view-simple {
   width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
-.panel-card {
-  background: linear-gradient(135deg, #ffffff 0%, #f7fbff 100%);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+.calendar-layout {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px;
+}
+
+.calendar-card,
+.lessons-card {
+  background: #ffffff;
   border-radius: 28px;
   padding: 24px;
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.18);
 }
 
-.eyebrow {
-  display: inline-flex;
+.calendar-top {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  border-radius: 999px;
-  background: #e0f2fe;
-  color: #0369a1;
-  padding: 0.45rem 0.8rem;
-  font-size: 0.78rem;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.calendar-weekday {
+  margin: 0 0 6px;
+  color: #475569;
   font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
 }
 
 h2 {
-  margin: 1rem 0 0.75rem;
-  font-size: clamp(1.4rem, 2.2vw, 1.9rem);
+  margin: 0;
+  font-size: 1.6rem;
   color: #0f172a;
 }
 
-p {
-  margin: 0;
-  color: #475569;
-  line-height: 1.7;
+.calendar-meta,
+.lessons-label {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 0.95rem;
 }
 
-.day-switcher {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-  margin: 1.1rem 0 1rem;
-}
-
-.day-chip {
-  border: 1px solid #dbeafe;
-  background: #f8fbff;
-  color: #334155;
-  border-radius: 999px;
-  padding: 0.55rem 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.day-chip.active {
+.calendar-button {
+  border: none;
   background: #2563eb;
   color: white;
-  border-color: #2563eb;
-}
-
-.slot-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.slot-btn {
-  border: 1px solid #dbeafe;
-  background: #ffffff;
-  color: #334155;
+  padding: 12px 22px;
   border-radius: 16px;
-  padding: 0.8rem 0.7rem;
-  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  font-weight: 700;
 }
 
-.slot-btn.selected {
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.weekday {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.day {
+  min-height: 72px;
+  border-radius: 20px;
+  background: #f8fbff;
+  color: #0f172a;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.day.clickable {
+  cursor: pointer;
+}
+
+.day.clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08);
+}
+
+.lesson-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2563eb;
+  display: block;
+  margin-top: 6px;
+}
+
+.day.empty {
+  background: transparent;
+  opacity: 0;
+  cursor: default;
+}
+
+.day.active {
   background: #2563eb;
   color: white;
-  border-color: #2563eb;
 }
 
-.summary-card {
-  margin-top: 1rem;
+.lessons-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.lessons-header h3 {
+  margin: 4px 0 0;
+  font-size: 1.25rem;
+}
+
+.lessons-count {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.lesson-list {
+  display: grid;
+  gap: 16px;
+}
+
+.lesson-item {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
   border-radius: 20px;
-  padding: 1rem 1.1rem;
-  background: #f8fbff;
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: #f8fafc;
+  border: 1px solid rgba(37, 99, 235, 0.12);
 }
 
-.summary-card h3 {
-  margin: 0 0 0.55rem;
+.lesson-time {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.lesson-title {
+  margin: 2px 0 0;
+  font-size: 1rem;
   color: #0f172a;
 }
 
-.summary-card ul {
-  margin: 0;
-  padding-left: 1rem;
+.lesson-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
   color: #475569;
-  display: grid;
-  gap: 0.35rem;
+  font-size: 0.95rem;
+}
+
+.lesson-empty {
+  padding: 24px;
+  border-radius: 20px;
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+}
+
+@media (max-width: 980px) {
+  .calendar-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .calendar-card,
+  .lessons-card {
+    padding: 18px;
+  }
+
+  .calendar-grid {
+    gap: 8px;
+  }
+
+  .day {
+    min-height: 60px;
+  }
 }
 </style>
