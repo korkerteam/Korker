@@ -1,233 +1,168 @@
 <template>
-  <main class="calendar-view-simple">
-    <div class="calendar-card">
-      <div class="calendar-top">
-        <div class="calendar-title">
-          <span class="calendar-day-name">Śr</span>
-          <div>
-            <div class="calendar-month-label">lipiec 2026</div>
-            <div class="calendar-meta">Dzień 196, Tydzień 29</div>
-          </div>
-        </div>
-        <button class="calendar-today">Dzisiaj</button>
+  <main class="info-shell">
+    <section class="info-card">
+      <div class="hero-block">
+        <span class="eyebrow">Kalendarz i organizacja lekcji</span>
+        <h1>Informacje o kalendarzu Korker</h1>
+        <p>
+          Ten ekran pokazuje, jak działa kalendarz dostępności, kiedy uczniowie mogą rezerwować
+          lekcje oraz jak najlepiej przygotować swój plan zajęć.
+        </p>
       </div>
 
-      <div class="calendar-controls">
-        <button class="nav-button">‹</button>
-        <select class="calendar-select">
-          <option>lip</option>
-          <option>sie</option>
-          <option>wrz</option>
-        </select>
-        <select class="calendar-select">
-          <option>2026</option>
-          <option>2027</option>
-          <option>2028</option>
-        </select>
-        <select class="calendar-select">
-          <option>Wakacje</option>
-          <option>Zima</option>
-          <option>Wiosna</option>
-        </select>
-        <select class="calendar-select">
-          <option>Dzień początku...</option>
-          <option>Poniedziałek</option>
-          <option>Niedziela</option>
-        </select>
+      <div class="feature-grid">
+        <article class="feature-card">
+          <h2>Jak działa kalendarz</h2>
+          <p>
+            Kalendarz pomaga uporządkować Twoje dostępne terminy i pokazuje, które godziny są już
+            zajęte, a które są jeszcze wolne.
+          </p>
+          <ul>
+            <li>Widzisz swoje dostępne sloty czasowe.</li>
+            <li>Uczniowie mogą wybierać terminy z Twojego planu.</li>
+            <li>Każda rezerwacja jest od razu widoczna w systemie.</li>
+          </ul>
+        </article>
+
+        <article class="feature-card">
+          <h2>Co warto wiedzieć</h2>
+          <p>
+            Najlepiej ustawiać godziny regularnie, tak aby uczniowie mogli łatwo dopasować lekcje do
+            swojego grafiku.
+          </p>
+          <ul>
+            <li>Dodawaj dodatkowe terminy w weekendy i wieczory.</li>
+            <li>Aktualizuj dostępność po każdej zmianie.</li>
+            <li>Utrzymuj spójny harmonogram, aby ograniczyć konflikty.</li>
+          </ul>
+        </article>
       </div>
 
-      <div class="calendar-grid">
-        <div class="weekday">Po</div>
-        <div class="weekday">Wt</div>
-        <div class="weekday">Śr</div>
-        <div class="weekday">Cz</div>
-        <div class="weekday">Pt</div>
-        <div class="weekday">So</div>
-        <div class="weekday">Ni</div>
+      <div class="tips-grid">
+        <article class="tip-card">
+          <h3>Przygotowanie planu</h3>
+          <p>Zacznij od najczęściej wybieranych godzin i rozbudowuj kalendarz stopniowo.</p>
+        </article>
 
-        <div class="day empty"></div>
-        <div class="day empty"></div>
-        <div class="day">1</div>
-        <div class="day">2</div>
-        <div class="day">3</div>
-        <div class="day empty">4</div>
-        <div class="day empty">5</div>
+        <article class="tip-card">
+          <h3>Komunikacja z uczniami</h3>
+          <p>Warto jasno oznaczać, czy lekcje odbywają się online czy stacjonarnie.</p>
+        </article>
 
-        <div class="day">6</div>
-        <div class="day">7</div>
-        <div class="day">8</div>
-        <div class="day">9</div>
-        <div class="day">10</div>
-        <div class="day">11</div>
-        <div class="day">12</div>
-
-        <div class="day">13</div>
-        <div class="day">14</div>
-        <div class="day active">15</div>
-        <div class="day">16</div>
-        <div class="day">17</div>
-        <div class="day">18</div>
-        <div class="day">19</div>
-
-        <div class="day">20</div>
-        <div class="day">21</div>
-        <div class="day">22</div>
-        <div class="day">23</div>
-        <div class="day">24</div>
-        <div class="day">25</div>
-        <div class="day">26</div>
-
-        <div class="day">27</div>
-        <div class="day">28</div>
-        <div class="day">29</div>
-        <div class="day">30</div>
-        <div class="day">31</div>
-        <div class="day empty"></div>
-        <div class="day empty"></div>
+        <article class="tip-card">
+          <h3>Elastyczność</h3>
+          <p>Jeżeli masz zmienne zajęcia, aktualizuj terminy jak najszybciej po każdej zmianie.</p>
+        </article>
       </div>
-    </div>
+    </section>
   </main>
 </template>
 
 <style scoped>
-.calendar-view-simple {
+.info-shell {
   width: 100%;
   display: flex;
   justify-content: center;
-  color: var(--text);
+  padding: 1.5rem 1rem 3rem;
 }
 
-.calendar-card {
+.info-card {
   width: 100%;
-  max-width: 760px;
-  background: var(--surface-strong);
-  border-radius: 28px;
-  padding: 24px;
-  box-shadow: var(--shadow-soft);
+  max-width: 1100px;
+  border-radius: 32px;
   border: 1px solid var(--border);
-}
-
-:root[data-theme='dark'] .calendar-card {
-  background: #111827;
-  border-color: rgba(148, 163, 184, 0.22);
-  color: #f8fafc;
-}
-
-.calendar-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 22px;
-}
-
-.calendar-title {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.calendar-day-name {
-  width: 56px;
-  height: 56px;
-  display: grid;
-  place-items: center;
-  border-radius: 18px;
-  background: var(--surface-soft);
+  background: linear-gradient(135deg, var(--surface-strong) 0%, var(--surface-soft) 100%);
+  box-shadow: var(--shadow);
+  padding: 2rem;
   color: var(--text);
+}
+
+.hero-block {
+  margin-bottom: 1.75rem;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.hero-block h1 {
+  margin: 1rem 0 0.75rem;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  line-height: 1.15;
   font-weight: 900;
 }
 
-.calendar-month-label {
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: var(--text);
-}
-
-.calendar-meta {
+.hero-block p {
+  margin: 0;
+  max-width: 760px;
+  line-height: 1.7;
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: 1.02rem;
 }
 
-.calendar-today {
-  border: none;
-  background: var(--accent-strong);
-  color: white;
-  padding: 12px 20px;
-  border-radius: 16px;
-  cursor: pointer;
-  font-weight: 700;
+.feature-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 1.25rem;
 }
 
-.calendar-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.nav-button,
-.calendar-select {
+.feature-card,
+.tip-card {
+  border-radius: 24px;
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 12px 16px;
-  background: var(--surface-soft);
-  color: var(--text);
-  font-weight: 700;
-  cursor: pointer;
+  background: var(--surface-strong);
+  padding: 1.35rem;
+  box-shadow: var(--shadow-soft);
 }
 
-.calendar-select {
-  min-width: 140px;
+.feature-card h2,
+.tip-card h3 {
+  margin: 0 0 0.6rem;
+  font-size: 1.1rem;
+  font-weight: 800;
 }
 
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.weekday {
+.feature-card p,
+.tip-card p {
+  margin: 0 0 0.8rem;
+  line-height: 1.6;
   color: var(--muted);
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  text-align: center;
 }
 
-.day {
-  min-height: 72px;
-  border-radius: 20px;
-  background: var(--surface-soft);
+.feature-card ul {
+  margin: 0;
+  padding-left: 1.15rem;
   color: var(--text);
   display: grid;
-  place-items: center;
-  font-weight: 700;
+  gap: 0.45rem;
 }
 
-.day.empty {
-  background: transparent;
-  opacity: 0;
+.tips-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.day.active {
-  background: var(--accent-strong);
-  color: white;
-}
-
-@media (max-width: 760px) {
-  .calendar-card {
-    padding: 18px;
+@media (max-width: 900px) {
+  .feature-grid,
+  .tips-grid {
+    grid-template-columns: 1fr;
   }
+}
 
-  .calendar-controls {
-    justify-content: stretch;
-  }
-
-  .calendar-select,
-  .nav-button {
-    flex: 1 1 150px;
+@media (max-width: 640px) {
+  .info-card {
+    padding: 1.25rem;
   }
 }
 </style>
