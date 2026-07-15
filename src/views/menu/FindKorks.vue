@@ -170,14 +170,14 @@ function likeTutor() {
     decisions.value[currentTutor.value.name] = 'good'
     emit('like-teacher', currentTutor.value)
   }
-  nextTick(() => console.log('Pozostali tutorzy:', filteredTutors.value))
+  nextTutor()
 }
 
 function dislikeTutor() {
   if (currentTutor.value) {
     decisions.value[currentTutor.value.name] = 'bad'
   }
-  nextTick(() => console.log('Pozostali tutorzy:', filteredTutors.value))
+  nextTutor()
 }
 
 function handleDecision(isLiked) {
