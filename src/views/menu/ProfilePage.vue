@@ -20,7 +20,6 @@ const profile = reactive({
 
 const tagOptions = ['Online', 'Na miejscu']
 const subjectOptions = ['Matematyka', 'Język polski', 'Angielski', 'Fizyka']
-const TUTOR_POST_KEY = 'korkerTutorPost'
 
 const isEditing = ref(false)
 const saving = ref(false)
@@ -68,43 +67,15 @@ function fromDb(data) {
   profile.profile_picture = data.profile_picture ?? ''
 }
 
-function loadTutorPost() {
-  if (typeof window === 'undefined') return null
-  try {
-    return JSON.parse(localStorage.getItem(TUTOR_POST_KEY) || 'null')
-  } catch {
-    return null
-  }
-}
-
-function saveTutorPost(post) {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(TUTOR_POST_KEY, JSON.stringify(post))
-}
-
-function removeTutorPost() {
-  if (typeof window === 'undefined') return
-  localStorage.removeItem(TUTOR_POST_KEY)
-}
-
-function generateDefaultTutorSlots() {
-  return [
-    { day: 'Poniedziałek', time: '10:00', date: '2024-01-15' },
-    { day: 'Wtorek', time: '14:00', date: '2024-01-16' },
-    { day: 'Czwartek', time: '16:00', date: '2024-01-18' },
-    { day: 'Piątek', time: '18:00', date: '2024-01-19' },
-  ]
-}
-
-function applySavedTutorPost() {
-  const saved = loadTutorPost()
-  if (saved) {
-    draft.lessonPhoto = saved.lessonPhoto || ''
-    draft.lessonPrice = saved.lessonPrice || ''
-    draft.lessonTags = saved.lessonTags || []
-    draft.lessonSubject = saved.lessonSubject || ''
-    draft.lessonLevel = saved.lessonLevel || 'Liceum'
-    draft.lessonDescription = saved.lessonDescription || ''
+function applySavedTutorPost(data) {
+  if (data?.tutor_post) {
+    const tp = data.tutor_post
+    draft.lessonPhoto = tp.photo || ''
+    draft.lessonPrice = String(tp.price ?? '')
+    draft.lessonTags = tp.tags || []
+    draft.lessonSubject = tp.subject || ''
+    draft.lessonLevel = tp.level || 'Liceum'
+    draft.lessonDescription = tp.description || ''
   }
 }
 
@@ -115,7 +86,7 @@ watch(
     if (data) {
       fromDb(data)
       setProfileName(profile.name)
-      applySavedTutorPost()
+      applySavedTutorPost(data)
     } else {
       const meta = user.value?.user_metadata
       if (meta?.name) {
@@ -132,12 +103,23 @@ function startEdit() {
   originalProfilePicture = profile.profile_picture
   originalLessonPhoto = draft.lessonPhoto || ''
   Object.assign(draft, profile)
-  applySavedTutorPost()
+  applySavedTutorPost(profileData.value)
   isEditing.value = true
 }
 
 async function saveProfile() {
   saveError.value = ''
+
+  if (draft.accountType === 'tutor') {
+    if (!draft.lessonSubject) {
+      saveError.value = 'Wybierz przedmiot'
+      return
+    }
+    if (!draft.lessonPrice) {
+      saveError.value = 'Podaj stawkę za lekcję'
+      return
+    }
+  }
 
   const ageNum = parseInt(draft.age, 10)
   if (draft.age !== '' && (isNaN(ageNum) || ageNum < 1 || ageNum > 100)) {
@@ -186,28 +168,23 @@ async function saveProfile() {
     }
 
     Object.assign(profile, draft)
-    const result = await upsertProfile(toDb(), user.value?.id)
+
+    let tutorPost = null
+    if (draft.accountType === 'tutor') {
+      tutorPost = {
+        subject: draft.lessonSubject || '',
+        level: draft.lessonLevel || 'Liceum',
+        price: Number(draft.lessonPrice) || null,
+        tags: draft.lessonTags || [],
+        description: draft.lessonDescription || '',
+        photo: draft.lessonPhoto || null,
+      }
+    }
+
+    const result = await upsertProfile(toDb(), user.value?.id, tutorPost)
     if (result) {
       fromDb(result)
       profileData.value = { ...result }
-    }
-
-    if (draft.accountType === 'tutor') {
-      const tutorPost = {
-        name: draft.name || profile.name || 'Korepetytor',
-        subject: draft.lessonSubject || 'Korepetycje',
-        level: draft.lessonLevel || 'Liceum',
-        tags: draft.lessonTags || [],
-        image: draft.lessonPhoto || profile.profile_picture || null,
-        bio: draft.lessonDescription || 'Zapraszam na lekcje w dogodnym terminie.',
-        price: Number(draft.lessonPrice) || 50,
-        rating: 4.5,
-        ratingCount: 1,
-        availableSlots: generateDefaultTutorSlots(),
-      }
-      saveTutorPost(tutorPost)
-    } else {
-      removeTutorPost()
     }
 
     setProfileName(profile.name)

@@ -1,186 +1,226 @@
 <template>
-  <main class="page-shell">
-    <div class="page-container">
-      <section class="hero-surface">
-        <div class="hero-copy">
-          <div class="eyebrow">Zintegrowany kalendarz</div>
-          <h1>Zaplanuj lekcje bez zbędnego zamieszania.</h1>
-          <p>
-            Kalendarz Korker pomaga korepetytorom szybko ustalać terminy, sprawdzać dostępność i
-            wysyłać przypomnienia bez chaosu.
-          </p>
-        </div>
-
-        <div class="hero-panel">
-          <div class="info-pill">
-            <span class="info-icon">📅</span>
-            <span>Przejrzysty podgląd tygodnia</span>
+  <main class="calendar-view-simple">
+    <div class="calendar-card">
+      <div class="calendar-top">
+        <div class="calendar-title">
+          <span class="calendar-day-name">Śr</span>
+          <div>
+            <div class="calendar-month-label">lipiec 2026</div>
+            <div class="calendar-meta">Dzień 196, Tydzień 29</div>
           </div>
         </div>
-      </section>
+        <button class="calendar-today">Dzisiaj</button>
+      </div>
 
-      <section class="content-stack">
-        <article class="content-card">
-          <h2>Szybkie sloty</h2>
-          <p>Dodawaj i blokuj terminy bez zbędnych kliknięć, a wszystko jest od razu widoczne.</p>
-        </article>
+      <div class="calendar-controls">
+        <button class="nav-button">‹</button>
+        <select class="calendar-select">
+          <option>lip</option>
+          <option>sie</option>
+          <option>wrz</option>
+        </select>
+        <select class="calendar-select">
+          <option>2026</option>
+          <option>2027</option>
+          <option>2028</option>
+        </select>
+        <select class="calendar-select">
+          <option>Wakacje</option>
+          <option>Zima</option>
+          <option>Wiosna</option>
+        </select>
+        <select class="calendar-select">
+          <option>Dzień początku...</option>
+          <option>Poniedziałek</option>
+          <option>Niedziela</option>
+        </select>
+      </div>
 
-        <article class="content-card">
-          <h2>Przypomnienia</h2>
-          <p>Uczniowie dostają automatyczne informacje o nadchodzących lekcjach i zmianach.</p>
-        </article>
+      <div class="calendar-grid">
+        <div class="weekday">Po</div>
+        <div class="weekday">Wt</div>
+        <div class="weekday">Śr</div>
+        <div class="weekday">Cz</div>
+        <div class="weekday">Pt</div>
+        <div class="weekday">So</div>
+        <div class="weekday">Ni</div>
 
-        <article class="content-card">
-          <h2>Online i stacjonarnie</h2>
-          <p>
-            Wybierasz format zajęć, a system odpowiada zgodnie z Twoją dostępnością i preferencjami.
-          </p>
-        </article>
+        <div class="day empty"></div>
+        <div class="day empty"></div>
+        <div class="day">1</div>
+        <div class="day">2</div>
+        <div class="day">3</div>
+        <div class="day empty">4</div>
+        <div class="day empty">5</div>
 
-        <article class="content-card">
-          <h2>Pełen przegląd tygodnia</h2>
-          <p>Widok zajęć jest przejrzysty, szybki i ułatwia codzienną organizację pracy.</p>
-        </article>
-      </section>
+        <div class="day">6</div>
+        <div class="day">7</div>
+        <div class="day">8</div>
+        <div class="day">9</div>
+        <div class="day">10</div>
+        <div class="day">11</div>
+        <div class="day">12</div>
+
+        <div class="day">13</div>
+        <div class="day">14</div>
+        <div class="day active">15</div>
+        <div class="day">16</div>
+        <div class="day">17</div>
+        <div class="day">18</div>
+        <div class="day">19</div>
+
+        <div class="day">20</div>
+        <div class="day">21</div>
+        <div class="day">22</div>
+        <div class="day">23</div>
+        <div class="day">24</div>
+        <div class="day">25</div>
+        <div class="day">26</div>
+
+        <div class="day">27</div>
+        <div class="day">28</div>
+        <div class="day">29</div>
+        <div class="day">30</div>
+        <div class="day">31</div>
+        <div class="day empty"></div>
+        <div class="day empty"></div>
+      </div>
     </div>
   </main>
 </template>
 
 <style scoped>
-.page-shell {
-  min-height: 80vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.4rem 1rem 0.2rem;
-  background: linear-gradient(135deg, #fdfefe 0%, #f2f8ff 45%, #f7fbff 100%);
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    sans-serif;
-  box-sizing: border-box;
-}
-
-.page-container {
-  max-width: 1100px;
-  margin: 0 auto;
+.calendar-view-simple {
   width: 100%;
   display: flex;
-  flex-direction: column;
   justify-content: center;
 }
 
-.hero-surface {
-  display: grid;
-  gap: 1rem;
-  border-radius: 30px;
-  padding: 1rem;
-  background: linear-gradient(135deg, #ffffff 0%, #f7fbff 50%, #eef8ff 100%);
-  box-shadow: 0 28px 80px rgba(2, 6, 23, 0.12);
+.calendar-card {
+  width: 100%;
+  max-width: 760px;
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
   border: 1px solid rgba(148, 163, 184, 0.18);
 }
 
-@media (min-width: 900px) {
-  .hero-surface {
-    grid-template-columns: 1.2fr 0.8fr;
-    align-items: center;
-    padding: 1.25rem;
-  }
-}
-
-.hero-copy {
-  padding: 0.5rem;
-}
-
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 9999px;
-  background: #e0f2fe;
-  color: #0369a1;
-  padding: 0.45rem 0.8rem;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.hero-copy h1 {
-  margin: 1rem 0 0.8rem;
-  font-size: clamp(1.8rem, 3.2vw, 2.6rem);
-  line-height: 1.08;
-  font-weight: 900;
-  color: #0f172a;
-  letter-spacing: -0.02em;
-}
-
-.hero-copy p {
-  margin: 0;
-  max-width: 40rem;
-  font-size: 1rem;
-  line-height: 1.7;
-  color: #475569;
-}
-
-.hero-panel {
+.calendar-top {
   display: flex;
-  justify-content: flex-start;
-}
-
-.info-pill {
-  display: inline-flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
-  border-radius: 9999px;
-  background: #f8fafc;
-  border: 1px solid #dbeafe;
-  padding: 0.7rem 1rem;
-  color: #334155;
-  font-weight: 600;
+  gap: 16px;
+  margin-bottom: 22px;
 }
 
-.info-icon {
-  display: inline-flex;
+.calendar-title {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: #e0f2fe;
-  color: #0369a1;
+  gap: 14px;
 }
 
-.content-stack {
+.calendar-day-name {
+  width: 56px;
+  height: 56px;
   display: grid;
-  gap: 0.75rem;
-  margin-top: 0.75rem;
+  place-items: center;
+  border-radius: 18px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-weight: 900;
 }
 
-.content-card {
-  border-radius: 20px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  background: #ffffff;
-  padding: 1rem;
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
-}
-
-.content-card h2 {
-  margin: 0 0 0.45rem;
-  font-size: 1.05rem;
-  font-weight: 700;
+.calendar-month-label {
+  font-size: 1.4rem;
+  font-weight: 800;
   color: #0f172a;
 }
 
-.content-card p {
-  margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.7;
+.calendar-meta {
   color: #475569;
+  font-size: 0.95rem;
+}
+
+.calendar-today {
+  border: none;
+  background: #2563eb;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.calendar-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.nav-button,
+.calendar-select {
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  padding: 12px 16px;
+  background: #f8fbff;
+  color: #0f172a;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.calendar-select {
+  min-width: 140px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.weekday {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.day {
+  min-height: 72px;
+  border-radius: 20px;
+  background: #f8fbff;
+  color: #0f172a;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.day.empty {
+  background: transparent;
+  opacity: 0;
+}
+
+.day.active {
+  background: #2563eb;
+  color: white;
+}
+
+@media (max-width: 760px) {
+  .calendar-card {
+    padding: 18px;
+  }
+
+  .calendar-controls {
+    justify-content: stretch;
+  }
+
+  .calendar-select,
+  .nav-button {
+    flex: 1 1 150px;
+  }
 }
 </style>
