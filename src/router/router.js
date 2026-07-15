@@ -1,7 +1,6 @@
 import MenuPage from '@/views/footer/MenuPage.vue'
 import HowItWorks from '@/views/footer/HowItWorks.vue'
 import CalendarInfo from '@/views/footer/CalendarInfo.vue'
-import Pricing from '@/views/footer/Pricing.vue'
 import BecomeTutor from '@/views/footer/BecomeTutor.vue'
 import TutorBenefits from '@/views/footer/TutorBenefits.vue'
 import JoinDatabase from '@/views/footer/JoinDatabase.vue'
@@ -43,11 +42,6 @@ const router = createRouter({
       path: '/kalendarz',
       name: 'kalendarz',
       component: CalendarInfo,
-    },
-    {
-      path: '/cennik',
-      name: 'cennik',
-      component: Pricing,
     },
     {
       path: '/zostan-korepetytorem',
