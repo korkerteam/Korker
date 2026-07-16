@@ -351,6 +351,9 @@ function closePage() {
             </template>
           </div>
         </div>
+        <div v-if="currentTutor.bio || currentTutor.lessonDescription" class="bio-box">
+          <p>{{ currentTutor.bio || currentTutor.lessonDescription }}</p>
+        </div>
       </div>
 
       <!-- Teacher panel (center) -->
@@ -728,7 +731,7 @@ function closePage() {
   box-shadow: var(--shadow-soft);
   align-self: flex-start;
   position: sticky;
-  top: 80px;
+  top: 24px;
   z-index: 9;
 }
 
@@ -947,7 +950,9 @@ function closePage() {
   position: relative;
   display: block;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 5;
+  max-height: 460px;
+  min-height: 320px;
   border-radius: 20px;
   overflow: hidden;
   background: var(--surface-soft);
@@ -960,12 +965,18 @@ function closePage() {
     filter 0.2s ease;
   will-change: transform;
   transform-origin: center center;
+  flex-shrink: 0;
 }
 
 .swipe-image-wrapper {
   width: 100%;
   height: 100%;
   transition: opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--surface-soft);
 }
 
 .card-image.swiping-left .swipe-image-wrapper,
@@ -1026,6 +1037,7 @@ function closePage() {
   border: none;
   box-shadow: none;
   display: block;
+  flex-shrink: 0;
   -webkit-user-drag: none;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -1107,6 +1119,7 @@ function closePage() {
 }
 
 .bio-box {
+  margin-top: 12px;
   background: var(--surface-soft);
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
