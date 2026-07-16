@@ -1,0 +1,571 @@
+<script setup>
+import { ref, inject, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { supabase } from '@/lib/supabase.js'
+import { useAuth } from '@/composables/useAuth.js'
+import LoadingBox from '@/components/LoadingBox.vue'
+
+const route = useRoute()
+const router = useRouter()
+const { user, isAuthenticated, openAuthModal } = useAuth()
+
+const profile = ref(null)
+const tutorPost = ref(null)
+const loading = ref(true)
+const error = ref('')
+
+const weeklyDayLabels = [
+  'Poniedziałek',
+  'Wtorek',
+  'Środa',
+  'Czwartek',
+  'Piątek',
+  'Sobota',
+  'Niedziela',
+]
+
+const globalChat = inject('globalChat')
+
+onMounted(async () => {
+  const identifier = route.params.nickname
+  if (!identifier) {
+    error.value = 'Nie znaleziono użytkownika'
+    loading.value = false
+    return
+  }
+  await fetchProfile(identifier)
+})
+
+async function fetchProfile(identifier) {
+  loading.value = true
+  error.value = ''
+
+  const { data, error: err } = await supabase
+    .from('users')
+    .select('*')
+    .eq('nickname', identifier)
+    .maybeSingle()
+
+  if (err) {
+    error.value = 'Błąd podczas ładowania profilu'
+    console.error('fetchProfile error:', err)
+    loading.value = false
+    return
+  }
+
+  if (!data) {
+    const { data: dataById, error: errById } = await supabase
+      .from('users')
+      .select('*')
+      .eq('auth_id', identifier)
+      .maybeSingle()
+
+    if (errById || !dataById) {
+      error.value = 'Nie znaleziono użytkownika'
+      loading.value = false
+      return
+    }
+
+    profile.value = dataById
+    tutorPost.value = dataById.tutor_post || null
+    loading.value = false
+    return
+  }
+
+  profile.value = data
+  tutorPost.value = data.tutor_post || null
+  loading.value = false
+}
+
+function getDisplayName() {
+  if (!profile.value) return ''
+  return (
+    profile.value.nickname ||
+    [profile.value.name, profile.value.surname].filter(Boolean).join(' ') ||
+    'Nieznany'
+  )
+}
+
+function getFullName() {
+  if (!profile.value) return ''
+  return [profile.value.name, profile.value.surname].filter(Boolean).join(' ') || ''
+}
+
+function getInitial() {
+  const name = profile.value?.nickname || profile.value?.name || ''
+  return name.charAt(0)?.toUpperCase() || '?'
+}
+
+function formattedLocation() {
+  return tutorPost.value?.city || profile.value?.city || ''
+}
+
+function getTeachingFormats() {
+  if (!tutorPost.value) return []
+  if (Array.isArray(tutorPost.value.teachingFormats)) return tutorPost.value.teachingFormats
+  if (tutorPost.value.teachingFormat) return [tutorPost.value.teachingFormat]
+  return []
+}
+
+function isCellSelected(day, hour) {
+  const slot = `${String(hour).padStart(2, '0')}:00-${String((hour + 1) % 24).padStart(2, '0')}:00`
+  return (tutorPost.value?.weeklyAvailability?.[day] || []).includes(slot)
+}
+
+function visibleHours() {
+  return Array.from({ length: 24 }, (_, h) => h)
+}
+
+function handleSendMessage() {
+  if (!isAuthenticated.value) {
+    openAuthModal()
+    return
+  }
+  if (!profile.value) return
+  if (user.value?.id === profile.value.auth_id) return
+  globalChat.openChatWithUser(profile.value.auth_id)
+}
+</script>
+
+<template>
+  <div class="profile-page">
+    <LoadingBox v-if="loading" />
+
+    <div v-else-if="error" class="page-error">
+      <p>{{ error }}</p>
+      <button class="btn btn-secondary" @click="router.push('/')">Wróć do strony głównej</button>
+    </div>
+
+    <div v-else class="profile-container">
+      <div class="profile-card">
+        <div class="profile-left">
+          <div class="avatar-wrapper">
+            <img
+              v-if="profile?.profile_picture"
+              :src="profile.profile_picture"
+              :alt="getDisplayName()"
+              class="avatar"
+            />
+            <span v-else class="avatar avatar-letter">{{ getInitial() }}</span>
+          </div>
+          <h2 class="profile-name">{{ getDisplayName() }}</h2>
+          <span
+            v-if="getFullName() && getDisplayName() !== getFullName()"
+            class="profile-real-name"
+            >{{ getFullName() }}</span
+          >
+
+          <div class="info-list">
+            <div v-if="profile?.account_type" class="info-item">
+              <span class="info-label">Typ konta</span>
+              <span class="info-value">{{
+                profile.account_type === 'tutor' ? 'Korepetytor' : 'Student'
+              }}</span>
+            </div>
+            <div v-if="profile?.age" class="info-item">
+              <span class="info-label">Wiek</span>
+              <span class="info-value">{{ profile.age }}</span>
+            </div>
+            <div v-if="formattedLocation()" class="info-item">
+              <span class="info-label">Miasto</span>
+              <span class="info-value">{{ formattedLocation() }}</span>
+            </div>
+            <div v-if="profile?.gender" class="info-item">
+              <span class="info-label">Płeć</span>
+              <span class="info-value">{{
+                profile.gender === 'male'
+                  ? 'Mężczyzna'
+                  : profile.gender === 'female'
+                    ? 'Kobieta'
+                    : ''
+              }}</span>
+            </div>
+          </div>
+
+          <button
+            v-if="profile && user?.id !== profile.auth_id"
+            class="btn btn-primary message-btn"
+            @click.stop="handleSendMessage"
+          >
+            Wyślij wiadomość
+          </button>
+        </div>
+
+        <div class="profile-right">
+          <template v-if="profile?.account_type === 'tutor'">
+            <div v-if="tutorPost" class="tutor-offer-view">
+              <h4>Oferta korepetytora</h4>
+
+              <div v-if="tutorPost.subject" class="offer-row">
+                <span class="offer-label">Przedmiot</span>
+                <span class="offer-value">{{ tutorPost.subject }}</span>
+              </div>
+              <div v-if="tutorPost.level" class="offer-row">
+                <span class="offer-label">Poziom</span>
+                <span class="offer-value">{{ tutorPost.level }}</span>
+              </div>
+              <div v-if="tutorPost.price" class="offer-row">
+                <span class="offer-label">Stawka</span>
+                <span class="offer-value">{{ tutorPost.price }} zł/h</span>
+              </div>
+              <div v-if="getTeachingFormats().length" class="offer-row">
+                <span class="offer-label">Forma</span>
+                <span class="offer-value">{{ getTeachingFormats().join(', ') }}</span>
+              </div>
+              <div v-if="tutorPost.description" class="offer-row offer-description">
+                <span class="offer-label">Opis</span>
+                <span class="offer-value desc-text">{{ tutorPost.description }}</span>
+              </div>
+              <div v-if="tutorPost.photo" class="offer-photo-preview">
+                <img :src="tutorPost.photo" alt="Zdjęcie oferty" />
+              </div>
+
+              <div
+                v-if="
+                  tutorPost.weeklyAvailability && Object.keys(tutorPost.weeklyAvailability).length
+                "
+                class="availability-section"
+              >
+                <span class="offer-label">Dostępność</span>
+                <div class="av-grid">
+                  <div class="av-header-cell av-corner"></div>
+                  <div
+                    v-for="day in weeklyDayLabels"
+                    :key="day"
+                    class="av-header-cell av-day-header"
+                  >
+                    {{ day }}
+                  </div>
+                  <template v-for="hour in visibleHours()" :key="hour">
+                    <div class="av-header-cell av-time-header">
+                      {{ String(hour).padStart(2, '0') }}:00
+                    </div>
+                    <div
+                      v-for="day in weeklyDayLabels"
+                      :key="`${day}-${hour}`"
+                      class="av-cell"
+                      :class="{ selected: isCellSelected(day, hour) }"
+                    ></div>
+                  </template>
+                </div>
+              </div>
+            </div>
+            <div v-else class="tutor-offer-view tutor-offer-empty">
+              <h4>Oferta korepetytora</h4>
+              <p class="empty-offer-text">Ten korepetytor nie ma jeszcze opublikowanej oferty.</p>
+            </div>
+          </template>
+          <template v-else>
+            <div class="tutor-offer-view tutor-offer-empty">
+              <h4>{{ getDisplayName() }}</h4>
+              <p class="empty-offer-text">Użytkownik nie jest korepetytorem.</p>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.profile-page {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+  min-height: 0;
+  width: 100%;
+}
+
+.page-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 60px 20px;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.profile-container {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.profile-card {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.profile-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 28px 16px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+  position: sticky;
+  top: 12px;
+}
+
+.avatar-wrapper {
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--border);
+  display: block;
+  background: var(--surface-soft);
+}
+
+.avatar-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--accent);
+  color: #ffffff;
+  font-size: 42px;
+  font-weight: 700;
+  border: 3px solid var(--border);
+  width: 110px;
+  height: 110px;
+}
+
+.profile-name {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+  text-align: center;
+  word-break: break-word;
+}
+
+.profile-real-name {
+  font-size: 14px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: -8px;
+}
+
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.info-label {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.info-value {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: right;
+}
+
+.profile-right {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 0;
+  min-width: 0;
+}
+
+.tutor-offer-view {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--shadow-soft);
+}
+
+.tutor-offer-empty {
+  align-items: center;
+  text-align: center;
+  padding: 48px 28px;
+}
+
+.tutor-offer-view h4 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.empty-offer-text {
+  color: var(--muted);
+  font-size: 15px;
+  margin: 0;
+}
+
+.offer-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 15px;
+}
+
+.offer-label {
+  font-weight: 600;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.offer-value {
+  text-align: right;
+  color: var(--text);
+}
+
+.offer-description {
+  flex-direction: column;
+  gap: 6px;
+}
+
+.desc-text {
+  text-align: left;
+  white-space: pre-wrap;
+  font-size: 15px;
+  line-height: 1.6;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.offer-photo-preview {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  max-width: 280px;
+}
+
+.offer-photo-preview img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.availability-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.av-grid {
+  display: grid;
+  grid-template-columns: 44px repeat(7, 1fr);
+  grid-auto-rows: 22px;
+  gap: 2px;
+  padding: 4px;
+  background: #f3f4f6;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  overflow: auto;
+  user-select: none;
+}
+
+.av-header-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  background: #fff;
+  border-radius: 3px;
+  padding: 2px;
+}
+
+.av-corner {
+  background: transparent;
+}
+
+.av-day-header {
+  background: #f9fafb;
+  font-size: 9px;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.av-time-header {
+  background: transparent;
+  color: #9ca3af;
+}
+
+.av-cell {
+  border-radius: 3px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  min-width: 0;
+}
+
+.av-cell.selected {
+  background: #4f75c7;
+  border-color: #4f75c7;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  font-family: inherit;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background: var(--accent);
+}
+
+.btn-secondary {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.btn-secondary:hover {
+  background: rgba(138, 180, 255, 0.2);
+}
+
+.message-btn {
+  width: 100%;
+  padding: 12px;
+}
+</style>

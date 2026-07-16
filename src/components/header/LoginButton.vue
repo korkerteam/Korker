@@ -83,7 +83,6 @@ function handleProfileClick() {
   font-weight: 600;
   color: var(--text);
   max-width: 140px;
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

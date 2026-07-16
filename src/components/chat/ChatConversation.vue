@@ -54,7 +54,11 @@ function handleDelete(id) {
         />
       </svg>
     </button>
-    <div class="conversation-header-info">
+    <router-link
+      :to="'/user/' + (contact?.nickname || contact?.userId)"
+      class="conversation-header-info"
+      @click.stop
+    >
       <div class="conversation-header-avatar" :style="{ background: contact?.avatarColor }">
         <img
           v-if="contact?.profilePicture"
@@ -67,7 +71,7 @@ function handleDelete(id) {
       <div class="conversation-header-meta">
         <span class="conversation-header-name">{{ contact?.name || 'Ładowanie...' }}</span>
       </div>
-    </div>
+    </router-link>
     <button class="icon-btn" @click="$emit('close')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <path
@@ -132,6 +136,9 @@ function handleDelete(id) {
   min-width: 0;
   flex: 1;
   margin-left: 10px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
 }
 .conversation-header-avatar {
   width: 42px;
@@ -160,7 +167,6 @@ function handleDelete(id) {
 .conversation-header-name {
   font-size: 19px;
   font-weight: 700;
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
