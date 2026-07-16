@@ -467,16 +467,15 @@ function closePage() {
 <style scoped>
 .find-korks-panel {
   width: 100%;
-  max-width: 1280px;
+  max-width: 100%;
   min-height: 0;
   max-height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
   gap: 0;
-
-  border-radius: 16px;
+  border-radius: 0;
   overflow: visible;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .find-korks-header {
@@ -504,22 +503,13 @@ function closePage() {
 .tutors-content {
   flex: 1;
   padding: 0;
-  display: flex;
-  flex-direction: row;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+  gap: 0;
   overflow: hidden;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-
-.tutor-section {
-  order: 0;
-  flex: 1;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  padding: 24px 0 24px 0;
+  align-items: start;
   min-height: 0;
+  margin: 0;
 }
 
 .empty-state-card {
@@ -549,18 +539,18 @@ function closePage() {
 
 .tags-filter-section {
   order: 1;
-  width: min(280px, 32%);
-  min-width: 260px;
-  max-height: calc(100vh - 270px);
-  padding: 24px;
-  border-radius: 28px;
-  overflow-y: auto;
+  width: 100%;
+  min-width: 0;
+  max-height: none;
+  padding: 22px 18px;
+  border-radius: 24px;
+  overflow: hidden;
   background: var(--surface-strong);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-soft);
-  margin-left: auto;
-  align-self: flex-start;
-  position: sticky;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  margin: 0;
+  align-self: stretch;
+  position: relative;
   pointer-events: auto;
   z-index: 10;
 }
@@ -582,24 +572,28 @@ function closePage() {
 
 .filter-group {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .filter-group h5 {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 12px;
   font-weight: 600;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.3px;
+  min-width: 90px;
 }
 
 .filter-options {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .city-select-group {
@@ -636,18 +630,18 @@ function closePage() {
 }
 
 .filter-options label {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 16px;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
   cursor: pointer;
   user-select: none;
   transition:
     background 0.2s ease,
     border-color 0.2s ease,
     transform 0.15s ease;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text);
   background: var(--surface-soft);
   border: 1px solid var(--border);
@@ -667,12 +661,12 @@ function closePage() {
 }
 
 .tutor-section {
-  flex: 1;
-  padding: 0 24px 8px;
+  min-width: 0;
+  padding: 0 12px 8px 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  overflow: visible;
+  overflow: hidden;
   align-items: center;
   justify-content: flex-start;
 }
