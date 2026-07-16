@@ -71,7 +71,7 @@ async function handleSubmit() {
 
 <template>
   <div class="modal-overlay" @click.self="emit('close')">
-    <div class="modal-card">
+    <div class="modal-card" :style="{ '--modal-w': isLogin ? '360px' : '460px' }">
       <button class="close-btn" @click="emit('close')" type="button">
         <svg
           viewBox="0 0 24 24"
@@ -101,7 +101,7 @@ async function handleSubmit() {
           />
         </div>
 
-        <div v-if="!isLogin" class="field-row">
+        <div v-show="!isLogin" class="field-row">
           <div class="field">
             <label for="name">Imię</label>
             <input
@@ -167,14 +167,14 @@ async function handleSubmit() {
 
 .modal-card {
   position: relative;
-  width: 100%;
-  max-width: fit-content;
+  width: calc(var(--modal-w) + 20px);
   padding: 32px 24px 28px;
   background: var(--surface-strong);
   border-radius: 24px;
   box-shadow: var(--shadow-soft);
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
+  transition: width 0.35s ease;
 }
 
 .close-btn {
@@ -226,6 +226,10 @@ async function handleSubmit() {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+.field-row div.field:first-child {
+  width: fit-content - 20px;
 }
 
 .field label {
