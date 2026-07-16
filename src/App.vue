@@ -61,6 +61,8 @@ function showTeacherProfile(teacher) {
   currentTeacher.value = teacher || null
 }
 
+provide('showTeacherProfile', showTeacherProfile)
+
 function removeLikedTeacher(teacher) {
   if (!teacher) return
 
