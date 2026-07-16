@@ -194,7 +194,7 @@ const rankingData = [
 .rank-8,
 .rank-9,
 .rank-10 {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-hover) 100%);
 }
 
 .rank-content {

@@ -47,7 +47,6 @@ function goToEditProfile() {
               <button class="btn btn-dark" type="button" @click="handleCreateAccount">
                 Załóż konto
               </button>
-              <button class="btn btn-outline" type="button">Sprawdź jak to działa</button>
             </div>
             <p v-if="accountMessage" class="account-message">{{ accountMessage }}</p>
             <button
@@ -184,8 +183,16 @@ function goToEditProfile() {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at top right, rgba(2, 132, 199, 0.22), transparent 32%),
-    radial-gradient(circle at bottom left, rgba(14, 165, 233, 0.16), transparent 24%);
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--primary-color) 22%, transparent),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at bottom left,
+      color-mix(in srgb, var(--primary-color) 16%, transparent),
+      transparent 24%
+    );
   pointer-events: none;
 }
 
@@ -232,7 +239,7 @@ function goToEditProfile() {
   align-items: center;
   gap: 0.5rem;
   border-radius: 9999px;
-  background-color: var(--accent);
+  background: var(--primary-color);
   padding: 0.5rem 1rem;
   color: #ffffff;
 }
@@ -282,7 +289,7 @@ function goToEditProfile() {
 .account-message {
   margin-top: 1rem;
   font-size: 0.95rem;
-  color: var(--accent-strong);
+  color: var(--primary-color);
   font-weight: 600;
 }
 
@@ -355,7 +362,7 @@ function goToEditProfile() {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  color: #38bdf8;
+  color: var(--primary-color);
 }
 
 .steps-title {
@@ -366,8 +373,8 @@ function goToEditProfile() {
 }
 
 .steps-badge {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #bae6fd;
+  background-color: color-mix(in srgb, var(--primary-color) 16%, transparent);
+  color: var(--text);
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.75rem;
@@ -391,7 +398,7 @@ function goToEditProfile() {
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.2em;
-  color: #38bdf8;
+  color: var(--primary-color);
 }
 
 .step-heading {
@@ -433,7 +440,7 @@ function goToEditProfile() {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  color: var(--accent);
+  color: var(--primary-color);
 }
 
 .benefit-title {
