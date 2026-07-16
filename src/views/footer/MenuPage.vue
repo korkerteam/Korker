@@ -115,7 +115,6 @@ function handleToggleRank() {
 }
 
 function handleToggleTeachers() {
-  if (!requireAuth()) return
   active.value = active.value === 'teachers' ? null : 'teachers'
 }
 

@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { supabase } from '@/lib/supabase.js'
 import LoadingBox from '@/components/LoadingBox.vue'
+import { useAuth } from '@/composables/useAuth.js'
 
 const emit = defineEmits(['show-teacher', 'remove-teacher'])
 const props = defineProps({
@@ -17,6 +18,7 @@ const props = defineProps({
 
 const loading = ref(false)
 const selectedTeacher = ref(null)
+const { isAuthenticated, openAuthModal } = useAuth()
 
 const showTimetable = ref(false)
 const timetableData = ref(null)
@@ -106,9 +108,24 @@ function goBack() {
 
 <template>
   <LoadingBox v-if="loading" />
-  <div v-else class="teacher-panel" :class="{ compact: isMany }">
+  <div v-else class="teacher-panel" :class="{ compact: isMany, 'guest-state': !isAuthenticated }">
+    <div v-if="!isAuthenticated" class="auth-required-card">
+      <h3>Aby zobaczyć swoich nauczycieli</h3>
+      <p>
+        Zarejestruj konto lub zaloguj się, żeby przeglądać swoją listę nauczycieli i zarządzać nią.
+      </p>
+      <div class="auth-actions">
+        <button class="btn-primary" type="button" @click="openAuthModal('login')">
+          Zaloguj się
+        </button>
+        <button class="btn-secondary" type="button" @click="openAuthModal('signup')">
+          Zarejestruj się
+        </button>
+      </div>
+    </div>
+
     <!-- Teacher List View -->
-    <template v-if="!selectedTeacher">
+    <template v-else-if="!selectedTeacher">
       <div class="teacher-header">
         <div>
           <h3>{{ props.isTutorAccount ? 'Moi Studenci' : 'Moi Nauczyciele' }}</h3>
@@ -140,7 +157,7 @@ function goBack() {
         <p v-else class="empty-state">
           {{
             props.isTutorAccount
-              ? 'Wybierz studentów korzystając z funkcji "Szukaj korepetycji"'
+              ? 'Nie masz jeszcze żadnych studentów.'
               : 'Wybierz nauczycieli korzystając z funkcji "Szukaj korepetycji"'
           }}
         </p>
@@ -239,6 +256,66 @@ function goBack() {
 
 .teacher-panel.compact {
   max-height: 60vh;
+}
+
+.teacher-panel.guest-state {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  max-height: none;
+  overflow: visible;
+}
+
+.auth-required-card {
+  width: min(100%, 520px);
+  padding: 28px;
+  border-radius: 24px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+  box-sizing: border-box;
+  margin: 24px auto;
+}
+
+.auth-required-card h3 {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 22px;
+}
+
+.auth-required-card p {
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.auth-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--accent-strong);
+  color: white;
+}
+
+.btn-secondary {
+  background: var(--surface-soft);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .teacher-header h3 {
