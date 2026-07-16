@@ -35,13 +35,17 @@ const swipeRotation = ref(0)
 const cardRef = ref(null)
 const availabilityExpanded = ref(false)
 
-const swipeHintState = computed(() => {
-  if (swipeOffsetX.value > 24) return 'like'
-  if (swipeOffsetX.value < -24) return 'dislike'
-  return ''
-})
+const ttDayKeys = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
+const ttDayAbbr = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd']
+const ttGridHours = Array.from({ length: 14 }, (_, i) => i + 8)
 
-const showSwipeOverlay = computed(() => !props.isTutorAccount)
+function ttSlotLabel(hour) {
+  return `${String(hour).padStart(2, '0')}:00-${String((hour + 1) % 24).padStart(2, '0')}:00`
+}
+
+function ttHasSlot(day, hour) {
+  return currentTutor.value?.weeklyAvailability?.[day]?.includes(ttSlotLabel(hour))
+}
 
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
@@ -87,6 +91,7 @@ async function loadTutors() {
           price: tp.price || 50,
           city: tp.city || '',
           lessonPlace: tp.lessonPlace || '',
+          weeklyAvailability: tp.weeklyAvailability || {},
         }
       })
   }
@@ -409,18 +414,6 @@ function closePage() {
               <div class="bio-box" v-if="currentTutor.bio || currentTutor.lessonDescription">
                 <p>{{ currentTutor.bio || currentTutor.lessonDescription }}</p>
               </div>
-
-              <div class="availability-box">
-                <div class="availability-panel-header">Dostępne godziny</div>
-                <div class="availability-inline-row">
-                  <div v-for="day in weekdayLabels" :key="day" class="availability-day-pill">
-                    <span class="availability-day">{{ day }}</span>
-                    <span class="availability-value">
-                      {{ formatAvailabilityRange(currentTutor?.weeklyAvailability?.[day] || []) }}
-                    </span>
-                  </div>
-                </div>
-              </div>
             </div>
 
             <div class="tags-list">
@@ -546,6 +539,26 @@ function closePage() {
           </div>
         </div>
       </div>
+
+      <!-- Timetable section (right of teacher panel) -->
+      <div v-if="currentTutor" class="tt-section">
+        <div class="tt-section-header">Plan lekcji</div>
+        <div class="tt-grid-wrap">
+          <div class="tt-grid">
+            <div class="tt-corner"></div>
+            <div v-for="d in ttDayAbbr" :key="d" class="tt-day-h">{{ d }}</div>
+            <template v-for="hour in ttGridHours" :key="hour">
+              <div class="tt-time-l">{{ String(hour).padStart(2, '0') }}:00</div>
+              <div
+                v-for="day in ttDayKeys"
+                :key="`${day}-${hour}`"
+                class="tt-c"
+                :class="{ on: ttHasSlot(day, hour) }"
+              ></div>
+            </template>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -553,16 +566,15 @@ function closePage() {
 <style scoped>
 .find-korks-panel {
   width: 100%;
-  max-width: 1280px;
+  max-width: 100%;
   min-height: 0;
   max-height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
   gap: 0;
-
-  border-radius: 16px;
+  border-radius: 0;
   overflow: visible;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .find-korks-header {
@@ -590,22 +602,13 @@ function closePage() {
 .tutors-content {
   flex: 1;
   padding: 0;
-  display: flex;
-  flex-direction: row;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+  gap: 0;
   overflow: hidden;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-
-.tutor-section {
-  order: 0;
-  flex: 1;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  padding: 24px 0 24px 0;
+  align-items: start;
   min-height: 0;
+  margin: 0;
 }
 
 .empty-state-card {
@@ -635,20 +638,44 @@ function closePage() {
 
 .tags-filter-section {
   order: 1;
-  width: min(280px, 32%);
-  min-width: 260px;
-  max-height: calc(100vh - 270px);
-  padding: 24px;
-  border-radius: 28px;
-  overflow-y: auto;
+  width: 100%;
+  min-width: 0;
+  max-height: none;
+  padding: 22px 18px 110px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  margin: 0 0 24px;
+  align-self: stretch;
+  position: relative;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+.tt-section {
+  order: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 20px;
+  border-radius: 24px;
   background: var(--surface-strong);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-soft);
-  margin-left: auto;
   align-self: flex-start;
   position: sticky;
-  pointer-events: auto;
-  z-index: 10;
+  top: 80px;
+  z-index: 9;
+}
+
+.tt-section-header {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
 }
 
 .tags-filter-header {
@@ -668,24 +695,28 @@ function closePage() {
 
 .filter-group {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .filter-group h5 {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 12px;
   font-weight: 600;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.3px;
+  min-width: 90px;
 }
 
 .filter-options {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .city-select-group {
@@ -722,18 +753,18 @@ function closePage() {
 }
 
 .filter-options label {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 16px;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
   cursor: pointer;
   user-select: none;
   transition:
     background 0.2s ease,
     border-color 0.2s ease,
     transform 0.15s ease;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text);
   background: var(--surface-soft);
   border: 1px solid var(--border);
@@ -753,12 +784,12 @@ function closePage() {
 }
 
 .tutor-section {
-  flex: 1;
-  padding: 0 24px 8px;
+  min-width: 0;
+  padding: 0 12px 8px 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  overflow: visible;
+  overflow: hidden;
   align-items: center;
   justify-content: flex-start;
 }
@@ -834,16 +865,13 @@ function closePage() {
   user-select: none;
   -webkit-user-drag: none;
   -webkit-touch-callout: none;
-  background: var(--surface-strong);
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 24px;
-  flex: 1;
-  height: 100%;
-  max-height: 980px;
-  width: min(100%, 470px);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  max-height: none;
+  width: 100%;
   overflow: visible;
-  margin: 0 auto;
 }
 
 .card-image {
@@ -1041,72 +1069,14 @@ function closePage() {
   border: 1px solid var(--border);
 }
 
-.availability-box {
-  width: 100%;
-  padding: 10px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: linear-gradient(135deg, var(--surface-strong) 0%, var(--surface-soft) 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  box-sizing: border-box;
-}
-
-.availability-panel-header {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.availability-inline-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.availability-day-pill {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(4px);
-  min-width: 86px;
-}
-
-.availability-day {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.availability-value {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--text);
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
 .actions {
   display: flex;
-  justify-content: space-between;
-  gap: 200px;
+  justify-content: center;
+  gap: 40px;
   margin-top: 16px;
   position: relative;
   z-index: 2;
+  width: 100%;
 }
 
 .btn-like,
@@ -1185,5 +1155,62 @@ function closePage() {
 
 .find-korks-card {
   display: none;
+}
+</style>
+
+<style>
+.tt-section .tt-grid-wrap {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tt-section .tt-grid {
+  display: grid;
+  grid-template-columns: 38px repeat(7, 1fr);
+  gap: 2px;
+  padding: 3px;
+  background: #f3f4f6;
+}
+
+.tt-section .tt-corner {
+  background: transparent;
+}
+
+.tt-section .tt-day-h {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: #f9fafb;
+  border-radius: 3px;
+  padding: 2px 0;
+}
+
+.tt-section .tt-time-l {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 600;
+  color: #9ca3af;
+  border-radius: 3px;
+}
+
+.tt-section .tt-c {
+  border-radius: 3px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  min-height: 22px;
+}
+
+.tt-section .tt-c.on {
+  background: #4f75c7;
+  border-color: #4f75c7;
 }
 </style>
