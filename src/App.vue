@@ -246,7 +246,7 @@ onMounted(() => {
   position: fixed;
   right: 16px;
   bottom: 10%;
-  z-index: 5;
+  z-index: 2000;
 }
 
 .settings-fab {

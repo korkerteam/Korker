@@ -542,17 +542,17 @@ function closePage() {
   width: 100%;
   min-width: 0;
   max-height: none;
-  padding: 22px 18px;
+  padding: 22px 18px 110px;
   border-radius: 24px;
   overflow: hidden;
   background: var(--surface-strong);
   border: 1px solid var(--border);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-  margin: 0;
+  margin: 0 0 24px;
   align-self: stretch;
   position: relative;
   pointer-events: auto;
-  z-index: 10;
+  z-index: 1;
 }
 
 .tags-filter-header {
