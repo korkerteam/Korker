@@ -590,19 +590,24 @@ function closePage() {
   width: 100%;
   padding: 12px 14px;
   border-radius: 16px;
-  border: 1px solid rgba(79, 117, 199, 0.12);
-  background: #f8fbff;
-  color: #1f2937;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  color: var(--text);
   font-size: 14px;
   appearance: none;
   cursor: pointer;
   pointer-events: auto;
 }
 
+.city-select-label select option {
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
 .filter-hint {
   margin: 0;
   font-size: 12px;
-  color: #64748b;
+  color: var(--muted);
 }
 
 .filter-options label {
@@ -650,7 +655,7 @@ function closePage() {
 .progress {
   text-align: right;
   font-size: 12px;
-  color: #4b5563;
+  color: var(--muted);
   font-weight: 500;
   margin-top: 0;
   align-self: flex-end;
@@ -811,8 +816,9 @@ function closePage() {
   gap: 2px;
   padding: 8px 10px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(79, 117, 199, 0.08);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
 }
 
 .tutor-summary-price {
@@ -877,16 +883,16 @@ function closePage() {
   width: 100%;
   padding: 10px;
   border-radius: 14px;
-  border: 1px solid rgba(79, 117, 199, 0.14);
-  background: linear-gradient(135deg, rgba(248, 251, 255, 0.98) 0%, rgba(238, 242, 255, 0.95) 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--surface-strong) 0%, var(--surface-soft) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   box-sizing: border-box;
 }
 
 .availability-panel-header {
   font-size: 11px;
   font-weight: 700;
-  color: #102036;
+  color: var(--text);
   margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -905,8 +911,8 @@ function closePage() {
   gap: 4px;
   padding: 8px 10px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(79, 117, 199, 0.1);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
   backdrop-filter: blur(4px);
   min-width: 86px;
 }
@@ -914,7 +920,7 @@ function closePage() {
 .availability-day {
   font-size: 10px;
   font-weight: 700;
-  color: #102036;
+  color: var(--text);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -925,8 +931,8 @@ function closePage() {
   justify-content: center;
   padding: 4px 8px;
   border-radius: 999px;
-  background: rgba(79, 117, 199, 0.12);
-  color: #234;
+  background: var(--accent-soft);
+  color: var(--text);
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
