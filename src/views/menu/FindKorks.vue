@@ -33,7 +33,6 @@ const swipeStartX = ref(null)
 const swipeOffsetX = ref(0)
 const swipeRotation = ref(0)
 const cardRef = ref(null)
-const availabilityExpanded = ref(false)
 
 const weekdayLabels = [
   'Poniedziałek',
@@ -363,7 +362,7 @@ function closePage() {
       </div>
 
       <!-- Teacher panel (center) -->
-      <div class="tutor-section">
+      <div class="tutor-section" :class="{ 'is-empty': !filteredTutors.length }">
         <div v-if="!isAuthenticated" class="auth-required-card">
           <h3>Aby szukać nauczycieli</h3>
           <p>
@@ -439,45 +438,6 @@ function closePage() {
                   <p class="tutor-price">{{ currentTutor.price }} zł/h</p>
                 </div>
               </div>
-
-              <button class="av-popup-trigger" type="button" @click="availabilityExpanded = true">
-                Dostępne godziny ▸
-              </button>
-              <Teleport to="body">
-                <div
-                  v-if="availabilityExpanded"
-                  class="av-popup-overlay"
-                  @click.self="availabilityExpanded = false"
-                >
-                  <div class="av-popup-card">
-                    <button
-                      class="av-popup-close"
-                      type="button"
-                      @click="availabilityExpanded = false"
-                    >
-                      ✕
-                    </button>
-                    <div class="av-popup-header">Dostępne godziny</div>
-                    <div class="av-popup-grid">
-                      <div></div>
-                      <div v-for="day in weekdayLabels" :key="day" class="av-popup-day-header">
-                        {{ day }}
-                      </div>
-                      <template v-for="hour in gridHours" :key="hour">
-                        <div class="av-popup-time-header">
-                          {{ String(hour).padStart(2, '0') }}:00
-                        </div>
-                        <div
-                          v-for="day in weekdayLabels"
-                          :key="`${day}-${hour}`"
-                          class="av-popup-cell"
-                          :class="{ filled: hasSlot(currentTutor?.weeklyAvailability, day, hour) }"
-                        ></div>
-                      </template>
-                    </div>
-                  </div>
-                </div>
-              </Teleport>
             </div>
 
             <div class="tags-list">
@@ -528,7 +488,7 @@ function closePage() {
         </div>
       </div>
 
-      <div v-if="isAuthenticated" class="tags-filter-section">
+      <div v-if="isAuthenticated && filteredTutors.length" class="tags-filter-section">
         <div class="tags-filter-header">
           <h4>Filtry</h4>
         </div>
@@ -676,6 +636,8 @@ function closePage() {
 }
 
 .empty-state-card {
+  justify-self: center;
+  align-self: center;
   width: min(100%, 480px);
   max-width: 480px;
   padding: 28px;
@@ -857,6 +819,13 @@ function closePage() {
   justify-content: center;
 }
 
+.tutor-section.is-empty {
+  grid-column: 1 / -1;
+  justify-content: center;
+  align-self: center;
+  padding: 0;
+}
+
 .auth-required-card {
   width: min(100%, 520px);
   padding: 28px;
@@ -945,10 +914,8 @@ function closePage() {
 .card-image {
   position: relative;
   display: block;
-  width: 100%;
-  aspect-ratio: 4 / 5;
-  max-height: 460px;
-  min-height: 320px;
+  width: 360px;
+  height: 480px;
   border-radius: 20px;
   overflow: hidden;
   background: var(--surface-soft);
@@ -1145,110 +1112,6 @@ function closePage() {
   font-size: 10px;
   font-weight: 600;
   border: 1px solid var(--border);
-}
-
-.av-popup-trigger {
-  width: 100%;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface-soft);
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: background 0.15s;
-  text-align: left;
-  box-sizing: border-box;
-}
-.av-popup-trigger:hover {
-  background: var(--accent-soft);
-}
-.av-popup-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(3px);
-}
-.av-popup-card {
-  position: relative;
-  background: var(--surface-strong);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: var(--shadow);
-  width: min(520px, 60vw);
-  max-height: 55vh;
-  overflow-y: auto;
-}
-.av-popup-close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: none;
-  background: var(--surface-soft);
-  color: var(--muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  transition: background 0.15s;
-}
-.av-popup-close:hover {
-  background: var(--accent-soft);
-  color: var(--text);
-}
-.av-popup-header {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 16px;
-}
-.av-popup-grid {
-  display: grid;
-  grid-template-columns: 28px repeat(7, 22px);
-  gap: 2px;
-  width: fit-content;
-}
-.av-popup-day-header {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--muted);
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  line-height: 22px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.av-popup-time-header {
-  font-size: 9px;
-  color: var(--muted);
-  text-align: right;
-  padding-right: 2px;
-  line-height: 22px;
-}
-.av-popup-cell {
-  width: 22px;
-  height: 22px;
-  border-radius: 3px;
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
-  box-sizing: border-box;
-}
-.av-popup-cell.filled {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
 }
 
 .actions {
