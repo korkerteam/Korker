@@ -147,7 +147,13 @@ const allDecided = computed(
   () => tutors.value.length > 0 && tutors.value.every((t) => decisions.value[t.id]),
 )
 
-const currentTutor = computed(() => filteredTutors.value[currentIndex.value] || null)
+const currentTutor = computed(() => {
+  const list = filteredTutors.value
+  if (!list.length) return null
+
+  const safeIndex = Math.min(Math.max(currentIndex.value, 0), list.length - 1)
+  return list[safeIndex] || null
+})
 
 watch(
   () => props.filters,
@@ -334,19 +340,19 @@ function closePage() {
   <div class="find-korks-panel" :class="{ 'guest-state': !isAuthenticated }">
     <div class="tutors-content">
       <!-- Plan lekcji (left) -->
-      <div v-if="currentTutor" class="tt-section">
+      <div v-if="filteredTutors.length && currentTutor" class="tt-section">
         <div class="tt-section-header">Plan lekcji</div>
         <div class="tt-grid-wrap">
           <div class="tt-grid">
             <div class="tt-corner"></div>
-            <div v-for="d in ttDayAbbr" :key="d" class="tt-day-h">{{ d }}</div>
-            <template v-for="hour in ttGridHours" :key="hour">
+            <div v-for="d in dayAbbr" :key="d" class="tt-day-h">{{ d }}</div>
+            <template v-for="hour in gridHours" :key="hour">
               <div class="tt-time-l">{{ String(hour).padStart(2, '0') }}:00</div>
               <div
-                v-for="day in ttDayKeys"
+                v-for="day in weekdayLabels"
                 :key="`${day}-${hour}`"
                 class="tt-c"
-                :class="{ on: ttHasSlot(day, hour) }"
+                :class="{ on: hasSlot(currentTutor?.weeklyAvailability, day, hour) }"
               ></div>
             </template>
           </div>
@@ -420,13 +426,7 @@ function closePage() {
 
           <div class="card-info">
             <div class="tutor-main-info">
-              <div class="browse-note">
-                {{
-                  props.isTutorAccount
-                    ? 'Przesuń w lewo lub prawo, aby zobaczyć kolejnego korepetytora.'
-                    : 'Przesuń w lewo lub prawo, aby przejść dalej albo dodaj korepetytora.'
-                }}
-              </div>
+              <div class="browse-note"></div>
               <div class="tutor-summary-row">
                 <div class="tutor-summary-card">
                   <h3 class="tutor-name">{{ currentTutor.name }}</h3>
@@ -438,10 +438,6 @@ function closePage() {
                 <div class="tutor-summary-card tutor-summary-price">
                   <p class="tutor-price">{{ currentTutor.price }} zł/h</p>
                 </div>
-              </div>
-
-              <div class="bio-box" v-if="currentTutor.bio || currentTutor.lessonDescription">
-                <p>{{ currentTutor.bio || currentTutor.lessonDescription }}</p>
               </div>
 
               <button class="av-popup-trigger" type="button" @click="availabilityExpanded = true">
