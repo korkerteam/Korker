@@ -14,9 +14,14 @@ const { user } = useAuth()
 const isMine = computed(() => props.message?.sender_id === user.value?.id)
 const attachments = computed(() => props.message?.attachments || [])
 
+const MAX_EDIT_LENGTH = 500
+
 const editing = ref(false)
 const editText = ref('')
 const showDeleteConfirm = ref(false)
+
+const editOverLimit = computed(() => editText.value.length > MAX_EDIT_LENGTH)
+const editCharsLeft = computed(() => MAX_EDIT_LENGTH - editText.value.length)
 
 function startEdit() {
   editText.value = props.message?.content || ''
@@ -33,6 +38,7 @@ function saveEdit() {
     cancelEdit()
     return
   }
+  if (editOverLimit.value) return
   emit('edit', { id: props.message.id, content: editText.value.trim() })
   editing.value = false
 }
@@ -69,25 +75,46 @@ function formatSize(bytes) {
 </script>
 
 <template>
-  <div
-    class="msg-row"
-    :class="isMine ? 'msg-row-me' : 'msg-row-them'"
-    @mouseleave="showDeleteConfirm = false"
-  >
-    <div v-if="!isMine" class="msg-avatar" :style="{ background: contact?.avatarColor }">
-      <img
-        v-if="contact?.profilePicture"
-        :src="contact.profilePicture"
-        :alt="contact?.name"
-        class="bubble-avatar-img"
-      />
-      <span v-else>{{ contact?.name?.charAt(0) || '?' }}</span>
-    </div>
+  <div class="msg-row" :class="isMine ? 'msg-row-me' : 'msg-row-them'">
+    <router-link
+      v-if="!isMine"
+      :to="'/user/' + (contact?.nickname || contact?.userId)"
+      class="msg-avatar-link"
+      @click.stop
+    >
+      <div class="msg-avatar" :style="{ background: contact?.avatarColor }">
+        <img
+          v-if="contact?.profilePicture"
+          :src="contact.profilePicture"
+          :alt="contact?.name"
+          class="bubble-avatar-img"
+        />
+        <span v-else>{{ contact?.name?.charAt(0) || '?' }}</span>
+      </div>
+    </router-link>
     <div class="msg-body">
       <div v-if="editing" class="edit-area">
-        <textarea v-model="editText" class="edit-textarea" rows="2"></textarea>
+        <div class="edit-textarea-wrap">
+          <textarea
+            v-model="editText"
+            class="edit-textarea"
+            :class="{ 'textarea-over': editOverLimit }"
+            rows="2"
+          ></textarea>
+          <span
+            v-if="editText.length"
+            class="edit-char-count"
+            :class="{ 'char-count-over': editOverLimit }"
+            >{{ editCharsLeft }}</span
+          >
+        </div>
+        <div v-if="editOverLimit" class="edit-limit-warning">
+          Maksymalnie {{ MAX_EDIT_LENGTH }} znaków
+        </div>
         <div class="edit-actions">
-          <button class="edit-btn save-btn" @click="saveEdit">Zapisz</button>
+          <button class="edit-btn save-btn" :disabled="editOverLimit" @click="saveEdit">
+            Zapisz
+          </button>
           <button class="edit-btn cancel-btn" @click="cancelEdit">Anuluj</button>
         </div>
       </div>
@@ -162,6 +189,16 @@ function formatSize(bytes) {
 .msg-row-me {
   align-self: flex-end;
   flex-direction: row-reverse;
+}
+.msg-avatar-link {
+  display: block;
+  line-height: 0;
+  text-decoration: none;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.msg-avatar-link:hover {
+  opacity: 0.85;
 }
 .msg-avatar {
   width: 34px;
@@ -372,6 +409,31 @@ function formatSize(bytes) {
 }
 .edit-textarea:focus {
   box-shadow: 0 0 0 3px rgba(79, 117, 199, 0.2);
+}
+.edit-textarea.textarea-over {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+.edit-textarea-wrap {
+  position: relative;
+}
+.edit-char-count {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  pointer-events: none;
+  line-height: 1;
+}
+.edit-char-count.char-count-over {
+  color: #ef4444;
+  font-weight: 600;
+}
+.edit-limit-warning {
+  font-size: 12px;
+  color: #ef4444;
+  font-weight: 500;
 }
 .edit-actions {
   display: flex;

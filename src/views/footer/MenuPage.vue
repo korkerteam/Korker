@@ -9,6 +9,7 @@ import Ranks from '@/views/menu/Ranks.vue'
 import MyTeachers from '@/views/menu/MyTeachers.vue'
 import FindKorks from '@/views/menu/FindKorks.vue'
 import CalendarView from '@/views/menu/CalendarView.vue'
+import UserProfilePage from '@/views/UserProfilePage.vue'
 import { toggleProfile, toggleRank } from '@/composables/menuToggle.js'
 
 const props = defineProps({
@@ -88,7 +89,7 @@ watch(isAuthenticated, (val) => {
 })
 
 watch(needsProfile, (val) => {
-  if (val) router.push('/profil')
+  if (val && route.path !== '/profil') router.push('/profil')
 })
 
 watch(
@@ -173,6 +174,7 @@ function handleToggleCalendar() {
         />
         <CalendarView v-else-if="activePanel === 'calendar'" key="calendar" />
         <!-- Tutaj ładuje się właściwy HomePage -->
+        <UserProfilePage v-else-if="route.name === 'user-profile'" :key="route.params.nickname" />
         <HomePage v-else key="home" />
       </Transition>
     </div>

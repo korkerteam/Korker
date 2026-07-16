@@ -95,12 +95,29 @@ function selectUser(userId) {
         @click="selectUser(r.userId)"
       >
         <div class="contact-item-left">
-          <div class="contact-item-avatar" :style="{ background: r.avatarColor }">
-            <img v-if="r.profilePicture" :src="r.profilePicture" :alt="r.name" class="avatar-img" />
-            <span v-else>{{ r.name?.charAt(0) || '?' }}</span>
-          </div>
+          <router-link
+            :to="'/user/' + (r.nickname || r.userId)"
+            class="contact-item-avatar-link"
+            @click.stop
+          >
+            <div class="contact-item-avatar" :style="{ background: r.avatarColor }">
+              <img
+                v-if="r.profilePicture"
+                :src="r.profilePicture"
+                :alt="r.name"
+                class="avatar-img"
+              />
+              <span v-else>{{ r.name?.charAt(0) || '?' }}</span>
+            </div>
+          </router-link>
           <div class="contact-item-info">
-            <span class="contact-item-name">{{ r.name }}</span>
+            <router-link
+              :to="'/user/' + (r.nickname || r.userId)"
+              class="contact-item-name-link"
+              @click.stop
+            >
+              <span class="contact-item-name">{{ r.name }}</span>
+            </router-link>
           </div>
         </div>
       </button>
@@ -116,12 +133,20 @@ function selectUser(userId) {
       @click="$emit('openChat', c.userId)"
     >
       <div class="contact-item-left">
-        <div class="contact-item-avatar" :style="{ background: c.avatarColor }">
-          <img v-if="c.profilePicture" :src="c.profilePicture" :alt="c.name" class="avatar-img" />
-          <span v-else>{{ c.name?.charAt(0) || '?' }}</span>
-        </div>
+        <router-link :to="'/user/' + c.userId" class="contact-item-avatar-link" @click.stop>
+          <div class="contact-item-avatar" :style="{ background: c.avatarColor }">
+            <img v-if="c.profilePicture" :src="c.profilePicture" :alt="c.name" class="avatar-img" />
+            <span v-else>{{ c.name?.charAt(0) || '?' }}</span>
+          </div>
+        </router-link>
         <div class="contact-item-info">
-          <span class="contact-item-name">{{ c.name }}</span>
+          <router-link
+            :to="'/user/' + (c.nickname || c.userId)"
+            class="contact-item-name-link"
+            @click.stop
+          >
+            <span class="contact-item-name">{{ c.name }}</span>
+          </router-link>
           <span class="contact-item-last">{{ c.lastMessage || '' }}</span>
         </div>
       </div>
@@ -306,6 +331,20 @@ function selectUser(userId) {
   height: 100%;
   object-fit: cover;
 }
+.contact-item-avatar-link {
+  display: block;
+  line-height: 0;
+  text-decoration: none;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.contact-item-name-link {
+  text-decoration: none;
+  color: inherit;
+}
+.contact-item-name-link:hover {
+  text-decoration: underline;
+}
 .contact-item-info {
   display: flex;
   flex-direction: column;
@@ -315,14 +354,12 @@ function selectUser(userId) {
   font-size: 17px;
   font-weight: 600;
   color: var(--text);
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .contact-item-last {
   font-size: 15px;
   color: var(--muted);
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-top: 1px;

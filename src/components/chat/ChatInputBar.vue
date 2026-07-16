@@ -6,12 +6,16 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue', 'send'])
 
+const MAX_MESSAGE_LENGTH = 500
 const MAX_FILE_SIZE = 20 * 1024 * 1024
 const ACCEPT_TYPES = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip,.rar,.7z'
 
 const fileInput = ref(null)
 const files = ref([])
 const sending = ref(false)
+
+const overLimit = computed(() => val.value.length > MAX_MESSAGE_LENGTH)
+const charsLeft = computed(() => MAX_MESSAGE_LENGTH - val.value.length)
 
 const val = computed({
   get: () => props.modelValue ?? '',
@@ -81,6 +85,9 @@ function getObjectUrl(file) {
         <button class="file-chip-remove" @click="removeFile(i)">&times;</button>
       </div>
     </div>
+    <div v-if="overLimit" class="limit-warning">
+      Wiadomość może mieć maksymalnie {{ MAX_MESSAGE_LENGTH }} znaków
+    </div>
     <div class="input-row">
       <button class="input-attach" @click="triggerFilePicker" title="Załącz plik">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -98,17 +105,23 @@ function getObjectUrl(file) {
         class="file-input-hidden"
         @change="onFileChange"
       />
-      <textarea
-        v-model="val"
-        class="input-textarea"
-        placeholder="Napisz wiadomość..."
-        rows="1"
-        @keydown="onkey"
-      ></textarea>
+      <div class="textarea-wrap">
+        <textarea
+          v-model="val"
+          class="input-textarea"
+          :class="{ 'textarea-over': overLimit }"
+          placeholder="Napisz wiadomość..."
+          rows="1"
+          @keydown="onkey"
+        ></textarea>
+        <span v-if="val.length" class="char-count" :class="{ 'char-count-over': overLimit }">{{
+          charsLeft
+        }}</span>
+      </div>
       <button
         class="input-send"
         @click="send"
-        :disabled="(!val.trim() && !files.length) || sending"
+        :disabled="(!val.trim() && !files.length) || sending || overLimit"
       >
         <svg v-if="!sending" width="18" height="18" viewBox="0 0 24 24" fill="none">
           <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor" />
@@ -223,8 +236,19 @@ function getObjectUrl(file) {
 .file-input-hidden {
   display: none;
 }
-.input-textarea {
+.limit-warning {
+  font-size: 12px;
+  color: #ef4444;
+  text-align: right;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.textarea-wrap {
   flex: 1;
+  position: relative;
+}
+.input-textarea {
+  width: 100%;
   border: none;
   background: transparent;
   font-size: 16px;
@@ -236,9 +260,26 @@ function getObjectUrl(file) {
   min-height: 40px;
   line-height: 1.5;
   font-family: inherit;
+  box-sizing: border-box;
 }
 .input-textarea::placeholder {
   color: var(--muted);
+}
+.input-textarea.textarea-over {
+  color: #ef4444;
+}
+.char-count {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  font-size: 11px;
+  color: var(--muted);
+  pointer-events: none;
+  line-height: 1;
+}
+.char-count-over {
+  color: #ef4444;
+  font-weight: 600;
 }
 .input-send {
   width: 40px;

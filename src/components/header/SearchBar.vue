@@ -3,7 +3,6 @@ import { ref, watch, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase.js'
 
-const emit = defineEmits(['select-teacher'])
 const router = useRouter()
 
 const query = ref('')
@@ -13,19 +12,14 @@ const loading = ref(false)
 let searchTimeout = null
 
 function getDisplayName(record) {
-  return [record?.name, record?.surname].filter(Boolean).join(' ').trim()
-}
-
-function isTeacherRecord(record) {
-  const accountType = `${record?.account_type || ''}`.toLowerCase()
   return (
-    accountType.includes('teacher') ||
-    accountType.includes('tutor') ||
-    accountType.includes('nauczyciel')
+    record?.nickname ||
+    [record?.name, record?.surname].filter(Boolean).join(' ').trim() ||
+    'Nieznany'
   )
 }
 
-async function fetchTeachers() {
+async function fetchUsers() {
   const value = query.value.trim()
   if (!value) {
     results.value = []
@@ -36,8 +30,9 @@ async function fetchTeachers() {
   loading.value = true
   const { data, error } = await supabase
     .from('users')
-    .select('id, name, surname, location, account_type, profile_picture')
-    .order('name', { ascending: true })
+    .select('auth_id, nickname, name, surname, profile_picture')
+    .or(`nickname.ilike.%${value}%,name.ilike.%${value}%`)
+    .limit(5)
 
   loading.value = false
 
@@ -46,21 +41,8 @@ async function fetchTeachers() {
     return
   }
 
-  const needle = value.toLowerCase()
-  const matches = (data || [])
-    .filter(isTeacherRecord)
-    .filter((teacher) => {
-      const haystack = [getDisplayName(teacher), teacher?.location, teacher?.account_type]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-
-      return haystack.includes(needle)
-    })
-    .slice(0, 8)
-
-  results.value = matches
-  isOpen.value = matches.length > 0
+  results.value = data || []
+  isOpen.value = true
 }
 
 function openResults() {
@@ -73,11 +55,15 @@ function closeResults() {
   }, 120)
 }
 
-function goToResult(teacher) {
-  emit('select-teacher', teacher)
-  query.value = getDisplayName(teacher)
+function clearQuery() {
+  query.value = ''
+  results.value = []
   isOpen.value = false
-  router.push({ path: '/', query: { teacher: teacher.id } })
+}
+
+function goToResult(user) {
+  const identifier = user.nickname || user.auth_id
+  router.push('/user/' + identifier)
 }
 
 function onSubmit() {
@@ -89,7 +75,8 @@ function onSubmit() {
     return
   }
 
-  router.push({ path: '/' })
+  const identifier = value
+  router.push('/user/' + identifier)
 }
 
 watch(query, (value) => {
@@ -101,7 +88,7 @@ watch(query, (value) => {
 
   clearTimeout(searchTimeout)
   searchTimeout = window.setTimeout(() => {
-    fetchTeachers()
+    fetchUsers()
   }, 250)
 })
 
@@ -140,27 +127,56 @@ onBeforeUnmount(() => {
         v-model="query"
         type="search"
         name="q"
-        placeholder="Szukaj nauczycieli..."
-        aria-label="Szukaj nauczycieli"
+        placeholder="Szukaj użytkowników..."
+        aria-label="Szukaj użytkowników"
+        maxlength="100"
         @input="openResults"
         @focus="openResults"
         @blur="closeResults"
       />
+      <button v-if="query" class="clear-btn" type="button" @mousedown.prevent="clearQuery">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M18 6L6 18M6 6l12 12"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
     </label>
     <button class="submit-btn" type="submit">Szukaj</button>
 
-    <div v-if="isOpen && (results.length || loading)" class="results-list" role="listbox">
-      <div v-if="loading" class="result-loading">Szukam nauczycieli...</div>
+    <div v-if="isOpen && (query.trim() || loading)" class="results-list" role="listbox">
+      <div v-if="loading" class="result-loading">Szukanie...</div>
+      <div v-else-if="results.length === 0" class="result-empty">Brak wyników</div>
       <template v-else>
         <button
-          v-for="teacher in results"
-          :key="teacher.id"
+          v-for="user in results"
+          :key="user.auth_id"
           class="result-item"
           type="button"
-          @mousedown.prevent="goToResult(teacher)"
+          @mousedown.prevent="goToResult(user)"
         >
-          <span class="result-title">{{ getDisplayName(teacher) }}</span>
-          <span class="result-description">{{ teacher.location || 'Brak lokalizacji' }}</span>
+          <div class="result-avatar">
+            <img
+              v-if="user.profile_picture"
+              :src="user.profile_picture"
+              :alt="getDisplayName(user)"
+              class="result-avatar-img"
+            />
+            <span v-else class="result-avatar-letter">{{
+              (user.nickname || user.name || '?').charAt(0).toUpperCase()
+            }}</span>
+          </div>
+          <div class="result-text">
+            <span class="result-title">{{
+              user.nickname || [user.name, user.surname].filter(Boolean).join(' ')
+            }}</span>
+            <span v-if="user.nickname && (user.name || user.surname)" class="result-description">{{
+              [user.name, user.surname].filter(Boolean).join(' ')
+            }}</span>
+          </div>
         </button>
       </template>
     </div>
@@ -172,8 +188,7 @@ onBeforeUnmount(() => {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  padding: 3px 9px;
   background: var(--surface-strong);
   border-radius: 999px;
   border: 1px solid var(--border);
@@ -197,10 +212,45 @@ onBeforeUnmount(() => {
 .search-input input {
   border: none;
   outline: none;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   padding: 6px 0;
   width: 100%;
   background: transparent;
+  color: var(--text);
+}
+.search-input input::-webkit-search-cancel-button,
+.search-input input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+.search-input input::-ms-clear,
+.search-input input::-ms-reveal {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.search-input input[type='search']::-moz-search-clear-button {
+  display: none;
+}
+.clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.clear-btn:hover {
+  background: rgba(138, 180, 255, 0.16);
   color: var(--text);
 }
 
@@ -208,7 +258,7 @@ onBeforeUnmount(() => {
   background: linear-gradient(135deg, var(--primary-color), var(--primary-color-hover));
   color: #ffffff;
   border: none;
-  padding: 12px 18px;
+  padding: 9px 14px;
   border-radius: 999px;
   font-weight: 700;
   cursor: pointer;
@@ -229,7 +279,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 240px;
+  max-height: 320px;
   overflow-y: auto;
   padding: 8px;
   border-radius: 18px;
@@ -241,13 +291,12 @@ onBeforeUnmount(() => {
 .result-loading,
 .result-item {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+  align-items: center;
+  gap: 10px;
   width: 100%;
   border: none;
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   text-align: left;
   background: transparent;
   color: #0f172a;
@@ -256,6 +305,13 @@ onBeforeUnmount(() => {
 .result-loading {
   color: #64748b;
   font-size: 0.9rem;
+  justify-content: center;
+}
+.result-empty {
+  color: #64748b;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 16px 12px;
 }
 
 .result-item {
@@ -266,14 +322,55 @@ onBeforeUnmount(() => {
   background: #f1f5f9;
 }
 
+.result-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.result-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.result-avatar-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.result-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
 .result-title {
   font-size: 0.95rem;
   font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .result-description {
   font-size: 0.8rem;
   color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 900px) {

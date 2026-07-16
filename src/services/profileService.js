@@ -17,17 +17,53 @@ export async function fetchProfile(userId) {
   return data
 }
 
+const LIMITS = {
+  nickname: 30,
+  name: 30,
+  surname: 30,
+  city: 50,
+  street: 50,
+  homeNumber: 10,
+  flatNumber: 10,
+  subject: 50,
+  description: 300,
+}
+
 export async function upsertProfile(
-  { name, surname, age, gender, account_type, city, profile_picture },
+  { nickname, name, surname, age, gender, account_type, city, profile_picture },
   userId,
   tutor_post = null,
 ) {
   const uid = await resolveUserId(userId)
   if (!uid) throw new Error('Not authenticated')
 
+  if ((!nickname || !nickname.trim()) && (!name || !name.trim()))
+    throw new Error('Pseudonim lub imię i nazwisko jest wymagane')
+  if (nickname && nickname.length > LIMITS.nickname)
+    throw new Error(`Pseudonim może mieć maksymalnie ${LIMITS.nickname} znaków`)
+  if (name && name.length > LIMITS.name)
+    throw new Error(`Imię może mieć maksymalnie ${LIMITS.name} znaków`)
+  if (surname && surname.length > LIMITS.surname)
+    throw new Error(`Nazwisko może mieć maksymalnie ${LIMITS.surname} znaków`)
+  if (city && city.length > LIMITS.city)
+    throw new Error(`Miasto może mieć maksymalnie ${LIMITS.city} znaków`)
+  if (tutor_post) {
+    if (tutor_post.street?.length > LIMITS.street)
+      throw new Error(`Ulica może mieć maksymalnie ${LIMITS.street} znaków`)
+    if (tutor_post.homeNumber?.length > LIMITS.homeNumber)
+      throw new Error(`Numer domu może mieć maksymalnie ${LIMITS.homeNumber} znaków`)
+    if (tutor_post.flatNumber?.length > LIMITS.flatNumber)
+      throw new Error(`Numer mieszkania może mieć maksymalnie ${LIMITS.flatNumber} znaków`)
+    if (tutor_post.subject?.length > LIMITS.subject)
+      throw new Error(`Przedmiot może mieć maksymalnie ${LIMITS.subject} znaków`)
+    if (tutor_post.description?.length > LIMITS.description)
+      throw new Error(`Opis może mieć maksymalnie ${LIMITS.description} znaków`)
+  }
+
   const existing = await fetchProfile(uid)
 
   const record = {
+    nickname,
     name,
     surname,
     age,
