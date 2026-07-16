@@ -123,8 +123,8 @@
   display: inline-flex;
   align-items: center;
   border-radius: 9999px;
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--primary-color) 16%, transparent);
+  color: var(--primary-color);
   padding: 0.45rem 0.8rem;
   font-size: 0.78rem;
   font-weight: 700;
@@ -161,12 +161,12 @@
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  background: linear-gradient(135deg, var(--accent-strong) 0%, var(--accent) 100%);
+  background: var(--primary-color);
   color: #ffffff;
   padding: 0.85rem 1.1rem;
   font-weight: 700;
   text-decoration: none;
-  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 12px 24px rgba(91, 120, 198, 0.2);
 }
 
 .support-pill {
@@ -202,7 +202,7 @@
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--accent-strong);
+  color: var(--primary-color);
 }
 
 blockquote {

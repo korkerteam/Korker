@@ -73,6 +73,8 @@
   --accent: #8ab4ff;
   --accent-strong: #9ec2ff;
   --accent-soft: rgba(138, 180, 255, 0.16);
+  --primary-color: #5b78c6;
+  --primary-color-hover: #4b68b3;
   --shadow: 0 30px 80px rgba(2, 6, 23, 0.5);
   --shadow-soft: 0 16px 42px rgba(2, 6, 23, 0.35);
 }

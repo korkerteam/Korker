@@ -1,72 +1,210 @@
 <script setup>
 import { computed, ref } from 'vue'
 
-const monthLabel = 'lipiec 2026'
+const todayDate = new Date()
+const currentDate = ref(new Date(todayDate.getFullYear(), todayDate.getMonth(), 1))
 const weekdayLabels = ['Po', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Ni']
-const selectedDay = ref(15)
-
-const calendarCells = [
-  null,
-  null,
-  1,
-  2,
-  3,
-  4,
-  5,
-  6,
-  7,
-  8,
-  9,
-  10,
-  11,
-  12,
-  13,
-  14,
-  15,
-  16,
-  17,
-  18,
-  19,
-  20,
-  21,
-  22,
-  23,
-  24,
-  25,
-  26,
-  27,
-  28,
-  29,
-  30,
-  31,
+const selectedDay = ref(todayDate.getDate())
+const today = ref(todayDate.getDate())
+const monthNames = [
+  'Styczeń',
+  'Luty',
+  'Marzec',
+  'Kwiecień',
+  'Maj',
+  'Czerwiec',
+  'Lipiec',
+  'Sierpień',
+  'Wrzesień',
+  'Październik',
+  'Listopad',
+  'Grudzień',
 ]
 
-const lessonsByDay = {
-  15: [
-    { time: '10:00', title: 'Matematyka - algebra', student: 'Marta', location: 'Online' },
-    { time: '13:00', title: 'Angielski - konwersacje', student: 'Kamil', location: 'Studio' },
-  ],
-  16: [{ time: '09:00', title: 'Fizyka - kinetyka', student: 'Ola', location: 'Online' }],
-  18: [
-    {
-      time: '17:00',
-      title: 'Język polski - analiza tekstu',
-      student: 'Bartek',
-      location: 'Studio',
-    },
-  ],
+function formatDateLabel(date) {
+  return new Intl.DateTimeFormat('pl-PL', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+    .format(date)
+    .replace(/^./, (char) => char.toUpperCase())
 }
 
-const selectedLessons = computed(() => lessonsByDay[selectedDay.value] || [])
-const selectedDateLabel = computed(() => `Środa, ${selectedDay.value} lipca 2026`)
+const monthLabel = computed(() =>
+  new Intl.DateTimeFormat('pl-PL', { month: 'long', year: 'numeric' })
+    .format(currentDate.value)
+    .replace(/^./, (char) => char.toUpperCase()),
+)
+
+const daysInMonth = computed(() => {
+  const date = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() + 1, 0)
+  return date.getDate()
+})
+
+const calendarDays = computed(() =>
+  Array.from({ length: daysInMonth.value }, (_, index) => index + 1),
+)
+
+const lessonsByDay = ref({})
+const lessonForm = ref({
+  time: '',
+  title: '',
+  student: '',
+  location: 'Online',
+})
+const formError = ref('')
+const timeInput = ref(null)
+const titleInput = ref(null)
+const studentInput = ref(null)
+
+function getLessonKey(day = selectedDay.value) {
+  return `${currentDate.value.getFullYear()}-${currentDate.value.getMonth() + 1}-${String(day).padStart(2, '0')}`
+}
+
+const selectedLessons = computed(() => lessonsByDay.value[getLessonKey()] || [])
+const selectedDateLabel = computed(() => {
+  const date = new Date(
+    currentDate.value.getFullYear(),
+    currentDate.value.getMonth(),
+    selectedDay.value,
+  )
+  return formatDateLabel(date)
+})
 
 function hasLessons(day) {
-  return day !== null && Array.isArray(lessonsByDay[day]) && lessonsByDay[day].length > 0
+  const lessonKey = getLessonKey(day)
+  return Array.isArray(lessonsByDay.value[lessonKey]) && lessonsByDay.value[lessonKey].length > 0
 }
 
 function selectDay(day) {
-  if (day === null) return
   selectedDay.value = day
+}
+
+function changeMonth(event) {
+  const monthIndex = Number(event.target.value)
+  currentDate.value = new Date(currentDate.value.getFullYear(), monthIndex, 1)
+  if (selectedDay.value > daysInMonth.value) {
+    selectedDay.value = daysInMonth.value
+  }
+}
+
+function goToPreviousMonth() {
+  currentDate.value = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() - 1, 1)
+  if (selectedDay.value > daysInMonth.value) {
+    selectedDay.value = daysInMonth.value
+  }
+}
+
+function goToNextMonth() {
+  currentDate.value = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() + 1, 1)
+  if (selectedDay.value > daysInMonth.value) {
+    selectedDay.value = daysInMonth.value
+  }
+}
+
+function goToToday() {
+  currentDate.value = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1)
+  selectedDay.value = today.value
+}
+
+function showValidationPopup(
+  input,
+  message = 'Wprowadź prawidłową wartość. Pole jest niekompletne lub ma nieprawidłową datę.',
+) {
+  if (input?.value) {
+    input.value.setCustomValidity(message)
+    input.value.reportValidity()
+  }
+}
+
+function clearValidation(input) {
+  if (input?.value) {
+    input.value.setCustomValidity('')
+  }
+}
+
+function addLesson() {
+  const timeValue = lessonForm.value.time.trim()
+  const titleValue = lessonForm.value.title.trim()
+  const studentValue = lessonForm.value.student.trim()
+
+  if (!timeValue) {
+    formError.value =
+      'Wprowadź prawidłową wartość. Pole jest niekompletne lub ma nieprawidłową datę.'
+    showValidationPopup(timeInput)
+    return
+  }
+
+  if (!titleValue) {
+    formError.value = 'Wprowadź prawidłową wartość. Pole jest niekompletne.'
+    return
+  }
+
+  if (!studentValue) {
+    formError.value = 'Wprowadź prawidłową wartość. Pole jest niekompletne.'
+    return
+  }
+
+  const studentWords = studentValue.split(/\s+/).filter(Boolean)
+  if (studentWords.length !== 2) {
+    formError.value = 'Wprowadź prawidłową wartość. Pole jest niekompletne.'
+    return
+  }
+
+  const validTimePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/
+  if (!validTimePattern.test(timeValue)) {
+    formError.value =
+      'Wprowadź prawidłową wartość. Pole jest niekompletne lub ma nieprawidłową datę.'
+    showValidationPopup(timeInput)
+    return
+  }
+
+  formError.value = ''
+  clearValidation(timeInput)
+  clearValidation(titleInput)
+  clearValidation(studentInput)
+
+  const lessonKey = getLessonKey(selectedDay.value)
+  const dayLessons = lessonsByDay.value[lessonKey] || []
+  lessonsByDay.value = {
+    ...lessonsByDay.value,
+    [lessonKey]: [
+      ...dayLessons,
+      {
+        time: timeValue,
+        title: titleValue,
+        student: studentValue,
+        location: lessonForm.value.location,
+      },
+    ],
+  }
+
+  lessonForm.value = {
+    time: '',
+    title: '',
+    student: '',
+    location: 'Online',
+  }
+}
+
+function removeLesson(index) {
+  const lessonKey = getLessonKey(selectedDay.value)
+  const dayLessons = [...(lessonsByDay.value[lessonKey] || [])]
+  dayLessons.splice(index, 1)
+
+  if (dayLessons.length === 0) {
+    const updatedLessons = { ...lessonsByDay.value }
+    delete updatedLessons[lessonKey]
+    lessonsByDay.value = updatedLessons
+    return
+  }
+
+  lessonsByDay.value = {
+    ...lessonsByDay.value,
+    [lessonKey]: dayLessons,
+  }
 }
 </script>
 
@@ -80,7 +218,32 @@ function selectDay(day) {
             <h2>{{ monthLabel }}</h2>
             <p class="calendar-meta">Dzień 196, Tydzień 29</p>
           </div>
-          <button class="calendar-button">Dzisiaj</button>
+          <div class="calendar-actions">
+            <div class="month-switcher">
+              <button
+                class="nav-button"
+                type="button"
+                @click="goToPreviousMonth"
+                aria-label="Poprzedni miesiąc"
+              >
+                ‹
+              </button>
+              <select class="month-select" :value="currentDate.getMonth()" @change="changeMonth">
+                <option v-for="(month, index) in monthNames" :key="month" :value="index">
+                  {{ month }}
+                </option>
+              </select>
+              <button
+                class="nav-button"
+                type="button"
+                @click="goToNextMonth"
+                aria-label="Następny miesiąc"
+              >
+                ›
+              </button>
+            </div>
+            <button class="calendar-button" type="button" @click="goToToday">Dzisiaj</button>
+          </div>
         </div>
 
         <div class="calendar-grid">
@@ -89,19 +252,16 @@ function selectDay(day) {
           </div>
 
           <button
-            v-for="(day, index) in calendarCells"
-            :key="index"
+            v-for="day in calendarDays"
+            :key="day"
             class="day"
             :class="{
-              empty: day === null,
               active: day === selectedDay,
-              clickable: day !== null,
               hasLesson: hasLessons(day),
             }"
-            :disabled="day === null"
             @click="selectDay(day)"
           >
-            <span>{{ day || '' }}</span>
+            <span>{{ day }}</span>
             <span v-if="hasLessons(day)" class="lesson-dot" />
           </button>
         </div>
@@ -122,8 +282,30 @@ function selectDay(day) {
           }}</span>
         </div>
 
+        <form class="lesson-form" @submit.prevent="addLesson">
+          <input
+            ref="timeInput"
+            v-model="lessonForm.time"
+            type="time"
+            placeholder="Godzina"
+            @input="clearValidation(timeInput)"
+          />
+          <input v-model="lessonForm.title" type="text" placeholder="Temat" />
+          <input v-model="lessonForm.student" type="text" placeholder="Imię i nazwisko ucznia" />
+          <p v-if="formError" class="form-error">{{ formError }}</p>
+          <select v-model="lessonForm.location">
+            <option value="Online">Online</option>
+            <option value="Studio">Studio</option>
+          </select>
+          <button class="add-lesson-button" type="submit">Dodaj lekcję</button>
+        </form>
+
         <div v-if="selectedLessons.length > 0" class="lesson-list">
-          <article v-for="lesson in selectedLessons" :key="lesson.time" class="lesson-item">
+          <article
+            v-for="(lesson, index) in selectedLessons"
+            :key="`${lesson.time}-${lesson.title}`"
+            class="lesson-item"
+          >
             <div>
               <p class="lesson-time">{{ lesson.time }}</p>
               <p class="lesson-title">{{ lesson.title }}</p>
@@ -132,6 +314,9 @@ function selectDay(day) {
               <span>{{ lesson.student }}</span>
               <span>{{ lesson.location }}</span>
             </div>
+            <button class="remove-lesson-button" type="button" @click="removeLesson(index)">
+              Usuń
+            </button>
           </article>
         </div>
 
@@ -199,14 +384,63 @@ h2 {
   font-size: 0.95rem;
 }
 
+.calendar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.month-switcher {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-button,
+.month-select,
+.calendar-button {
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-weight: 700;
+  transition:
+    background-color var(--theme-transition-duration) var(--theme-transition-easing),
+    transform var(--theme-transition-duration) var(--theme-transition-easing);
+}
+
+.nav-button {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.month-select {
+  min-width: 118px;
+  appearance: none;
+}
+
 .calendar-button {
   border: none;
-  background: var(--accent-strong);
+  background: var(--primary-color);
   color: white;
   padding: 12px 22px;
   border-radius: 16px;
-  cursor: pointer;
-  font-weight: 700;
+}
+
+.nav-button:hover,
+.month-select:hover,
+.calendar-button:hover {
+  background: var(--primary-color-hover);
+  color: white;
+  transform: translateY(-1px);
 }
 
 .calendar-grid {
@@ -232,24 +466,28 @@ h2 {
   place-items: center;
   font-weight: 700;
   border: 1px solid var(--border);
-}
-
-.day.clickable {
   cursor: pointer;
+  transition:
+    transform var(--theme-transition-duration) var(--theme-transition-easing),
+    box-shadow var(--theme-transition-duration) var(--theme-transition-easing),
+    background-color var(--theme-transition-duration) var(--theme-transition-easing),
+    color var(--theme-transition-duration) var(--theme-transition-easing);
 }
 
-.day.clickable:hover {
+.day:hover {
   transform: translateY(-1px);
   box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08);
+  background: color-mix(in srgb, var(--surface-soft) 88%, var(--primary-color) 12%);
 }
 
 .lesson-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--accent-strong);
+  background: var(--primary-color);
   display: block;
   margin-top: 6px;
+  box-shadow: 0 0 0 2px rgba(91, 120, 198, 0.2);
 }
 
 .day.empty {
@@ -259,8 +497,10 @@ h2 {
 }
 
 .day.active {
-  background: var(--accent-strong);
+  background: var(--primary-color);
   color: white;
+  border-color: var(--primary-color);
+  box-shadow: 0 10px 20px rgba(91, 120, 198, 0.22);
 }
 
 .lessons-header {
@@ -279,6 +519,42 @@ h2 {
 .lessons-count {
   color: var(--accent-strong);
   font-weight: 700;
+}
+
+.lesson-form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.lesson-form input,
+.lesson-form select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--surface-soft);
+  color: var(--text);
+}
+
+.add-lesson-button,
+.remove-lesson-button {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.add-lesson-button {
+  background: var(--primary-color);
+  color: white;
+}
+
+.remove-lesson-button {
+  background: var(--surface-soft);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .lesson-list {
