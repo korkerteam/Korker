@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth.js'
 import { translateAuthError } from '@/utils/authErrors.js'
@@ -8,9 +8,9 @@ const router = useRouter()
 
 const emit = defineEmits(['close'])
 
-const { signIn, signUp } = useAuth()
+const { signIn, signUp, authModalMode } = useAuth()
 
-const isLogin = ref(true)
+const isLogin = computed(() => authModalMode.value === 'login')
 const email = ref('')
 const password = ref('')
 const name = ref('')
@@ -20,7 +20,7 @@ const success = ref('')
 const submitting = ref(false)
 
 function toggleMode() {
-  isLogin.value = !isLogin.value
+  authModalMode.value = isLogin.value ? 'signup' : 'login'
   error.value = ''
   success.value = ''
 }

@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { supabase } from '@/lib/supabase.js'
+import { useAuth } from '@/composables/useAuth.js'
 
 const props = defineProps({
   filters: {
@@ -11,9 +12,14 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  isTutorAccount: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits(['close', 'like-teacher'])
+const { isAuthenticated, openAuthModal } = useAuth()
 const tutors = ref([])
 const loading = ref(true)
 const decisions = ref({})
@@ -47,7 +53,21 @@ const tagOptions = ['Matura', 'Egzamin', 'Online', 'Na miejscu']
 const cityOptions = ['Warszawa', 'Kraków', 'Wrocław', 'Poznań']
 const lessonPlaceOptions = ['Online', 'Na miejscu']
 
-onMounted(async () => {
+function getTutorKey(tutor) {
+  if (!tutor) return null
+  if (tutor.id != null) return String(tutor.id)
+  if (tutor.name) return `name:${tutor.name}`
+  return null
+}
+
+async function loadTutors() {
+  if (!isAuthenticated.value) {
+    loading.value = false
+    return
+  }
+
+  loading.value = true
+
   const { data: rows, error } = await supabase
     .from('users')
     .select('id, name, surname, profile_picture, tutor_post')
@@ -56,7 +76,7 @@ onMounted(async () => {
 
   if (!error && rows) {
     tutors.value = rows
-      .filter((r, index) => r.tutor_post)
+      .filter((r) => r.tutor_post)
       .map((r, index) => {
         const tp = r.tutor_post
         const renderedName = [r.name, r.surname].filter(Boolean).join(' ') || 'Korepetytor'
@@ -75,24 +95,27 @@ onMounted(async () => {
         }
       })
   }
-  console.log('Wszyscy tutorzy:', tutors.value)
+
   loading.value = false
+}
+
+onMounted(() => {
+  loadTutors()
 })
 
-function isTutorLiked(tutor) {
-  const tutorId = tutor?.id != null ? String(tutor.id) : null
-  if (tutorId) {
-    return props.likedTeachers.some((item) => item?.id != null && String(item.id) === tutorId)
+watch(isAuthenticated, (authenticated) => {
+  if (authenticated) {
+    loadTutors()
+  } else {
+    tutors.value = []
+    loading.value = false
   }
-  return props.likedTeachers.some((item) => item?.name === tutor.name)
-}
+})
 
 const filteredTutors = computed(() => {
   return tutors.value.filter((tutor) => {
-    if (decisions.value[tutor.id]) {
-      return false
-    }
-    if (isTutorLiked(tutor)) {
+    const tutorKey = getTutorKey(tutor)
+    if (!props.isTutorAccount && tutorKey && decisions.value[tutorKey]) {
       return false
     }
 
@@ -132,7 +155,18 @@ watch(
 
 watch(
   () => props.likedTeachers,
-  () => {
+  (teachers = []) => {
+    const nextDecisions = { ...decisions.value }
+
+    teachers.forEach((teacher) => {
+      const tutorKey = getTutorKey(teacher)
+      if (tutorKey) {
+        nextDecisions[tutorKey] = 'good'
+      }
+    })
+
+    decisions.value = nextDecisions
+
     const length = filteredTutors.value.length
     if (length === 0) {
       currentIndex.value = 0
@@ -143,7 +177,7 @@ watch(
       currentIndex.value = length - 1
     }
   },
-  { deep: true },
+  { deep: true, immediate: true },
 )
 
 function resetSwipe() {
@@ -195,7 +229,6 @@ function moveSwipe(event) {
 function endSwipe(event) {
   if (swipeStartX.value === null) return
 
-  // Release pointer capture
   if (cardRef.value && event.pointerId !== undefined) {
     cardRef.value.releasePointerCapture(event.pointerId)
   }
@@ -203,43 +236,46 @@ function endSwipe(event) {
   const currentX = getSwipeClientX(event)
   const delta = currentX - swipeStartX.value
 
-  if (delta < -80) {
-    handleDecision(false)
-  } else if (delta > 80) {
+  if (props.isTutorAccount) {
+    if (delta < -80 || delta > 80) {
+      nextTutor()
+    } else {
+      resetSwipe()
+    }
+    return
+  }
+
+  if (delta > 80) {
     handleDecision(true)
+  } else if (delta < -80) {
+    handleDecision(false)
   } else {
     resetSwipe()
   }
 }
 
-function nextTutor() {
-  resetSwipe()
-
-  const nextIndex = currentIndex.value
-  const remaining = filteredTutors.value.length
-  if (remaining === 0) {
-    currentIndex.value = 0
-    return
-  }
-
-  currentIndex.value = Math.min(nextIndex, remaining - 1)
-}
-
 function likeTutor() {
-  const tutor = currentTutor.value
-  if (tutor) {
-    const likedTutor = { ...tutor, id: String(tutor.id) }
-    decisions.value[likedTutor.id] = 'good'
-    emit('like-teacher', likedTutor)
-  }
-  nextTutor()
+  addCurrentTutorToList()
 }
 
 function dislikeTutor() {
   const tutor = currentTutor.value
-  if (tutor) {
-    decisions.value[String(tutor.id)] = 'bad'
+  if (!tutor) return
+
+  decisions.value[String(tutor.id)] = 'bad'
+  nextTutor()
+}
+
+function addCurrentTutorToList() {
+  const tutor = currentTutor.value
+  if (!tutor) return
+
+  const likedTutor = { ...tutor, id: String(tutor.id) }
+  const tutorKey = getTutorKey(likedTutor)
+  if (tutorKey) {
+    decisions.value[tutorKey] = 'good'
   }
+  emit('like-teacher', likedTutor)
   nextTutor()
 }
 
@@ -249,6 +285,19 @@ function handleDecision(isLiked) {
   } else {
     dislikeTutor()
   }
+}
+
+function nextTutor() {
+  resetSwipe()
+
+  const remaining = filteredTutors.value.length
+  if (remaining === 0) {
+    currentIndex.value = 0
+    return
+  }
+
+  const nextIndex = currentIndex.value + 1
+  currentIndex.value = nextIndex >= remaining ? 0 : nextIndex
 }
 
 function toggleSelection(category, value) {
@@ -277,7 +326,7 @@ function closePage() {
 </script>
 
 <template>
-  <div class="find-korks-panel">
+  <div class="find-korks-panel" :class="{ 'guest-state': !isAuthenticated }">
     <div class="tutors-content">
       <!-- Plan lekcji (left) -->
       <div v-if="currentTutor" class="tt-section">
@@ -301,8 +350,24 @@ function closePage() {
 
       <!-- Teacher panel (center) -->
       <div class="tutor-section">
+        <div v-if="!isAuthenticated" class="auth-required-card">
+          <h3>Aby szukać nauczycieli</h3>
+          <p>
+            Zarejestruj konto lub zaloguj się, żeby przeglądać korepetytorów i dodawać ich do swojej
+            listy.
+          </p>
+          <div class="auth-actions">
+            <button class="btn-primary" type="button" @click="openAuthModal('login')">
+              Zaloguj się
+            </button>
+            <button class="btn-secondary" type="button" @click="openAuthModal('signup')">
+              Zarejestruj się
+            </button>
+          </div>
+        </div>
+
         <div
-          v-if="filteredTutors.length && currentTutor"
+          v-else-if="filteredTutors.length && currentTutor"
           ref="cardRef"
           class="tutor-card"
           @pointerdown="startSwipe"
@@ -317,16 +382,22 @@ function closePage() {
         >
           <div
             class="card-image"
-            :class="[
-              swipeOffsetX < -120 ? 'swiping-left' : '',
-              swipeOffsetX > 120 ? 'swiping-right' : '',
-            ]"
+            :class="{
+              'swiping-left': showSwipeOverlay && swipeHintState === 'dislike',
+              'swiping-right': showSwipeOverlay && swipeHintState === 'like',
+            }"
           >
-            <div class="swipe-indicator dislike" aria-hidden="true" v-if="swipeOffsetX < -120">
+            <div
+              v-if="showSwipeOverlay && swipeHintState === 'dislike'"
+              class="swipe-indicator dislike"
+            >
               <span>✕</span>
             </div>
-            <div class="swipe-indicator like" aria-hidden="true" v-if="swipeOffsetX > 120">
-              <span>✔</span>
+            <div
+              v-else-if="showSwipeOverlay && swipeHintState === 'like'"
+              class="swipe-indicator like"
+            >
+              <span>✓</span>
             </div>
             <div v-if="currentTutor.image" class="swipe-image-wrapper">
               <img
@@ -341,6 +412,13 @@ function closePage() {
 
           <div class="card-info">
             <div class="tutor-main-info">
+              <div class="browse-note">
+                {{
+                  props.isTutorAccount
+                    ? 'Przesuń w lewo lub prawo, aby zobaczyć kolejnego korepetytora.'
+                    : 'Przesuń w lewo lub prawo, aby przejść dalej albo dodaj korepetytora.'
+                }}
+              </div>
               <div class="tutor-summary-row">
                 <div class="tutor-summary-card">
                   <h3 class="tutor-name">{{ currentTutor.name }}</h3>
@@ -366,7 +444,7 @@ function closePage() {
         </div>
 
         <div
-          v-if="filteredTutors.length && currentTutor"
+          v-if="filteredTutors.length && currentTutor && !props.isTutorAccount"
           class="actions"
           @pointerdown.stop
           @pointermove.stop
@@ -395,7 +473,7 @@ function closePage() {
           </button>
         </div>
 
-        <div v-else-if="!filteredTutors.length" class="empty-state-card">
+        <div v-else-if="isAuthenticated && !filteredTutors.length" class="empty-state-card">
           <template v-if="allDecided">
             <h3>Dotarłeś do końca</h3>
             <p>Przejrzałeś już wszystkich dostępnych korepetytorów.</p>
@@ -407,8 +485,7 @@ function closePage() {
         </div>
       </div>
 
-      <!-- Filtry (right) -->
-      <div class="tags-filter-section">
+      <div v-if="isAuthenticated" class="tags-filter-section">
         <div class="tags-filter-header">
           <h4>Filtry</h4>
         </div>
@@ -540,6 +617,21 @@ function closePage() {
   margin: 0;
 }
 
+.find-korks-panel.guest-state .tutors-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  grid-template-columns: 1fr;
+}
+
+.find-korks-panel.guest-state .tutor-section {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 0 8px 0;
+}
+
 .empty-state-card {
   width: min(100%, 480px);
   max-width: 480px;
@@ -569,17 +661,17 @@ function closePage() {
   width: 100%;
   min-width: 0;
   max-height: none;
-  padding: 22px 18px;
+  padding: 22px 18px 110px;
   border-radius: 24px;
   overflow: hidden;
   background: var(--surface-strong);
   border: 1px solid var(--border);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-  margin: 0;
+  margin: 0 0 24px;
   align-self: stretch;
   position: relative;
   pointer-events: auto;
-  z-index: 10;
+  z-index: 1;
 }
 
 .tt-section {
@@ -712,13 +804,70 @@ function closePage() {
 
 .tutor-section {
   min-width: 0;
+  width: 100%;
   padding: 0 12px 8px 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
   overflow: hidden;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
+}
+
+.auth-required-card {
+  width: min(100%, 520px);
+  padding: 28px;
+  border-radius: 24px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+  box-sizing: border-box;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-required-card h3 {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 22px;
+}
+
+.auth-required-card p {
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.auth-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--accent-strong);
+  color: white;
+}
+
+.btn-secondary {
+  background: var(--surface-soft);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .progress {

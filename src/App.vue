@@ -1,5 +1,5 @@
 <script setup>
-import { ref, provide, onMounted, watch } from 'vue'
+import { ref, provide, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import HeaderKorker from './components/HeaderKorker.vue'
 import SearchBar from './components/header/SearchBar.vue'
@@ -15,7 +15,7 @@ import { useAuth } from '@/composables/useAuth.js'
 
 const route = useRoute()
 const router = useRouter()
-const { showAuthModal, openAuthModal, closeAuthModal } = useAuth()
+const { showAuthModal, openAuthModal, closeAuthModal, profileData, profileLoading } = useAuth()
 
 const selectedFilters = ref({ subjects: [], levels: [], tags: [] })
 const likedTeachers = ref([])
@@ -25,6 +25,12 @@ const homeTrigger = ref(0)
 const isDarkMode = ref(false)
 const isHighContrast = ref(false)
 const showSettingsMenu = ref(false)
+const isTutorAccount = computed(() => {
+  const profile = profileData.value
+  const accountType = [profile?.account_type, profile?.accountType].find(Boolean)
+  return `${accountType || ''}`.toLowerCase().includes('tutor')
+})
+const shouldWaitForProfile = computed(() => false)
 provide('homeTrigger', homeTrigger)
 
 // --- GLOBALNY STAN CZATU (DO PRZEKAZYWANIA MIĘDZY KOMPONENTAMI) ---
@@ -60,6 +66,8 @@ function handleTeacherLike(teacher) {
 function showTeacherProfile(teacher) {
   currentTeacher.value = teacher || null
 }
+
+provide('showTeacherProfile', showTeacherProfile)
 
 function removeLikedTeacher(teacher) {
   if (!teacher) return
@@ -132,7 +140,7 @@ onMounted(() => {
 
       <div class="search-block">
         <SearchBar @select-teacher="showTeacherProfile" />
-        <LoginButton @login="openAuthModal" />
+        <LoginButton @login="() => openAuthModal('login')" />
       </div>
     </div>
 
@@ -145,13 +153,16 @@ onMounted(() => {
     <div class="main-content-area">
       <template v-if="['home', 'profil', 'nauczyciele'].includes(route.name)">
         <MainContent
+          v-if="!shouldWaitForProfile || !profileLoading"
           :selected-filters="selectedFilters"
           :liked-teachers="likedTeachers"
+          :show-search="!isTutorAccount"
+          :is-tutor-account="isTutorAccount"
           @update:selected-filters="selectedFilters = $event"
           @show-teacher="showTeacherProfile"
           @like-teacher="handleTeacherLike"
           @remove-liked-teacher="removeLikedTeacher"
-          @open-auth="openAuthModal"
+          @open-auth="() => openAuthModal('login')"
         />
       </template>
 
@@ -246,7 +257,7 @@ onMounted(() => {
   position: fixed;
   right: 16px;
   bottom: 10%;
-  z-index: 5;
+  z-index: 2000;
 }
 
 .settings-fab {
