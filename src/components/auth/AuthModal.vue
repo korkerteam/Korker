@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth.js'
 import { translateAuthError } from '@/utils/authErrors.js'
 
+const LIMITS = { name: 30, surname: 30 }
+
 const router = useRouter()
 
 const emit = defineEmits(['close'])
@@ -36,6 +38,15 @@ async function handleSubmit() {
 
   if (!isLogin.value && (!name.value || !surname.value)) {
     error.value = 'Wypełnij wszystkie pola'
+    return
+  }
+
+  if (!isLogin.value && name.value.length > LIMITS.name) {
+    error.value = `Imię może mieć maksymalnie ${LIMITS.name} znaków`
+    return
+  }
+  if (!isLogin.value && surname.value.length > LIMITS.surname) {
+    error.value = `Nazwisko może mieć maksymalnie ${LIMITS.surname} znaków`
     return
   }
 
@@ -98,6 +109,7 @@ async function handleSubmit() {
             type="email"
             placeholder="twoj@email.pl"
             autocomplete="email"
+            maxlength="254"
           />
         </div>
 
@@ -110,6 +122,7 @@ async function handleSubmit() {
               type="text"
               placeholder="Jan"
               autocomplete="given-name"
+              :maxlength="LIMITS.name"
             />
           </div>
           <div class="field">
@@ -120,6 +133,7 @@ async function handleSubmit() {
               type="text"
               placeholder="Kowalski"
               autocomplete="family-name"
+              :maxlength="LIMITS.surname"
             />
           </div>
         </div>
@@ -132,6 +146,7 @@ async function handleSubmit() {
             type="password"
             placeholder="••••••"
             autocomplete="current-password"
+            maxlength="128"
           />
         </div>
 

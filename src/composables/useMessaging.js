@@ -59,7 +59,10 @@ function formatRelativeTime(dateStr) {
 function makeContact(userId, profile) {
   return {
     userId,
-    name: profile ? [profile.name, profile.surname].filter(Boolean).join(' ') : 'Nieznany',
+    nickname: profile?.nickname || null,
+    name: profile
+      ? profile.nickname || [profile.name, profile.surname].filter(Boolean).join(' ') || 'Nieznany'
+      : 'Nieznany',
     avatarColor: stringToColor(userId),
     profilePicture: profile?.profile_picture || null,
   }
@@ -78,7 +81,7 @@ async function getProfileByAuthId(authId) {
   if (profileCache.has(authId)) return profileCache.get(authId)
   const { data, error } = await supabase
     .from('users')
-    .select('name, surname, profile_picture')
+    .select('nickname, name, surname, profile_picture')
     .eq('auth_id', authId)
     .maybeSingle()
   const result = error || !data ? null : data
@@ -214,9 +217,12 @@ export function useMessaging() {
     return uploaded
   }
 
+  const MAX_MESSAGE_LENGTH = 500
+
   async function sendMessage(content, files) {
     if (!user.value || !activeUserId.value) return false
     if (!content?.trim() && (!files || files.length === 0)) return false
+    if (content && content.length > MAX_MESSAGE_LENGTH) return false
 
     const attachments = files?.length ? await uploadAttachments(files) : []
 
@@ -269,6 +275,7 @@ export function useMessaging() {
 
   async function editMessage(messageId, newContent) {
     if (!user.value || !newContent.trim()) return false
+    if (newContent.length > MAX_MESSAGE_LENGTH) return false
 
     const { error } = await supabase
       .from('messages')
@@ -363,8 +370,8 @@ export function useMessaging() {
     searchLoading.value = true
     const { data, error } = await supabase
       .from('users')
-      .select('auth_id, name, surname, profile_picture')
-      .or(`name.ilike.%${query}%,surname.ilike.%${query}%`)
+      .select('auth_id, nickname, name, surname, profile_picture')
+      .or(`nickname.ilike.%${query}%,name.ilike.%${query}%,surname.ilike.%${query}%`)
       .neq('auth_id', user.value.id)
       .limit(20)
 
@@ -377,7 +384,8 @@ export function useMessaging() {
 
     searchResults.value = (data || []).map((u) => ({
       userId: u.auth_id,
-      name: [u.name, u.surname].filter(Boolean).join(' '),
+      nickname: u.nickname || null,
+      name: u.nickname || [u.name, u.surname].filter(Boolean).join(' '),
       avatarColor: stringToColor(u.auth_id),
       profilePicture: u.profile_picture || null,
     }))
@@ -395,7 +403,9 @@ export function useMessaging() {
     if (existing?.name) return existing.name
 
     const profile = await getProfileByAuthId(senderId)
-    return [profile?.name, profile?.surname].filter(Boolean).join(' ') || 'Nieznany'
+    return (
+      profile?.nickname || [profile?.name, profile?.surname].filter(Boolean).join(' ') || 'Nieznany'
+    )
   }
 
   async function addChatNotification(msg) {

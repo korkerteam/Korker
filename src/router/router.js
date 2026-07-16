@@ -87,6 +87,11 @@ const router = createRouter({
       path: '/szukaj',
       redirect: { name: 'home', query: { search: '1' } },
     },
+    {
+      path: '/user/:nickname',
+      name: 'user-profile',
+      component: MenuPage,
+    },
   ],
 })
 

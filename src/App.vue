@@ -131,7 +131,7 @@ onMounted(() => {
       </div>
 
       <div class="search-block">
-        <SearchBar @select-teacher="showTeacherProfile" />
+        <SearchBar />
         <LoginButton @login="openAuthModal" />
       </div>
     </div>
@@ -143,7 +143,7 @@ onMounted(() => {
     <TeacherOverlay :teacher="currentTeacher" @close="currentTeacher = null" />
 
     <div class="main-content-area">
-      <template v-if="['home', 'profil', 'nauczyciele'].includes(route.name)">
+      <template v-if="['home', 'profil', 'nauczyciele', 'user-profile'].includes(route.name)">
         <MainContent
           :selected-filters="selectedFilters"
           :liked-teachers="likedTeachers"

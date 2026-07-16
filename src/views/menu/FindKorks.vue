@@ -29,6 +29,23 @@ const swipeRotation = ref(0)
 const cardRef = ref(null)
 const availabilityExpanded = ref(false)
 
+const weekdayLabels = [
+  'Poniedziałek',
+  'Wtorek',
+  'Środa',
+  'Czwartek',
+  'Piątek',
+  'Sobota',
+  'Niedziela',
+]
+const dayAbbr = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd']
+const gridHours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+
+function hasSlot(availability, day, hour) {
+  const slot = `${String(hour).padStart(2, '0')}:00-${String((hour + 1) % 24).padStart(2, '0')}:00`
+  return (availability?.[day] || []).includes(slot)
+}
+
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
 const tagOptions = ['Matura', 'Egzamin', 'Online', 'Na miejscu']
@@ -59,6 +76,7 @@ onMounted(async () => {
           price: tp.price || 50,
           city: tp.city || '',
           lessonPlace: tp.lessonPlace || '',
+          weeklyAvailability: tp.weeklyAvailability || {},
         }
       })
   }
@@ -324,17 +342,44 @@ function closePage() {
                 <p>{{ currentTutor.bio || currentTutor.lessonDescription }}</p>
               </div>
 
-              <div class="availability-box">
-                <div class="availability-panel-header">Dostępne godziny</div>
-                <div class="availability-inline-row">
-                  <div v-for="day in weekdayLabels" :key="day" class="availability-day-pill">
-                    <span class="availability-day">{{ day }}</span>
-                    <span class="availability-value">
-                      {{ formatAvailabilityRange(currentTutor?.weeklyAvailability?.[day] || []) }}
-                    </span>
+              <button class="av-popup-trigger" type="button" @click="availabilityExpanded = true">
+                Dostępne godziny ▸
+              </button>
+              <Teleport to="body">
+                <div
+                  v-if="availabilityExpanded"
+                  class="av-popup-overlay"
+                  @click.self="availabilityExpanded = false"
+                >
+                  <div class="av-popup-card">
+                    <button
+                      class="av-popup-close"
+                      type="button"
+                      @click="availabilityExpanded = false"
+                    >
+                      ✕
+                    </button>
+                    <div class="av-popup-header">Dostępne godziny</div>
+                    <div class="av-popup-grid">
+                      <div></div>
+                      <div v-for="day in weekdayLabels" :key="day" class="av-popup-day-header">
+                        {{ day }}
+                      </div>
+                      <template v-for="hour in gridHours" :key="hour">
+                        <div class="av-popup-time-header">
+                          {{ String(hour).padStart(2, '0') }}:00
+                        </div>
+                        <div
+                          v-for="day in weekdayLabels"
+                          :key="`${day}-${hour}`"
+                          class="av-popup-cell"
+                          :class="{ filled: hasSlot(currentTutor?.weeklyAvailability, day, hour) }"
+                        ></div>
+                      </template>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Teleport>
             </div>
 
             <div class="tags-list">
@@ -904,63 +949,108 @@ function closePage() {
   border: 1px solid var(--border);
 }
 
-.availability-box {
+.av-popup-trigger {
   width: 100%;
-  padding: 10px;
-  border-radius: 14px;
+  padding: 6px 8px;
   border: 1px solid var(--border);
-  background: linear-gradient(135deg, var(--surface-strong) 0%, var(--surface-soft) 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  box-sizing: border-box;
-}
-
-.availability-panel-header {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.availability-inline-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.availability-day-pill {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--surface-soft);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(4px);
-  min-width: 86px;
-}
-
-.availability-day {
+  color: var(--muted);
   font-size: 10px;
   font-weight: 700;
-  color: var(--text);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+  box-sizing: border-box;
 }
-
-.availability-value {
-  display: inline-flex;
+.av-popup-trigger:hover {
+  background: var(--accent-soft);
+}
+.av-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 8px;
-  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(3px);
+}
+.av-popup-card {
+  position: relative;
+  background: var(--surface-strong);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+  width: min(520px, 60vw);
+  max-height: 55vh;
+  overflow-y: auto;
+}
+.av-popup-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface-soft);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: background 0.15s;
+}
+.av-popup-close:hover {
   background: var(--accent-soft);
   color: var(--text);
-  font-size: 11px;
+}
+.av-popup-header {
+  font-size: 14px;
   font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+.av-popup-grid {
+  display: grid;
+  grid-template-columns: 28px repeat(7, 22px);
+  gap: 2px;
+  width: fit-content;
+}
+.av-popup-day-header {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 22px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+.av-popup-time-header {
+  font-size: 9px;
+  color: var(--muted);
+  text-align: right;
+  padding-right: 2px;
+  line-height: 22px;
+}
+.av-popup-cell {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  box-sizing: border-box;
+}
+.av-popup-cell.filled {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 .actions {

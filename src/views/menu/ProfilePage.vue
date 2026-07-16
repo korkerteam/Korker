@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { reactive, ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { upsertProfile, deleteProfile } from '@/services/profileService.js'
@@ -11,6 +11,7 @@ const router = useRouter()
 const { user, profileData, profileLoading, setProfileName, clearNeedsProfile, signOut } = useAuth()
 const profile = reactive({
   name: '',
+  nickname: '',
   accountType: 'student',
   age: '',
   city: '',
@@ -77,6 +78,7 @@ const focusedCell = ref(null)
 let originalProfilePicture = ''
 let originalLessonPhoto = ''
 const draft = reactive({
+  nickname: profile.nickname,
   name: profile.name,
   accountType: profile.accountType,
   age: profile.age,
@@ -106,6 +108,7 @@ const strictestFormat = computed(() => {
 function toDb() {
   const parts = profile.name.trim().split(/\s+/)
   return {
+    nickname: profile.nickname || '',
     name: parts[0] || '',
     surname: parts.slice(1).join(' ') || '',
     age: parseInt(profile.age, 10) || null,
@@ -118,6 +121,7 @@ function toDb() {
 
 function fromDb(data) {
   if (!data) return
+  profile.nickname = data.nickname || ''
   profile.name = [data.name, data.surname].filter(Boolean).join(' ')
   profile.age = String(data.age ?? '')
   profile.accountType = data.account_type ?? 'student'
@@ -250,7 +254,7 @@ watch(
     if (busy) return
     if (data) {
       fromDb(data)
-      setProfileName(profile.name)
+      setProfileName(profile.nickname || profile.name)
       applySavedTutorPost(data)
     } else {
       const meta = user.value?.user_metadata
@@ -275,6 +279,11 @@ function startEdit() {
 async function saveProfile() {
   saveError.value = ''
 
+  if (!draft.nickname.trim() && !draft.name.trim()) {
+    saveError.value = 'Pseudonim lub imię i nazwisko jest wymagane'
+    return
+  }
+
   const sf = draft.accountType === 'tutor' ? strictestFormat.value : 't'
   if (draft.accountType === 'tutor') {
     if (!draft.lessonSubject) {
@@ -296,6 +305,35 @@ async function saveProfile() {
   }
   if (sf === 'Stacjonarnie' && !draft.street) {
     saveError.value = 'Podaj ulicę'
+    return
+  }
+
+  if (draft.nickname.length > LIMITS.nickname) {
+    saveError.value = `Pseudonim może mieć maksymalnie ${LIMITS.nickname} znaków`
+    return
+  }
+  if (draft.name.length > LIMITS.name) {
+    saveError.value = `Imię i nazwisko może mieć maksymalnie ${LIMITS.name} znaków`
+    return
+  }
+  if (draft.city.length > LIMITS.city) {
+    saveError.value = `Miasto może mieć maksymalnie ${LIMITS.city} znaków`
+    return
+  }
+  if (draft.street.length > LIMITS.street) {
+    saveError.value = `Ulica może mieć maksymalnie ${LIMITS.street} znaków`
+    return
+  }
+  if (draft.homeNumber.length > LIMITS.homeNumber) {
+    saveError.value = `Numer domu może mieć maksymalnie ${LIMITS.homeNumber} znaków`
+    return
+  }
+  if (draft.flatNumber.length > LIMITS.flatNumber) {
+    saveError.value = `Numer mieszkania może mieć maksymalnie ${LIMITS.flatNumber} znaków`
+    return
+  }
+  if (draft.lessonDescription.length > LIMITS.description) {
+    saveError.value = `Opis oferty może mieć maksymalnie ${LIMITS.description} znaków`
     return
   }
 
@@ -378,7 +416,7 @@ async function saveProfile() {
       profileData.value = { ...result }
     }
 
-    setProfileName(profile.name)
+    setProfileName(profile.nickname || profile.name)
     clearNeedsProfile()
     isEditing.value = false
   } catch (err) {
@@ -396,6 +434,16 @@ function cancelEdit() {
   profile.profile_picture = originalProfilePicture
   Object.assign(draft, profile)
   isEditing.value = false
+}
+
+const LIMITS = {
+  nickname: 30,
+  name: 30,
+  city: 50,
+  street: 50,
+  homeNumber: 10,
+  flatNumber: 10,
+  description: 300,
 }
 
 const confirmingDelete = ref(false)
@@ -471,7 +519,9 @@ function toggleTeachingFormat(format) {
         >
           <img v-if="profile.profile_picture" :src="profile.profile_picture" class="avatar" />
           <span v-else class="avatar avatar-letter">{{
-            profile.name?.charAt(0)?.toUpperCase() || '?'
+            profile.nickname?.charAt(0)?.toUpperCase() ||
+            profile.name?.charAt(0)?.toUpperCase() ||
+            '?'
           }}</span>
           <div v-if="isEditing" class="avatar-overlay">
             <span class="change-prof-pic">Zmień</span>
@@ -486,12 +536,32 @@ function toggleTeachingFormat(format) {
         />
         <template v-if="isEditing">
           <label class="field-row name-input-label">
+            <span class="field-label">Pseudonim</span>
+            <input
+              v-model="draft.nickname"
+              class="name-input"
+              placeholder="janek123"
+              :maxlength="LIMITS.nickname"
+            />
+          </label>
+          <label class="field-row name-input-label">
             <span class="field-label">Imię i nazwisko</span>
-            <input v-model="draft.name" class="name-input" placeholder="Jan Kowalski" />
+            <input
+              v-model="draft.name"
+              class="name-input"
+              placeholder="Jan Kowalski"
+              :maxlength="LIMITS.name"
+            />
           </label>
         </template>
         <template v-else>
-          <h2>{{ profile.name }}</h2>
+          <div class="header-text">
+            <template v-if="profile.nickname">
+              <h2>{{ profile.nickname }}</h2>
+              <span v-if="profile.name" class="profile-real-name">{{ profile.name }}</span>
+            </template>
+            <h2 v-else>{{ profile.name }}</h2>
+          </div>
         </template>
       </div>
 
@@ -532,21 +602,33 @@ function toggleTeachingFormat(format) {
                 <span class="field-label"
                   >Miasto<span v-if="strictestFormat !== 'Online'" class="req">*</span></span
                 >
-                <input v-model="draft.city" placeholder="Warszawa" />
+                <input v-model="draft.city" placeholder="Warszawa" :maxlength="LIMITS.city" />
               </label>
               <template v-if="strictestFormat === 'Stacjonarnie'">
                 <label class="field-row">
                   <span class="field-label">Ulica<span class="req">*</span></span>
-                  <input v-model="draft.street" placeholder="Marszałkowska" />
+                  <input
+                    v-model="draft.street"
+                    placeholder="Marszałkowska"
+                    :maxlength="LIMITS.street"
+                  />
                 </label>
                 <div class="address-row">
                   <label class="field-row address-field">
                     <span class="field-label">Nr domu</span>
-                    <input v-model="draft.homeNumber" placeholder="12" />
+                    <input
+                      v-model="draft.homeNumber"
+                      placeholder="12"
+                      :maxlength="LIMITS.homeNumber"
+                    />
                   </label>
                   <label class="field-row address-field">
                     <span class="field-label">Nr mieszkania</span>
-                    <input v-model="draft.flatNumber" placeholder="3" />
+                    <input
+                      v-model="draft.flatNumber"
+                      placeholder="3"
+                      :maxlength="LIMITS.flatNumber"
+                    />
                   </label>
                 </div>
               </template>
@@ -554,7 +636,7 @@ function toggleTeachingFormat(format) {
           </template>
           <label class="field-row" v-if="draft.accountType !== 'tutor'">
             <span class="field-label">Miasto<span class="req">*</span></span>
-            <input v-model="draft.city" placeholder="Warszawa" />
+            <input v-model="draft.city" placeholder="Warszawa" :maxlength="LIMITS.city" />
           </label>
           <label class="field-row">
             <span class="field-label">Płeć</span>
@@ -647,10 +729,28 @@ function toggleTeachingFormat(format) {
             </div>
             <label class="field-row">
               <span class="field-label">Opis oferty</span>
-              <textarea
-                v-model="draft.lessonDescription"
-                placeholder="Napisz krótki opis lekcji..."
-              ></textarea>
+              <div class="description-wrap">
+                <textarea
+                  v-model="draft.lessonDescription"
+                  placeholder="Napisz krótki opis lekcji..."
+                  :maxlength="LIMITS.description"
+                ></textarea>
+                <span
+                  v-if="draft.lessonDescription.length"
+                  class="desc-char-count"
+                  :class="{
+                    'char-count-over': draft.lessonDescription.length > LIMITS.description,
+                  }"
+                >
+                  {{ LIMITS.description - draft.lessonDescription.length }}
+                </span>
+              </div>
+              <span
+                v-if="draft.lessonDescription.length > LIMITS.description"
+                class="field-warning"
+              >
+                Opis może mieć maksymalnie {{ LIMITS.description }} znaków
+              </span>
             </label>
             <label class="field-row lesson-photo-row">
               <span class="field-label">Zdjęcie oferty</span>
@@ -781,7 +881,8 @@ function toggleTeachingFormat(format) {
   background: var(--surface-strong);
   border: 1px solid var(--border);
   border-radius: 16px;
-  width: 100%;
+  width: fit-content;
+  min-width: 500px;
   max-width: 1000px;
   padding: 32px;
   margin: 0 auto;
@@ -861,11 +962,20 @@ function toggleTeachingFormat(format) {
   display: none;
 }
 
+.header-text {
+  display: flex;
+  flex-direction: column;
+}
 .header h2 {
   font-size: 20px;
   font-weight: 700;
   margin: 0;
   color: var(--text);
+}
+.profile-real-name {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 2px;
 }
 
 .name-input {
@@ -943,6 +1053,27 @@ function toggleTeachingFormat(format) {
 .field-row textarea {
   min-height: 100px;
   resize: vertical;
+}
+.description-wrap {
+  position: relative;
+}
+.desc-char-count {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  pointer-events: none;
+  line-height: 1;
+}
+.desc-char-count.char-count-over {
+  color: #ef4444;
+  font-weight: 600;
+}
+.field-warning {
+  font-size: 12px;
+  color: #ef4444;
+  font-weight: 500;
 }
 
 .field-row input:focus,
@@ -1037,6 +1168,13 @@ function toggleTeachingFormat(format) {
 .req {
   color: #dc2626;
   margin-left: 2px;
+}
+.optional {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .format-options-row {

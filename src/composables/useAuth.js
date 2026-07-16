@@ -21,10 +21,11 @@ async function loadProfile() {
     try {
       const profile = await fetchProfile(user.value?.id)
       profileData.value = profile
-      if (profile?.name) {
-        const full = [profile.name, profile.surname].filter(Boolean).join(' ')
-        profileName.value = full
-        profileInitial.value = profile.name.charAt(0).toUpperCase()
+      if (profile?.nickname || profile?.name) {
+        const display =
+          profile.nickname || [profile.name, profile.surname].filter(Boolean).join(' ')
+        profileName.value = display
+        profileInitial.value = (profile.nickname || profile.name || '').charAt(0).toUpperCase()
         needsProfile.value = false
       } else {
         needsProfile.value = true
@@ -68,6 +69,9 @@ supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
   session.value = currentSession
   user.value = currentSession?.user ?? null
   loading.value = false
+  if (currentSession?.user) {
+    loadProfile()
+  }
 })
 
 export function useAuth() {
