@@ -326,7 +326,7 @@ function closePage() {
 </script>
 
 <template>
-  <div class="find-korks-panel">
+  <div class="find-korks-panel" :class="{ 'guest-state': !isAuthenticated }">
     <div class="tutors-content">
       <div class="tutor-section">
         <div v-if="!isAuthenticated" class="auth-required-card">
@@ -611,6 +611,21 @@ function closePage() {
   margin: 0;
 }
 
+.find-korks-panel.guest-state .tutors-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  grid-template-columns: 1fr;
+}
+
+.find-korks-panel.guest-state .tutor-section {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 0 8px 0;
+}
+
 .empty-state-card {
   width: min(100%, 480px);
   max-width: 480px;
@@ -785,13 +800,14 @@ function closePage() {
 
 .tutor-section {
   min-width: 0;
+  width: 100%;
   padding: 0 12px 8px 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
   overflow: hidden;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
 }
 
 .auth-required-card {
@@ -803,6 +819,11 @@ function closePage() {
   box-shadow: var(--shadow-soft);
   text-align: center;
   box-sizing: border-box;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .auth-required-card h3 {
