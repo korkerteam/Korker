@@ -140,8 +140,16 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at top right, rgba(2, 132, 199, 0.22), transparent 32%),
-    radial-gradient(circle at bottom left, rgba(14, 165, 233, 0.16), transparent 24%);
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--primary-color) 22%, transparent),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at bottom left,
+      color-mix(in srgb, var(--primary-color) 16%, transparent),
+      transparent 24%
+    );
   pointer-events: none;
 }
 
@@ -189,7 +197,7 @@
   align-items: center;
   gap: 0.5rem;
   border-radius: 9999px;
-  background-color: var(--accent);
+  background: var(--primary-color);
   padding: 0.5rem 1rem;
   color: #ffffff;
 }
@@ -273,7 +281,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  color: #38bdf8;
+  color: var(--primary-color);
 }
 
 .benefits-title {
@@ -285,8 +293,8 @@
 
 .benefits-badge {
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #bae6fd;
+  background: color-mix(in srgb, var(--primary-color) 16%, transparent);
+  color: var(--text);
   padding: 0.3rem 0.75rem;
   font-size: 0.75rem;
   white-space: nowrap;

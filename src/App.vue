@@ -287,24 +287,25 @@ onMounted(() => {
   align-items: flex-end;
   justify-content: flex-start;
   padding: 0 0 96px 24px;
-  background: rgba(8, 12, 24, 0.18);
+  background: rgba(2, 6, 23, 0.3);
+  backdrop-filter: blur(6px);
 }
 
 .settings-menu {
-  background: var(--surface-color);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(135deg, var(--surface-strong) 0%, var(--surface-soft) 100%);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: 18px;
   padding: 14px 16px;
   min-width: 220px;
-  box-shadow: 0 16px 44px rgba(15, 23, 42, 0.18);
+  box-shadow: var(--shadow);
 }
 
 .settings-menu-title {
   font-size: 0.95rem;
   font-weight: 700;
   margin-bottom: 10px;
-  color: var(--text-color);
+  color: var(--text);
 }
 
 .setting-row {
@@ -314,6 +315,7 @@ onMounted(() => {
   cursor: pointer;
   font-size: 0.92rem;
   margin-top: 8px;
+  color: var(--text);
 }
 
 .setting-row input {
@@ -327,7 +329,7 @@ onMounted(() => {
   width: 46px;
   height: 26px;
   border-radius: 999px;
-  background: var(--border-color);
+  background: var(--border);
   transition: background 0.2s ease;
 }
 
@@ -353,7 +355,7 @@ onMounted(() => {
 }
 
 .setting-label {
-  color: var(--muted-text-color);
+  color: var(--muted);
   flex: 1;
 }
 </style>

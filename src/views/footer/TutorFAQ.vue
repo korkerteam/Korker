@@ -38,11 +38,10 @@ const toggleFAQ = (index) => {
             Korker.
           </p>
         </div>
-
-        <div class="hero-panel">
+        <div class="hero-side">
           <div class="info-pill">
-            <span class="info-icon">❓</span>
-            <span>Info w przejrzystej formie</span>
+            <span class="info-icon">ℹ</span>
+            <span>Informacje</span>
           </div>
         </div>
       </section>
@@ -105,6 +104,7 @@ const toggleFAQ = (index) => {
 .hero-surface {
   display: grid;
   gap: 1rem;
+  align-items: start;
   border-radius: 30px;
   padding: 1rem;
   background-color: var(--surface-strong);
@@ -120,13 +120,23 @@ const toggleFAQ = (index) => {
 
 @media (min-width: 900px) {
   .hero-surface {
-    grid-template-columns: 1.2fr 0.8fr;
-    align-items: center;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
     padding: 1.25rem;
   }
 }
 
 .hero-copy {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.hero-side {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
   padding: 0.5rem;
 }
 
@@ -134,8 +144,8 @@ const toggleFAQ = (index) => {
   display: inline-flex;
   align-items: center;
   border-radius: 9999px;
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--primary-color) 16%, transparent);
+  color: var(--primary-color);
   padding: 0.45rem 0.8rem;
   font-size: 0.78rem;
   font-weight: 700;
@@ -184,8 +194,8 @@ const toggleFAQ = (index) => {
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--primary-color) 16%, transparent);
+  color: var(--primary-color);
 }
 
 .faq-list {
@@ -228,14 +238,14 @@ const toggleFAQ = (index) => {
   width: 2rem;
   height: 2rem;
   border-radius: 9999px;
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--primary-color) 16%, transparent);
+  color: var(--primary-color);
   font-size: 1rem;
   flex-shrink: 0;
 }
 
 .faq-toggle.open {
-  background: var(--accent-strong);
+  background: var(--primary-color);
   color: #ffffff;
 }
 
