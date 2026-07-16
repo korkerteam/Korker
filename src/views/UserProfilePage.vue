@@ -1,13 +1,21 @@
 <script setup>
-import { ref, inject, onMounted } from 'vue'
+import { ref, inject, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import LoadingBox from '@/components/LoadingBox.vue'
 
+const props = defineProps({
+  likedTeachers: {
+    type: Array,
+    default: () => [],
+  },
+})
+const emit = defineEmits(['like-teacher', 'remove-liked-teacher'])
+
 const route = useRoute()
 const router = useRouter()
-const { user, isAuthenticated, openAuthModal } = useAuth()
+const { user, isAuthenticated, profileData: myProfile, openAuthModal } = useAuth()
 
 const profile = ref(null)
 const tutorPost = ref(null)
@@ -35,6 +43,13 @@ onMounted(async () => {
   }
   await fetchProfile(identifier)
 })
+
+watch(
+  () => route.params.nickname,
+  (nickname) => {
+    if (nickname) fetchProfile(nickname)
+  },
+)
 
 async function fetchProfile(identifier) {
   loading.value = true
@@ -75,6 +90,36 @@ async function fetchProfile(identifier) {
   profile.value = data
   tutorPost.value = data.tutor_post || null
   loading.value = false
+}
+
+const isLiked = computed(() => {
+  if (!profile.value) return false
+  const pid = profile.value.auth_id || profile.value.id
+  if (!pid) return false
+  return props.likedTeachers.some((t) => {
+    const tid = t.auth_id || t.id
+    return tid && String(tid) === String(pid)
+  })
+})
+
+const canAddTeacher = computed(() => {
+  if (!profile.value || !user.value) return false
+  const viewerType = `${myProfile.value?.account_type || ''}`.toLowerCase()
+  const profileType = `${profile.value.account_type || ''}`.toLowerCase()
+  const viewerIsTutor = viewerType.includes('tutor')
+  const profileIsTutor = profileType.includes('tutor')
+  return viewerIsTutor !== profileIsTutor
+})
+
+function toggleLike() {
+  if (!profile.value) return
+  const pid = profile.value.auth_id || profile.value.id
+  if (!pid) return
+  if (isLiked.value) {
+    emit('remove-liked-teacher', profile.value)
+  } else {
+    emit('like-teacher', profile.value)
+  }
 }
 
 function getDisplayName() {
@@ -182,6 +227,31 @@ function handleSendMessage() {
             </div>
           </div>
 
+          <button
+            v-if="profile && user?.id !== profile.auth_id && canAddTeacher"
+            class="btn save-btn"
+            :class="{ saved: isLiked }"
+            @click="toggleLike"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path
+                v-if="!isLiked"
+                d="M12 5v14m-7-7h14"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <path
+                v-else
+                d="M20 6L9 17l-5-5"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            {{ isLiked ? 'Dodano' : 'Dodaj' }}
+          </button>
           <button
             v-if="profile && user?.id !== profile.auth_id"
             class="btn btn-primary message-btn"
@@ -447,6 +517,9 @@ function handleSendMessage() {
 .offer-description {
   flex-direction: column;
   gap: 6px;
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
 }
 
 .desc-text {
@@ -567,5 +640,30 @@ function handleSendMessage() {
 .message-btn {
   width: 100%;
   padding: 12px;
+}
+.save-btn {
+  width: 100%;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--surface-strong);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.save-btn:hover {
+  background: rgba(79, 117, 199, 0.08);
+  color: var(--accent);
+  border-color: rgba(79, 117, 199, 0.3);
+}
+.save-btn.saved {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.save-btn.saved:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
 }
 </style>

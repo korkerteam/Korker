@@ -18,7 +18,7 @@ function handleCreateAccount() {
 }
 
 function goToEditProfile() {
-  router.push({ name: 'profil' })
+  router.push({ path: '/', query: { panel: 'profile' } })
 }
 </script>
 

@@ -21,13 +21,11 @@ const router = createRouter({
     },
     {
       path: '/profil',
-      name: 'profil',
-      component: MenuPage,
+      redirect: { name: 'home', query: { panel: 'profile' } },
     },
     {
       path: '/nauczyciele',
-      name: 'nauczyciele',
-      component: MenuPage,
+      redirect: { name: 'home', query: { panel: 'teachers' } },
     },
     {
       path: '/korker-szukaj',

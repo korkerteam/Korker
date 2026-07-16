@@ -67,7 +67,7 @@ async function handleSubmit() {
       })
       if (data?.session) {
         emit('close')
-        router.push('/profil')
+        router.push({ path: '/', query: { panel: 'profile' } })
       } else {
         success.value = 'Konto utworzone! Sprawdź email, aby potwierdzić rejestrację.'
       }
