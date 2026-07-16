@@ -11,7 +11,7 @@ import FindKorks from '@/views/menu/FindKorks.vue'
 import CalendarView from '@/views/menu/CalendarView.vue'
 import { toggleProfile, toggleRank } from '@/composables/menuToggle.js'
 
-defineProps({
+const props = defineProps({
   selectedFilters: {
     type: Object,
     default: () => ({ subjects: [], levels: [], tags: [] }),
@@ -19,6 +19,14 @@ defineProps({
   likedTeachers: {
     type: Array,
     default: () => [],
+  },
+  showSearch: {
+    type: Boolean,
+    default: true,
+  },
+  isTutorAccount: {
+    type: Boolean,
+    default: false,
   },
 })
 
@@ -112,8 +120,6 @@ function handleToggleTeachers() {
 }
 
 function handleToggleSearch() {
-  if (!requireAuth()) return
-
   if (active.value === 'search' && route.query.search !== undefined) {
     const query = { ...route.query }
     delete query.search
@@ -133,6 +139,8 @@ function handleToggleCalendar() {
     <!-- LEWY PANEL (Twoje odzyskane przyciski!) -->
     <div class="left-side">
       <MenuContent
+        :show-search="props.showSearch"
+        :is-tutor-account="props.isTutorAccount"
         @toggle-profile="() => toggleProfile(route, router)"
         @toggle-rank="handleToggleRank"
         @toggle-teachers="handleToggleTeachers"
@@ -150,15 +158,17 @@ function handleToggleCalendar() {
         <FindKorks
           v-else-if="activePanel === 'search'"
           key="search"
-          :filters="selectedFilters"
-          :liked-teachers="likedTeachers"
+          :filters="props.selectedFilters"
+          :liked-teachers="props.likedTeachers"
+          :is-tutor-account="props.isTutorAccount"
           @close="handleToggleSearch"
           @like-teacher="(t) => emit('like-teacher', t)"
         />
         <MyTeachers
           v-else-if="activePanel === 'teachers'"
           key="teachers"
-          :teachers="likedTeachers"
+          :teachers="props.likedTeachers"
+          :is-tutor-account="props.isTutorAccount"
           @show-teacher="(t) => emit('show-teacher', t)"
           @remove-teacher="(t) => emit('remove-liked-teacher', t)"
         />

@@ -9,6 +9,10 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  isTutorAccount: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const loading = ref(false)
@@ -107,7 +111,7 @@ function goBack() {
     <template v-if="!selectedTeacher">
       <div class="teacher-header">
         <div>
-          <h3>Moi Nauczyciele</h3>
+          <h3>{{ props.isTutorAccount ? 'Moi Studenci' : 'Moi Nauczyciele' }}</h3>
         </div>
       </div>
 
@@ -134,7 +138,11 @@ function goBack() {
           </div>
         </template>
         <p v-else class="empty-state">
-          Wybierz nauczycieli korzystając z funkcji "Szukaj korepetycji"
+          {{
+            props.isTutorAccount
+              ? 'Wybierz studentów korzystając z funkcji "Szukaj korepetycji"'
+              : 'Wybierz nauczycieli korzystając z funkcji "Szukaj korepetycji"'
+          }}
         </p>
       </div>
     </template>

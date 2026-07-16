@@ -1,5 +1,8 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { useAuth } from '@/composables/useAuth.js'
+
+const { isAuthenticated, openAuthModal } = useAuth()
 
 const todayDate = new Date()
 const currentDate = ref(new Date(todayDate.getFullYear(), todayDate.getMonth(), 1))
@@ -210,7 +213,20 @@ function removeLesson(index) {
 
 <template>
   <section class="calendar-view-simple">
-    <div class="calendar-layout">
+    <div v-if="!isAuthenticated" class="auth-required-card">
+      <h3>Aby korzystać z kalendarza</h3>
+      <p>Zarejestruj konto lub zaloguj się, żeby zapisywać i przeglądać swoje lekcje.</p>
+      <div class="auth-actions">
+        <button class="btn-primary" type="button" @click="openAuthModal('login')">
+          Zaloguj się
+        </button>
+        <button class="btn-secondary" type="button" @click="openAuthModal('signup')">
+          Zarejestruj się
+        </button>
+      </div>
+    </div>
+
+    <div v-else class="calendar-layout">
       <div class="calendar-card">
         <div class="calendar-top">
           <div>
@@ -327,6 +343,63 @@ function removeLesson(index) {
 </template>
 
 <style scoped>
+.calendar-view-simple {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.auth-required-card {
+  width: min(100%, 560px);
+  padding: 28px;
+  border-radius: 24px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.auth-required-card h3 {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 22px;
+}
+
+.auth-required-card p {
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.auth-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--accent-strong);
+  color: white;
+}
+
+.btn-secondary {
+  background: var(--surface-soft);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
 .calendar-view-simple {
   width: 100%;
   display: flex;

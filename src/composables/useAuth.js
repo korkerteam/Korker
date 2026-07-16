@@ -6,6 +6,7 @@ const user = ref(null)
 const session = ref(null)
 const loading = ref(true)
 const showAuthModal = ref(false)
+const authModalMode = ref('login')
 
 const profileName = ref('')
 const profileInitial = ref('?')
@@ -88,12 +89,14 @@ export function useAuth() {
     if (error) throw error
   }
 
-  function openAuthModal() {
+  function openAuthModal(mode = 'login') {
+    authModalMode.value = mode
     showAuthModal.value = true
   }
 
   function closeAuthModal() {
     showAuthModal.value = false
+    authModalMode.value = 'login'
   }
 
   const isAuthenticated = computed(() => !!user.value)
@@ -104,6 +107,7 @@ export function useAuth() {
     loading,
     isAuthenticated,
     showAuthModal,
+    authModalMode,
     profileName,
     profileInitial,
     profileData,
