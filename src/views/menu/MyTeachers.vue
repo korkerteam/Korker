@@ -67,7 +67,7 @@ function goBack() {
 
       <div class="teacher-card-list">
         <template v-if="teachers.length">
-          <div v-for="teacher in teachers" :key="teacher.name" class="teacher-row">
+          <div v-for="teacher in teachers" :key="teacher.id || teacher.name" class="teacher-row">
             <div class="avatar">
               <img
                 v-if="getTeacherImage(teacher)"

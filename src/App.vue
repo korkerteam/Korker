@@ -1,5 +1,5 @@
 <script setup>
-import { ref, provide, onMounted } from 'vue'
+import { ref, provide, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import HeaderKorker from './components/HeaderKorker.vue'
 import SearchBar from './components/header/SearchBar.vue'
@@ -43,9 +43,17 @@ provide('globalChat', {
 function handleTeacherLike(teacher) {
   if (!teacher) return
 
-  const exists = likedTeachers.value.some((item) => item.name === teacher.name)
+  const teacherId = teacher?.id != null ? String(teacher.id) : null
+  const exists = likedTeachers.value.some((item) => {
+    const itemId = item?.id != null ? String(item.id) : null
+    return itemId && teacherId ? itemId === teacherId : item?.name === teacher?.name
+  })
+
   if (!exists) {
-    likedTeachers.value = [...likedTeachers.value, teacher]
+    likedTeachers.value = [
+      ...likedTeachers.value,
+      teacherId ? { ...teacher, id: teacherId } : { ...teacher },
+    ]
   }
 }
 
@@ -56,9 +64,20 @@ function showTeacherProfile(teacher) {
 function removeLikedTeacher(teacher) {
   if (!teacher) return
 
-  likedTeachers.value = likedTeachers.value.filter((t) => t.name !== teacher.name)
+  const teacherId = teacher.id !== undefined ? String(teacher.id) : undefined
+  likedTeachers.value = likedTeachers.value.filter((t) => {
+    const itemId = t.id !== undefined ? String(t.id) : undefined
+    return itemId !== undefined && teacherId !== undefined
+      ? itemId !== teacherId
+      : t.name !== teacher.name
+  })
 
-  if (currentTeacher.value && currentTeacher.value.name === teacher.name) {
+  if (
+    currentTeacher.value &&
+    (currentTeacher.value.id !== undefined && teacherId !== undefined
+      ? String(currentTeacher.value.id) === teacherId
+      : currentTeacher.value.name === teacher.name)
+  ) {
     currentTeacher.value = null
   }
 }
@@ -188,7 +207,6 @@ onMounted(() => {
 .main-layout {
   display: flex;
   flex-direction: column;
-  gap: 22px;
   min-height: 100vh;
   position: relative;
 }
@@ -235,7 +253,7 @@ onMounted(() => {
   position: fixed;
   bottom: 24px;
   left: 24px;
-  z-index: 1300;
+  z-index: 1200;
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -264,30 +282,29 @@ onMounted(() => {
 .settings-menu-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1250;
+  z-index: 1190;
   display: flex;
   align-items: flex-end;
   justify-content: flex-start;
   padding: 0 0 96px 24px;
-  background: rgba(2, 6, 23, 0.28);
-  backdrop-filter: blur(4px);
+  background: rgba(8, 12, 24, 0.18);
 }
 
 .settings-menu {
-  background: var(--surface-strong);
-  color: var(--text);
-  border: 1px solid var(--border);
+  background: var(--surface-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
   border-radius: 18px;
   padding: 14px 16px;
   min-width: 220px;
-  box-shadow: var(--shadow-soft);
+  box-shadow: 0 16px 44px rgba(15, 23, 42, 0.18);
 }
 
 .settings-menu-title {
   font-size: 0.95rem;
   font-weight: 700;
   margin-bottom: 10px;
-  color: var(--text);
+  color: var(--text-color);
 }
 
 .setting-row {
