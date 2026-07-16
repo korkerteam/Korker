@@ -56,7 +56,7 @@ function scrollToTop(event) {
       </div>
 
       <div class="footer__bottom">
-        <p class="footer__copyright">© 2026 Korker. Wszelkie prawa ukradzione za pomocą ai.</p>
+        <p class="footer__copyright">© 2026 Korker. Wszelkie prawa nie zastrzeżone.</p>
         <div class="footer__socials" aria-label="Media społecznościowe">
           <a
             href="https://www.facebook.com"

@@ -9,6 +9,8 @@
 }
 :root {
   color-scheme: light;
+  --theme-transition-duration: 360ms;
+  --theme-transition-easing: cubic-bezier(0.16, 1, 0.3, 1);
   --bg-color: #eff5ff;
   --surface: rgba(255, 255, 255, 0.9);
   --surface-strong: #ffffff;
@@ -100,6 +102,11 @@ body {
     'Segoe UI',
     sans-serif;
   text-rendering: optimizeLegibility;
+  transition:
+    background-color var(--theme-transition-duration) var(--theme-transition-easing),
+    color var(--theme-transition-duration) var(--theme-transition-easing),
+    border-color var(--theme-transition-duration) var(--theme-transition-easing),
+    box-shadow var(--theme-transition-duration) var(--theme-transition-easing);
 }
 
 body::before {
@@ -113,6 +120,7 @@ body::before {
   opacity: 0.14;
   z-index: -1;
   pointer-events: none;
+  transition: opacity var(--theme-transition-duration) var(--theme-transition-easing);
 }
 
 :root[data-theme='dark'] body::before {
@@ -233,6 +241,28 @@ body::before {
   background: rgba(15, 23, 42, 0.8);
   color: var(--text);
   border-color: var(--border);
+}
+
+button,
+input,
+textarea,
+select,
+section,
+article,
+.card,
+.panel,
+.box,
+.container,
+.section,
+.main-layout,
+.main-content-area,
+.top-row,
+.search-block {
+  transition:
+    background-color var(--theme-transition-duration) var(--theme-transition-easing),
+    color var(--theme-transition-duration) var(--theme-transition-easing),
+    border-color var(--theme-transition-duration) var(--theme-transition-easing),
+    box-shadow var(--theme-transition-duration) var(--theme-transition-easing);
 }
 
 button,
