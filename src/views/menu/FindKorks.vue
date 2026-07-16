@@ -336,232 +336,240 @@ function closePage() {
 </script>
 
 <template>
-  <div class="find-korks-panel" :class="{ 'guest-state': !isAuthenticated }">
-    <div class="tutors-content">
-      <!-- Plan lekcji (left) -->
-      <div v-if="filteredTutors.length && currentTutor" class="tt-section">
-        <div class="tt-section-header">Plan lekcji</div>
-        <div class="tt-grid-wrap">
-          <div class="tt-grid">
-            <div class="tt-corner"></div>
-            <div v-for="d in dayAbbr" :key="d" class="tt-day-h">{{ d }}</div>
-            <template v-for="hour in gridHours" :key="hour">
-              <div class="tt-time-l">{{ String(hour).padStart(2, '0') }}:00</div>
-              <div
-                v-for="day in weekdayLabels"
-                :key="`${day}-${hour}`"
-                class="tt-c"
-                :class="{ on: hasSlot(currentTutor?.weeklyAvailability, day, hour) }"
-              ></div>
-            </template>
+  <div>
+    <div
+      v-if="!isAuthenticated || filteredTutors.length"
+      class="find-korks-panel"
+      :class="{ 'guest-state': !isAuthenticated }"
+    >
+      <div class="tutors-content">
+        <!-- Plan lekcji (left) -->
+        <div v-if="filteredTutors.length && currentTutor" class="tt-section">
+          <div class="tt-section-header">Plan lekcji</div>
+          <div class="tt-grid-wrap">
+            <div class="tt-grid">
+              <div class="tt-corner"></div>
+              <div v-for="d in dayAbbr" :key="d" class="tt-day-h">{{ d }}</div>
+              <template v-for="hour in gridHours" :key="hour">
+                <div class="tt-time-l">{{ String(hour).padStart(2, '0') }}:00</div>
+                <div
+                  v-for="day in weekdayLabels"
+                  :key="`${day}-${hour}`"
+                  class="tt-c"
+                  :class="{ on: hasSlot(currentTutor?.weeklyAvailability, day, hour) }"
+                ></div>
+              </template>
+            </div>
           </div>
-        </div>
-        <div v-if="currentTutor.bio || currentTutor.lessonDescription" class="bio-box">
-          <p>{{ currentTutor.bio || currentTutor.lessonDescription }}</p>
-        </div>
-      </div>
-
-      <!-- Teacher panel (center) -->
-      <div class="tutor-section" :class="{ 'is-empty': !filteredTutors.length }">
-        <div v-if="!isAuthenticated" class="auth-required-card">
-          <h3>Aby szukać nauczycieli</h3>
-          <p>
-            Zarejestruj konto lub zaloguj się, żeby przeglądać korepetytorów i dodawać ich do swojej
-            listy.
-          </p>
-          <div class="auth-actions">
-            <button class="btn-primary" type="button" @click="openAuthModal('login')">
-              Zaloguj się
-            </button>
-            <button class="btn-secondary" type="button" @click="openAuthModal('signup')">
-              Zarejestruj się
-            </button>
+          <div v-if="currentTutor.bio || currentTutor.lessonDescription" class="bio-box">
+            <p>{{ currentTutor.bio || currentTutor.lessonDescription }}</p>
           </div>
         </div>
 
-        <div
-          v-else-if="filteredTutors.length && currentTutor"
-          ref="cardRef"
-          class="tutor-card"
-          @pointerdown="startSwipe"
-          @pointermove="moveSwipe"
-          @pointerup="endSwipe"
-          @pointercancel="endSwipe"
-          @dragstart.prevent
-          :style="{
-            '--swipe-offset': `${swipeOffsetX}px`,
-            '--swipe-rotation': `${swipeRotation}deg`,
-          }"
-        >
+        <!-- Teacher panel (center) -->
+        <div class="tutor-section">
+          <div v-if="!isAuthenticated" class="auth-required-card">
+            <h3>Aby szukać nauczycieli</h3>
+            <p>
+              Zarejestruj konto lub zaloguj się, żeby przeglądać korepetytorów i dodawać ich do
+              swojej listy.
+            </p>
+            <div class="auth-actions">
+              <button class="btn-primary" type="button" @click="openAuthModal('login')">
+                Zaloguj się
+              </button>
+              <button class="btn-secondary" type="button" @click="openAuthModal('signup')">
+                Zarejestruj się
+              </button>
+            </div>
+          </div>
+
           <div
-            class="card-image"
-            :class="{
-              'swiping-left': showSwipeOverlay && swipeHintState === 'dislike',
-              'swiping-right': showSwipeOverlay && swipeHintState === 'like',
+            v-else-if="filteredTutors.length && currentTutor"
+            ref="cardRef"
+            class="tutor-card"
+            @pointerdown="startSwipe"
+            @pointermove="moveSwipe"
+            @pointerup="endSwipe"
+            @pointercancel="endSwipe"
+            @dragstart.prevent
+            :style="{
+              '--swipe-offset': `${swipeOffsetX}px`,
+              '--swipe-rotation': `${swipeRotation}deg`,
             }"
           >
             <div
-              v-if="showSwipeOverlay && swipeHintState === 'dislike'"
-              class="swipe-indicator dislike"
+              class="card-image"
+              :class="{
+                'swiping-left': showSwipeOverlay && swipeHintState === 'dislike',
+                'swiping-right': showSwipeOverlay && swipeHintState === 'like',
+              }"
             >
-              <span>✕</span>
-            </div>
-            <div
-              v-else-if="showSwipeOverlay && swipeHintState === 'like'"
-              class="swipe-indicator like"
-            >
-              <span>✓</span>
-            </div>
-            <div v-if="currentTutor.image" class="swipe-image-wrapper">
-              <img
-                class="swipe-image"
-                :src="currentTutor.image"
-                :alt="currentTutor.name"
-                draggable="false"
-                @dragstart.prevent
-              />
-            </div>
-          </div>
-
-          <div class="card-info">
-            <div class="tutor-main-info">
-              <div class="browse-note"></div>
-              <div class="tutor-summary-row">
-                <div class="tutor-summary-card">
-                  <h3 class="tutor-name">{{ currentTutor.name }}</h3>
-                  <p class="tutor-meta">
-                    {{ currentTutor.subject || currentTutor.lessonSubject || 'Korepetycje' }} •
-                    {{ currentTutor.level || currentTutor.lessonLevel || 'Liceum' }}
-                  </p>
-                </div>
-                <div class="tutor-summary-card tutor-summary-price">
-                  <p class="tutor-price">{{ currentTutor.price }} zł/h</p>
-                </div>
+              <div
+                v-if="showSwipeOverlay && swipeHintState === 'dislike'"
+                class="swipe-indicator dislike"
+              >
+                <span>✕</span>
+              </div>
+              <div
+                v-else-if="showSwipeOverlay && swipeHintState === 'like'"
+                class="swipe-indicator like"
+              >
+                <span>✓</span>
+              </div>
+              <div v-if="currentTutor.image" class="swipe-image-wrapper">
+                <img
+                  class="swipe-image"
+                  :src="currentTutor.image"
+                  :alt="currentTutor.name"
+                  draggable="false"
+                  @dragstart.prevent
+                />
               </div>
             </div>
 
-            <div class="tags-list">
-              <span v-for="tag in currentTutor.tags" :key="tag" class="tag">{{ tag }}</span>
+            <div class="card-info">
+              <div class="tutor-main-info">
+                <div class="browse-note"></div>
+                <div class="tutor-summary-row">
+                  <div class="tutor-summary-card">
+                    <h3 class="tutor-name">{{ currentTutor.name }}</h3>
+                    <p class="tutor-meta">
+                      {{ currentTutor.subject || currentTutor.lessonSubject || 'Korepetycje' }} •
+                      {{ currentTutor.level || currentTutor.lessonLevel || 'Liceum' }}
+                    </p>
+                  </div>
+                  <div class="tutor-summary-card tutor-summary-price">
+                    <p class="tutor-price">{{ currentTutor.price }} zł/h</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tags-list">
+                <span v-for="tag in currentTutor.tags" :key="tag" class="tag">{{ tag }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            v-if="filteredTutors.length && currentTutor && !props.isTutorAccount"
+            class="actions"
+            @pointerdown.stop
+            @pointermove.stop
+            @pointerup.stop
+            @pointercancel.stop
+          >
+            <button
+              id="dislike-button"
+              class="btn-dislike"
+              type="button"
+              aria-label="Nie pasuje"
+              @click.stop.prevent="handleDecision(false)"
+            >
+              <span aria-hidden="true">✕</span>
+              <span class="visually-hidden">Nie pasuje</span>
+            </button>
+            <button
+              id="like-button"
+              class="btn-like"
+              type="button"
+              aria-label="Lubię"
+              @click.stop.prevent="handleDecision(true)"
+            >
+              <span aria-hidden="true">✔</span>
+              <span class="visually-hidden">Lubię</span>
+            </button>
+          </div>
+        </div>
+
+        <div v-if="isAuthenticated && filteredTutors.length" class="tags-filter-section">
+          <div class="tags-filter-header">
+            <h4>Filtry</h4>
+          </div>
+
+          <div class="filter-group">
+            <h5>Miasto</h5>
+            <div class="filter-options city-select-group">
+              <label class="city-select-label">
+                <select v-model="selectedCity">
+                  <option value="" disabled>Wybierz miasto</option>
+                  <option v-for="option in cityOptions" :key="option" :value="option">
+                    {{ option }}
+                  </option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <h5>Przedmioty</h5>
+            <div class="filter-options">
+              <label v-for="option in subjectOptions" :key="option">
+                <input
+                  type="checkbox"
+                  :checked="selectedSubjects.includes(option)"
+                  @change="toggleSelection('subjects', option)"
+                />
+                {{ option }}
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <h5>Poziom</h5>
+            <div class="filter-options">
+              <label v-for="option in levelOptions" :key="option">
+                <input
+                  type="checkbox"
+                  :checked="selectedLevels.includes(option)"
+                  @change="toggleSelection('levels', option)"
+                />
+                {{ option }}
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <h5>Miejsce lekcji</h5>
+            <div class="filter-options">
+              <label v-for="option in lessonPlaceOptions" :key="option">
+                <input
+                  type="checkbox"
+                  :checked="selectedLessonPlaces.includes(option)"
+                  @change="toggleSelection('lessonPlace', option)"
+                />
+                {{ option }}
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <h5>Tagi</h5>
+            <div class="filter-options">
+              <label v-for="option in tagOptions" :key="option">
+                <input
+                  type="checkbox"
+                  :checked="selectedTags.includes(option)"
+                  @change="toggleSelection('tags', option)"
+                />
+                {{ option }}
+              </label>
             </div>
           </div>
         </div>
-
-        <div
-          v-if="filteredTutors.length && currentTutor && !props.isTutorAccount"
-          class="actions"
-          @pointerdown.stop
-          @pointermove.stop
-          @pointerup.stop
-          @pointercancel.stop
-        >
-          <button
-            id="dislike-button"
-            class="btn-dislike"
-            type="button"
-            aria-label="Nie pasuje"
-            @click.stop.prevent="handleDecision(false)"
-          >
-            <span aria-hidden="true">✕</span>
-            <span class="visually-hidden">Nie pasuje</span>
-          </button>
-          <button
-            id="like-button"
-            class="btn-like"
-            type="button"
-            aria-label="Lubię"
-            @click.stop.prevent="handleDecision(true)"
-          >
-            <span aria-hidden="true">✔</span>
-            <span class="visually-hidden">Lubię</span>
-          </button>
-        </div>
-
-        <div v-else-if="isAuthenticated && !filteredTutors.length" class="empty-state-card">
-          <template v-if="allDecided">
-            <h3>Dotarłeś do końca</h3>
-            <p>Przejrzałeś już wszystkich dostępnych korepetytorów.</p>
-          </template>
-          <template v-else>
-            <h3>Brak nauczycieli</h3>
-            <p>Nie ma wyników dla tych filtrów. Spróbuj zmienić tagi lub wybrać inne kryteria.</p>
-          </template>
-        </div>
       </div>
+    </div>
 
-      <div v-if="isAuthenticated && filteredTutors.length" class="tags-filter-section">
-        <div class="tags-filter-header">
-          <h4>Filtry</h4>
-        </div>
-
-        <div class="filter-group">
-          <h5>Miasto</h5>
-          <div class="filter-options city-select-group">
-            <label class="city-select-label">
-              <select v-model="selectedCity">
-                <option value="" disabled>Wybierz miasto</option>
-                <option v-for="option in cityOptions" :key="option" :value="option">
-                  {{ option }}
-                </option>
-              </select>
-            </label>
-          </div>
-        </div>
-
-        <div class="filter-group">
-          <h5>Przedmioty</h5>
-          <div class="filter-options">
-            <label v-for="option in subjectOptions" :key="option">
-              <input
-                type="checkbox"
-                :checked="selectedSubjects.includes(option)"
-                @change="toggleSelection('subjects', option)"
-              />
-              {{ option }}
-            </label>
-          </div>
-        </div>
-
-        <div class="filter-group">
-          <h5>Poziom</h5>
-          <div class="filter-options">
-            <label v-for="option in levelOptions" :key="option">
-              <input
-                type="checkbox"
-                :checked="selectedLevels.includes(option)"
-                @change="toggleSelection('levels', option)"
-              />
-              {{ option }}
-            </label>
-          </div>
-        </div>
-
-        <div class="filter-group">
-          <h5>Miejsce lekcji</h5>
-          <div class="filter-options">
-            <label v-for="option in lessonPlaceOptions" :key="option">
-              <input
-                type="checkbox"
-                :checked="selectedLessonPlaces.includes(option)"
-                @change="toggleSelection('lessonPlace', option)"
-              />
-              {{ option }}
-            </label>
-          </div>
-        </div>
-
-        <div class="filter-group">
-          <h5>Tagi</h5>
-          <div class="filter-options">
-            <label v-for="option in tagOptions" :key="option">
-              <input
-                type="checkbox"
-                :checked="selectedTags.includes(option)"
-                @change="toggleSelection('tags', option)"
-              />
-              {{ option }}
-            </label>
-          </div>
-        </div>
+    <div v-if="isAuthenticated && !filteredTutors.length" class="empty-state-fullscreen">
+      <div class="empty-state-card">
+        <template v-if="allDecided">
+          <h3>Dotarłeś do końca</h3>
+          <p>Przejrzałeś już wszystkich dostępnych korepetytorów.</p>
+        </template>
+        <template v-else>
+          <h3>Brak nauczycieli</h3>
+          <p>Nie ma wyników dla tych filtrów. Spróbuj zmienić tagi lub wybrać inne kryteria.</p>
+        </template>
       </div>
     </div>
   </div>
@@ -635,9 +643,15 @@ function closePage() {
   padding: 0 0 8px 0;
 }
 
+.empty-state-fullscreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: calc(100vh - 160px);
+}
+
 .empty-state-card {
-  justify-self: center;
-  align-self: center;
   width: min(100%, 480px);
   max-width: 480px;
   padding: 28px;
@@ -817,13 +831,6 @@ function closePage() {
   overflow: hidden;
   align-items: center;
   justify-content: center;
-}
-
-.tutor-section.is-empty {
-  grid-column: 1 / -1;
-  justify-content: center;
-  align-self: center;
-  padding: 0;
 }
 
 .auth-required-card {
