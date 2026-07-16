@@ -1066,8 +1066,8 @@ function toggleTeachingFormat(format) {
 
 .lesson-photo-preview {
   margin-top: 10px;
-  max-width: 160px;
-  max-height: 120px;
+  width: 160px;
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   border-radius: 12px;
   border: 1px solid rgba(79, 117, 199, 0.15);
@@ -1076,7 +1076,8 @@ function toggleTeachingFormat(format) {
 .lesson-photo-preview img,
 .offer-photo-preview img {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
   display: block;
 }
 
@@ -1251,8 +1252,8 @@ function toggleTeachingFormat(format) {
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid rgba(79, 117, 199, 0.15);
-  max-width: 200px;
-  max-height: 150px;
+  width: 200px;
+  aspect-ratio: 1 / 1;
 }
 
 .info-label {

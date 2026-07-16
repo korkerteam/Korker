@@ -279,6 +279,27 @@ function closePage() {
 <template>
   <div class="find-korks-panel">
     <div class="tutors-content">
+      <!-- Plan lekcji (left) -->
+      <div v-if="currentTutor" class="tt-section">
+        <div class="tt-section-header">Plan lekcji</div>
+        <div class="tt-grid-wrap">
+          <div class="tt-grid">
+            <div class="tt-corner"></div>
+            <div v-for="d in ttDayAbbr" :key="d" class="tt-day-h">{{ d }}</div>
+            <template v-for="hour in ttGridHours" :key="hour">
+              <div class="tt-time-l">{{ String(hour).padStart(2, '0') }}:00</div>
+              <div
+                v-for="day in ttDayKeys"
+                :key="`${day}-${hour}`"
+                class="tt-c"
+                :class="{ on: ttHasSlot(day, hour) }"
+              ></div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- Teacher panel (center) -->
       <div class="tutor-section">
         <div
           v-if="filteredTutors.length && currentTutor"
@@ -386,6 +407,7 @@ function closePage() {
         </div>
       </div>
 
+      <!-- Filtry (right) -->
       <div class="tags-filter-section">
         <div class="tags-filter-header">
           <h4>Filtry</h4>
@@ -461,26 +483,6 @@ function closePage() {
           </div>
         </div>
       </div>
-
-      <!-- Timetable section (right of teacher panel) -->
-      <div v-if="currentTutor" class="tt-section">
-        <div class="tt-section-header">Plan lekcji</div>
-        <div class="tt-grid-wrap">
-          <div class="tt-grid">
-            <div class="tt-corner"></div>
-            <div v-for="d in ttDayAbbr" :key="d" class="tt-day-h">{{ d }}</div>
-            <template v-for="hour in ttGridHours" :key="hour">
-              <div class="tt-time-l">{{ String(hour).padStart(2, '0') }}:00</div>
-              <div
-                v-for="day in ttDayKeys"
-                :key="`${day}-${hour}`"
-                class="tt-c"
-                :class="{ on: ttHasSlot(day, hour) }"
-              ></div>
-            </template>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -494,9 +496,14 @@ function closePage() {
   display: flex;
   flex-direction: column;
   gap: 0;
-  border-radius: 0;
-  overflow: visible;
+  border-radius: 24px;
+  overflow: hidden;
   margin: 0;
+  padding: 16px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  box-sizing: border-box;
 }
 
 .find-korks-header {
@@ -525,8 +532,8 @@ function closePage() {
   flex: 1;
   padding: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
-  gap: 0;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
   overflow: hidden;
   align-items: start;
   min-height: 0;
@@ -559,7 +566,6 @@ function closePage() {
 }
 
 .tags-filter-section {
-  order: 1;
   width: 100%;
   min-width: 0;
   max-height: none;
@@ -577,7 +583,6 @@ function closePage() {
 }
 
 .tt-section {
-  order: 1;
   flex: 1 1 0;
   min-width: 0;
   padding: 20px;
@@ -749,7 +754,7 @@ function closePage() {
   position: relative;
   display: block;
   width: 100%;
-  height: 460px;
+  aspect-ratio: 1 / 1;
   border-radius: 20px;
   overflow: hidden;
   background: var(--surface-soft);
