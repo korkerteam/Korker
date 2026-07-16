@@ -32,27 +32,33 @@ const availabilityExpanded = ref(false)
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
 const tagOptions = ['Matura', 'Egzamin', 'Online', 'Na miejscu']
+const cityOptions = ['Warszawa', 'Kraków', 'Wrocław', 'Poznań']
+const lessonPlaceOptions = ['Online', 'Na miejscu']
 
 onMounted(async () => {
   const { data: rows, error } = await supabase
     .from('users')
-    .select('name, surname, profile_picture, tutor_post')
+    .select('id, name, surname, profile_picture, tutor_post')
     .eq('account_type', 'tutor')
     .not('tutor_post', 'is', null)
 
   if (!error && rows) {
     tutors.value = rows
-      .filter((r) => r.tutor_post)
-      .map((r) => {
+      .filter((r, index) => r.tutor_post)
+      .map((r, index) => {
         const tp = r.tutor_post
+        const renderedName = [r.name, r.surname].filter(Boolean).join(' ') || 'Korepetytor'
         return {
-          name: [r.name, r.surname].filter(Boolean).join(' ') || 'Korepetytor',
+          id: r.id || `${renderedName}-${tp.subject || 'unknown'}-${index}`,
+          name: renderedName,
           subject: tp.subject || '',
           level: tp.level || '',
           tags: tp.teachingFormats || [],
           image: tp.photo || r.profile_picture || null,
           bio: tp.description || '',
           price: tp.price || 50,
+          city: tp.city || '',
+          lessonPlace: tp.lessonPlace || '',
         }
       })
   }
@@ -60,9 +66,20 @@ onMounted(async () => {
   loading.value = false
 })
 
+function isTutorLiked(tutor) {
+  const tutorId = tutor?.id != null ? String(tutor.id) : null
+  if (tutorId) {
+    return props.likedTeachers.some((item) => item?.id != null && String(item.id) === tutorId)
+  }
+  return props.likedTeachers.some((item) => item?.name === tutor.name)
+}
+
 const filteredTutors = computed(() => {
   return tutors.value.filter((tutor) => {
-    if (decisions.value[tutor.name]) {
+    if (decisions.value[tutor.id]) {
+      return false
+    }
+    if (isTutorLiked(tutor)) {
       return false
     }
 
@@ -86,7 +103,7 @@ const filteredTutors = computed(() => {
 })
 
 const allDecided = computed(
-  () => tutors.value.length > 0 && tutors.value.every((t) => decisions.value[t.name]),
+  () => tutors.value.length > 0 && tutors.value.every((t) => decisions.value[t.id]),
 )
 
 const currentTutor = computed(() => filteredTutors.value[currentIndex.value] || null)
@@ -96,6 +113,22 @@ watch(
   () => {
     currentIndex.value = 0
     resetSwipe()
+  },
+  { deep: true },
+)
+
+watch(
+  () => props.likedTeachers,
+  () => {
+    const length = filteredTutors.value.length
+    if (length === 0) {
+      currentIndex.value = 0
+      return
+    }
+
+    if (currentIndex.value >= length) {
+      currentIndex.value = length - 1
+    }
   },
   { deep: true },
 )
@@ -169,24 +202,30 @@ function endSwipe(event) {
 function nextTutor() {
   resetSwipe()
 
-  if (currentIndex.value < filteredTutors.value.length - 1) {
-    currentIndex.value += 1
-  } else {
+  const nextIndex = currentIndex.value
+  const remaining = filteredTutors.value.length
+  if (remaining === 0) {
     currentIndex.value = 0
+    return
   }
+
+  currentIndex.value = Math.min(nextIndex, remaining - 1)
 }
 
 function likeTutor() {
-  if (currentTutor.value) {
-    decisions.value[currentTutor.value.name] = 'good'
-    emit('like-teacher', currentTutor.value)
+  const tutor = currentTutor.value
+  if (tutor) {
+    const likedTutor = { ...tutor, id: String(tutor.id) }
+    decisions.value[likedTutor.id] = 'good'
+    emit('like-teacher', likedTutor)
   }
   nextTutor()
 }
 
 function dislikeTutor() {
-  if (currentTutor.value) {
-    decisions.value[currentTutor.value.name] = 'bad'
+  const tutor = currentTutor.value
+  if (tutor) {
+    decisions.value[String(tutor.id)] = 'bad'
   }
   nextTutor()
 }
@@ -427,20 +466,6 @@ function closePage() {
 
 <style scoped>
 .find-korks-panel {
-  width: 100%;
-  max-width: 1280px;
-  min-height: 0;
-  max-height: calc(100vh - 160px);
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-
-  border-radius: 16px;
-  overflow: visible;
-  margin: 0 auto;
-}
-
-<style scoped > .find-korks-panel {
   width: 100%;
   max-width: 1280px;
   min-height: 0;
