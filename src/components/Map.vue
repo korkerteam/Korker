@@ -1,11 +1,23 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, inject, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 const mapContainer = ref(null)
 const isMapVisible = ref(false)
 let map = null
+
+const { showChatGlobal: showChat } = inject('globalChat', {
+  showChatGlobal: ref(false),
+})
+const isChatOpen = computed(() => showChat.value)
+
+watch(isChatOpen, (isOpen) => {
+  if (isOpen) {
+    isMapVisible.value = false
+    destroyLeaflet()
+  }
+})
 
 const showMap = () => {
   isMapVisible.value = true
@@ -45,12 +57,13 @@ const initLeaflet = () => {
 }
 
 const toggleMap = () => {
+  if (isChatOpen.value) return
   isMapVisible.value = !isMapVisible.value
 }
 </script>
 
 <template>
-  <div class="map-wrapper">
+  <div v-if="!isChatOpen" class="map-wrapper">
     <div class="map-relative-box">
       <Transition name="fade" @after-enter="initLeaflet" @after-leave="destroyLeaflet">
         <div v-if="isMapVisible" ref="mapContainer" class="ramka"></div>
@@ -91,7 +104,7 @@ const toggleMap = () => {
   position: fixed;
   bottom: 24px;
   right: 96px;
-  z-index: 1200;
+  z-index: 1300;
   width: 56px;
   height: 56px;
   border-radius: 50%;

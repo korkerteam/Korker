@@ -61,6 +61,8 @@ function showTeacherProfile(teacher) {
   currentTeacher.value = teacher || null
 }
 
+provide('showTeacherProfile', showTeacherProfile)
+
 function removeLikedTeacher(teacher) {
   if (!teacher) return
 
@@ -246,7 +248,7 @@ onMounted(() => {
   position: fixed;
   right: 16px;
   bottom: 10%;
-  z-index: 5;
+  z-index: 2000;
 }
 
 .settings-fab {

@@ -83,6 +83,7 @@ onUnmounted(() => {
 })
 
 const list = computed(() => !activeUserId.value)
+const hideFab = computed(() => showChat.value && !!activeUserId.value)
 
 function toggle() {
   if (!isAuthenticated.value) {
@@ -120,7 +121,7 @@ async function handleSend(content, files) {
 </script>
 
 <template>
-  <ChatFab :unread-count="totalUnread" @toggle="toggle" />
+  <ChatFab :unread-count="totalUnread" :hidden="hideFab" @toggle="toggle" />
   <Transition name="fade">
     <div v-if="showChat" class="backdrop"></div>
   </Transition>

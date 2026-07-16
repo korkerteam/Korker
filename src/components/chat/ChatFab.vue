@@ -4,12 +4,16 @@ const props = defineProps({
     type: Number,
     default: 0,
   },
+  hidden: {
+    type: Boolean,
+    default: false,
+  },
 })
 defineEmits(['toggle'])
 </script>
 
 <template>
-  <button class="fab" @click="$emit('toggle')" title="Czat">
+  <button v-if="!props.hidden" class="fab" @click="$emit('toggle')" title="Czat">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
       <path
         d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"
@@ -29,6 +33,7 @@ defineEmits(['toggle'])
   position: fixed;
   bottom: 24px;
   right: 24px;
+  z-index: 1300;
   width: 56px;
   height: 56px;
   border-radius: 50%;

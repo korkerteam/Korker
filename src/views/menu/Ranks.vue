@@ -1,20 +1,63 @@
 <script setup>
-import { ref } from 'vue'
+import { inject, onMounted, ref } from 'vue'
 import LoadingBox from '@/components/LoadingBox.vue'
+import { supabase } from '@/lib/supabase.js'
 
-const loading = ref(false)
-const rankingData = [
-  { name: 'LENA MEISSER', subject: 'J. polski' },
-  { name: 'PATRYCJA CHUDZYSKA', subject: 'Chemia' },
-  { name: 'OSKAR MALYSZKO', subject: 'Niem' },
-  { name: 'KRYSTIAN H. OMOS', subject: 'Plastyka' },
-  { name: 'MARTYNA WOJTCZAK', subject: 'Nic' },
-  { name: 'BLAZEJ KACZALA', subject: 'Biologia' },
-  { name: 'WIOLETTA MICHALAK', subject: 'Matematyka' },
-  { name: 'ALEX JAKUBEK', subject: 'Pedal' },
-  { name: 'AMELIA GRUBA', subject: 'J. polski' },
-  { name: 'ADRIAN GROCHOWSKI', subject: 'Biologia' },
-]
+const loading = ref(true)
+const rankingData = ref([])
+const showTeacherProfile = inject('showTeacherProfile', null)
+
+onMounted(async () => {
+  try {
+    const { data: rows, error } = await supabase
+      .from('users')
+      .select('id, name, surname, profile_picture, tutor_post')
+      .eq('account_type', 'tutor')
+      .not('tutor_post', 'is', null)
+
+    if (!error && rows) {
+      rankingData.value = rows
+        .filter((row) => row.tutor_post)
+        .map((row, index) => {
+          const tutorPost = row.tutor_post || {}
+          const renderedName = [row.name, row.surname].filter(Boolean).join(' ') || 'Korepetytor'
+
+          return {
+            id: row.id || `${renderedName}-${index}`,
+            name: renderedName,
+            subject: tutorPost.subject || 'Brak danych',
+            level: tutorPost.level || 'Brak danych',
+            bio: tutorPost.description || '',
+            price: tutorPost.price || null,
+            city: tutorPost.city || '',
+            lessonPlace: tutorPost.lessonPlace || '',
+            tags: tutorPost.teachingFormats || [],
+            image: tutorPost.photo || row.profile_picture || null,
+          }
+        })
+        .slice(0, 10)
+    }
+  } finally {
+    loading.value = false
+  }
+})
+
+function openTeacher(entry) {
+  if (!showTeacherProfile || !entry) return
+
+  showTeacherProfile({
+    id: entry.id,
+    name: entry.name,
+    subject: entry.subject,
+    level: entry.level,
+    bio: entry.bio,
+    price: entry.price,
+    city: entry.city,
+    lessonPlace: entry.lessonPlace,
+    tags: entry.tags,
+    image: entry.image,
+  })
+}
 </script>
 
 <template>
@@ -32,8 +75,13 @@ const rankingData = [
       <ol class="ranks-list">
         <li
           v-for="(entry, index) in rankingData"
-          :key="entry.name"
+          :key="entry.id || entry.name"
           :class="['rank-row', { featured: index < 3 }]"
+          role="button"
+          tabindex="0"
+          @click="openTeacher(entry)"
+          @keydown.enter.prevent="openTeacher(entry)"
+          @keydown.space.prevent="openTeacher(entry)"
         >
           <div class="rank-pill" :class="`rank-${index + 1}`">
             <span class="rank-number">{{ index + 1 }}</span>
@@ -141,6 +189,7 @@ const rankingData = [
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
+  cursor: pointer;
   border-radius: 16px;
   background: var(--surface-strong);
   border: 1px solid var(--border);
