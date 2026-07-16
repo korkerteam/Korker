@@ -52,6 +52,10 @@ watch(chatTargetUserId, (userId) => {
   }
 })
 
+watch(showChat, (v) => {
+  document.body.style.overflow = v ? 'hidden' : originalOverflow
+})
+
 watch(
   () => isAuthenticated.value,
   (authenticated) => {
@@ -61,6 +65,8 @@ watch(
   },
   { immediate: true },
 )
+
+const originalOverflow = document.body.style.overflow || ''
 
 onMounted(() => {
   document.addEventListener('click', onClickOutside)
@@ -73,6 +79,7 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', onClickOutside)
   teardownRealtime()
+  document.body.style.overflow = originalOverflow
 })
 
 const list = computed(() => !activeUserId.value)

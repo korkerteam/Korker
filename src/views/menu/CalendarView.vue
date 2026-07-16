@@ -113,7 +113,13 @@ function selectDay(day) {
             <p class="lessons-label">Zaplanowane lekcje</p>
             <h3>{{ selectedDateLabel }}</h3>
           </div>
-          <span class="lessons-count">{{ selectedLessons.length }} zajęcia</span>
+          <span class="lessons-count">{{
+            selectedLessons.length === 0
+              ? 'Brak lekcji'
+              : selectedLessons.length === 1
+                ? '1 lekcja'
+                : `${selectedLessons.length} lekcje`
+          }}</span>
         </div>
 
         <div v-if="selectedLessons.length > 0" class="lesson-list">

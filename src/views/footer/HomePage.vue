@@ -2,7 +2,7 @@
   <div class="home-shell">
     <div class="dashboard-top">
       <div>
-        <p class="dashboard-welcome">Witamy w Korker</p>
+        <p class="dashboard-welcome">Witamy w Kirker</p>
         <h2 class="dashboard-title">Znajdź korepetytora w kilka sekund</h2>
       </div>
       <div class="dashboard-actions">
