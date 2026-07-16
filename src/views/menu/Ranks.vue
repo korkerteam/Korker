@@ -3,56 +3,46 @@ import { ref } from 'vue'
 import LoadingBox from '@/components/LoadingBox.vue'
 
 const loading = ref(false)
+const rankingData = [
+  { name: 'LENA MEISSER', subject: 'J. polski' },
+  { name: 'PATRYCJA CHUDZYSKA', subject: 'Chemia' },
+  { name: 'OSKAR MALYSZKO', subject: 'Niem' },
+  { name: 'KRYSTIAN H. OMOS', subject: 'Plastyka' },
+  { name: 'MARTYNA WOJTCZAK', subject: 'Nic' },
+  { name: 'BLAZEJ KACZALA', subject: 'Biologia' },
+  { name: 'WIOLETTA MICHALAK', subject: 'Matematyka' },
+  { name: 'ALEX JAKUBEK', subject: 'Pedal' },
+  { name: 'AMELIA GRUBA', subject: 'J. polski' },
+  { name: 'ADRIAN GROCHOWSKI', subject: 'Biologia' },
+]
 </script>
 
 <template>
   <LoadingBox v-if="loading" />
   <div v-else class="ranks-panel">
     <div class="ranks-header">
-      <h3>TOP 10 NAUCZYCIELI: SKARBIMIERZYCE</h3>
+      <div class="header-badge">🏆 TOP 10</div>
+      <div>
+        <h3>Top nauczycieli</h3>
+        <p>Skarbimierzyce · aktualna klasyfikacja</p>
+      </div>
     </div>
 
     <div class="ranks-body">
       <ol class="ranks-list">
-        <li>
-          <span class="rank">1</span><span class="name">LENA MEISSER</span
-          ><span class="subject">J. POLSKI</span>
-        </li>
-        <li>
-          <span class="rank">2</span><span class="name">PATRYCJA CHUDZYSKA</span
-          ><span class="subject">CHEMIA</span>
-        </li>
-        <li>
-          <span class="rank">3</span><span class="name">OSKAR MALYSZKO</span
-          ><span class="subject">NIEM</span>
-        </li>
-        <li>
-          <span class="rank">4</span><span class="name">KRYSTIAN H. OMOS</span
-          ><span class="subject">PLASTYKA</span>
-        </li>
-        <li>
-          <span class="rank">5</span><span class="name">MARTYNA WOJTCZAK</span
-          ><span class="subject">NIC</span>
-        </li>
-        <li>
-          <span class="rank">6</span><span class="name">BLAZEJ KACZALA</span
-          ><span class="subject">BIOLOGIA</span>
-        </li>
-        <li>
-          <span class="rank">7</span><span class="name">WIOLETTA MICHALAK</span
-          ><span class="subject">MATEMATYKA</span>
-        </li>
-        <li>
-          <span class="rank">8</span><span class="name">ALEX JAKUBEK</span
-          ><span class="subject">PEDAL</span>
-        </li>
-        <li>
-          <span class="rank">9</span><span class="name">AMELIA GRUBA</span
-          ><span class="subject">J. POLSKI</span>
-        </li>
-        <li>
-          <span class="rank">10</span><span class="name">ADRIAN GROCHOWSKI</span
-          ><span class="subject">BIOLOGIA</span>
+        <li
+          v-for="(entry, index) in rankingData"
+          :key="entry.name"
+          :class="['rank-row', { featured: index < 3 }]"
+        >
+          <div class="rank-pill" :class="`rank-${index + 1}`">
+            <span class="rank-number">{{ index + 1 }}</span>
+          </div>
+          <div class="rank-content">
+            <span class="name">{{ entry.name }}</span>
+            <span class="meta">{{ entry.subject }}</span>
+          </div>
+          <span class="subject-chip">{{ entry.subject }}</span>
         </li>
       </ol>
     </div>
@@ -61,15 +51,15 @@ const loading = ref(false)
 
 <style scoped>
 .ranks-panel {
-  border: 1.5px solid var(--primary-color);
   width: 100%;
   max-width: 1120px;
   margin: 0 auto;
-  background: var(--surface-strong);
-  border-radius: 16px;
-  box-shadow: var(--shadow-soft);
+  background: linear-gradient(135deg, var(--surface-strong) 0%, var(--surface-soft) 100%);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
   overflow: hidden;
-  font-family: sans-serif;
+  font-family: Inter, sans-serif;
   min-height: 0;
   max-height: calc(74vh - 50px);
   display: flex;
@@ -77,24 +67,47 @@ const loading = ref(false)
 }
 
 .ranks-header {
-  padding: 18px 20px;
-  background: var(--surface-soft);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 22px;
+  background: linear-gradient(120deg, var(--accent-soft) 0%, rgba(255, 255, 255, 0.08) 100%);
   border-bottom: 1px solid var(--border);
 }
 
-.ranks-header h3 {
-  margin: 0;
-  color: var(--primary-color);
-  font-size: 18px;
+.header-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: var(--primary-color);
+  color: white;
+  font-size: 12px;
   font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ranks-header h3 {
+  margin: 0 0 4px;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.ranks-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .ranks-body {
-  padding: 16px 20px 22px 20px;
+  padding: 18px 20px 24px 20px;
   overflow-y: auto;
 }
 
-/* Scrollbar styling for ranks body */
 .ranks-body::-webkit-scrollbar {
   width: 10px;
 }
@@ -122,40 +135,98 @@ const loading = ref(false)
   gap: 10px;
 }
 
-.ranks-list li {
+.rank-row {
   display: grid;
-  grid-template-columns: 36px 1fr auto;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  transition: background 0.12s ease;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
 }
 
-.ranks-list li:hover {
+.rank-row:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
   background: var(--accent-soft);
 }
 
-.rank {
+.rank-row.featured {
+  background: linear-gradient(115deg, rgba(79, 117, 199, 0.12) 0%, var(--surface-strong) 100%);
+  border-color: rgba(79, 117, 199, 0.22);
+}
+
+.rank-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: var(--primary-color);
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
   color: white;
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 15px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.rank-1 {
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.rank-2 {
+  background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+}
+
+.rank-3 {
+  background: linear-gradient(135deg, #c97a2b 0%, #e9b16b 100%);
+}
+
+.rank-4,
+.rank-5,
+.rank-6,
+.rank-7,
+.rank-8,
+.rank-9,
+.rank-10 {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+}
+
+.rank-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .name {
   font-weight: 700;
   color: var(--text);
+  letter-spacing: 0.01em;
 }
 
-.subject {
+.meta {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
+}
+
+.subject-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  white-space: nowrap;
 }
 </style>
