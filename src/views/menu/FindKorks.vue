@@ -29,6 +29,18 @@ const swipeRotation = ref(0)
 const cardRef = ref(null)
 const availabilityExpanded = ref(false)
 
+const ttDayKeys = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
+const ttDayAbbr = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd']
+const ttGridHours = Array.from({ length: 14 }, (_, i) => i + 8)
+
+function ttSlotLabel(hour) {
+  return `${String(hour).padStart(2, '0')}:00-${String((hour + 1) % 24).padStart(2, '0')}:00`
+}
+
+function ttHasSlot(day, hour) {
+  return currentTutor.value?.weeklyAvailability?.[day]?.includes(ttSlotLabel(hour))
+}
+
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
 const tagOptions = ['Matura', 'Egzamin', 'Online', 'Na miejscu']
@@ -59,6 +71,7 @@ onMounted(async () => {
           price: tp.price || 50,
           city: tp.city || '',
           lessonPlace: tp.lessonPlace || '',
+          weeklyAvailability: tp.weeklyAvailability || {},
         }
       })
   }
@@ -323,18 +336,6 @@ function closePage() {
               <div class="bio-box" v-if="currentTutor.bio || currentTutor.lessonDescription">
                 <p>{{ currentTutor.bio || currentTutor.lessonDescription }}</p>
               </div>
-
-              <div class="availability-box">
-                <div class="availability-panel-header">Dostępne godziny</div>
-                <div class="availability-inline-row">
-                  <div v-for="day in weekdayLabels" :key="day" class="availability-day-pill">
-                    <span class="availability-day">{{ day }}</span>
-                    <span class="availability-value">
-                      {{ formatAvailabilityRange(currentTutor?.weeklyAvailability?.[day] || []) }}
-                    </span>
-                  </div>
-                </div>
-              </div>
             </div>
 
             <div class="tags-list">
@@ -460,6 +461,26 @@ function closePage() {
           </div>
         </div>
       </div>
+
+      <!-- Timetable section (right of teacher panel) -->
+      <div v-if="currentTutor" class="tt-section">
+        <div class="tt-section-header">Plan lekcji</div>
+        <div class="tt-grid-wrap">
+          <div class="tt-grid">
+            <div class="tt-corner"></div>
+            <div v-for="d in ttDayAbbr" :key="d" class="tt-day-h">{{ d }}</div>
+            <template v-for="hour in ttGridHours" :key="hour">
+              <div class="tt-time-l">{{ String(hour).padStart(2, '0') }}:00</div>
+              <div
+                v-for="day in ttDayKeys"
+                :key="`${day}-${hour}`"
+                class="tt-c"
+                :class="{ on: ttHasSlot(day, hour) }"
+              ></div>
+            </template>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -553,6 +574,30 @@ function closePage() {
   position: relative;
   pointer-events: auto;
   z-index: 10;
+}
+
+.tt-section {
+  order: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 20px;
+  border-radius: 24px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  align-self: flex-start;
+  position: sticky;
+  top: 80px;
+  z-index: 9;
+}
+
+.tt-section-header {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
 }
 
 .tags-filter-header {
@@ -691,16 +736,13 @@ function closePage() {
   user-select: none;
   -webkit-user-drag: none;
   -webkit-touch-callout: none;
-  background: var(--surface-strong);
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 24px;
-  flex: 1;
-  height: 100%;
-  max-height: 980px;
-  width: min(100%, 470px);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  max-height: none;
+  width: 100%;
   overflow: visible;
-  margin: 0 auto;
 }
 
 .card-image {
@@ -898,72 +940,14 @@ function closePage() {
   border: 1px solid var(--border);
 }
 
-.availability-box {
-  width: 100%;
-  padding: 10px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: linear-gradient(135deg, var(--surface-strong) 0%, var(--surface-soft) 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  box-sizing: border-box;
-}
-
-.availability-panel-header {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.availability-inline-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.availability-day-pill {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(4px);
-  min-width: 86px;
-}
-
-.availability-day {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.availability-value {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--text);
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
 .actions {
   display: flex;
-  justify-content: space-between;
-  gap: 200px;
+  justify-content: center;
+  gap: 40px;
   margin-top: 16px;
   position: relative;
   z-index: 2;
+  width: 100%;
 }
 
 .btn-like,
@@ -1042,5 +1026,62 @@ function closePage() {
 
 .find-korks-card {
   display: none;
+}
+</style>
+
+<style>
+.tt-section .tt-grid-wrap {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tt-section .tt-grid {
+  display: grid;
+  grid-template-columns: 38px repeat(7, 1fr);
+  gap: 2px;
+  padding: 3px;
+  background: #f3f4f6;
+}
+
+.tt-section .tt-corner {
+  background: transparent;
+}
+
+.tt-section .tt-day-h {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: #f9fafb;
+  border-radius: 3px;
+  padding: 2px 0;
+}
+
+.tt-section .tt-time-l {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 600;
+  color: #9ca3af;
+  border-radius: 3px;
+}
+
+.tt-section .tt-c {
+  border-radius: 3px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  min-height: 22px;
+}
+
+.tt-section .tt-c.on {
+  background: #4f75c7;
+  border-color: #4f75c7;
 }
 </style>
