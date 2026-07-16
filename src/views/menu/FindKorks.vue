@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { supabase } from '@/lib/supabase.js'
+import { useAuth } from '@/composables/useAuth.js'
 
 const props = defineProps({
   filters: {
@@ -11,9 +12,14 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  isTutorAccount: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits(['close', 'like-teacher'])
+const { isAuthenticated, openAuthModal } = useAuth()
 const tutors = ref([])
 const loading = ref(true)
 const decisions = ref({})
@@ -52,7 +58,21 @@ const tagOptions = ['Matura', 'Egzamin', 'Online', 'Na miejscu']
 const cityOptions = ['Warszawa', 'Kraków', 'Wrocław', 'Poznań']
 const lessonPlaceOptions = ['Online', 'Na miejscu']
 
-onMounted(async () => {
+function getTutorKey(tutor) {
+  if (!tutor) return null
+  if (tutor.id != null) return String(tutor.id)
+  if (tutor.name) return `name:${tutor.name}`
+  return null
+}
+
+async function loadTutors() {
+  if (!isAuthenticated.value) {
+    loading.value = false
+    return
+  }
+
+  loading.value = true
+
   const { data: rows, error } = await supabase
     .from('users')
     .select('id, name, surname, profile_picture, tutor_post')
@@ -61,7 +81,7 @@ onMounted(async () => {
 
   if (!error && rows) {
     tutors.value = rows
-      .filter((r, index) => r.tutor_post)
+      .filter((r) => r.tutor_post)
       .map((r, index) => {
         const tp = r.tutor_post
         const renderedName = [r.name, r.surname].filter(Boolean).join(' ') || 'Korepetytor'
@@ -80,24 +100,27 @@ onMounted(async () => {
         }
       })
   }
-  console.log('Wszyscy tutorzy:', tutors.value)
+
   loading.value = false
+}
+
+onMounted(() => {
+  loadTutors()
 })
 
-function isTutorLiked(tutor) {
-  const tutorId = tutor?.id != null ? String(tutor.id) : null
-  if (tutorId) {
-    return props.likedTeachers.some((item) => item?.id != null && String(item.id) === tutorId)
+watch(isAuthenticated, (authenticated) => {
+  if (authenticated) {
+    loadTutors()
+  } else {
+    tutors.value = []
+    loading.value = false
   }
-  return props.likedTeachers.some((item) => item?.name === tutor.name)
-}
+})
 
 const filteredTutors = computed(() => {
   return tutors.value.filter((tutor) => {
-    if (decisions.value[tutor.id]) {
-      return false
-    }
-    if (isTutorLiked(tutor)) {
+    const tutorKey = getTutorKey(tutor)
+    if (!props.isTutorAccount && tutorKey && decisions.value[tutorKey]) {
       return false
     }
 
@@ -137,7 +160,18 @@ watch(
 
 watch(
   () => props.likedTeachers,
-  () => {
+  (teachers = []) => {
+    const nextDecisions = { ...decisions.value }
+
+    teachers.forEach((teacher) => {
+      const tutorKey = getTutorKey(teacher)
+      if (tutorKey) {
+        nextDecisions[tutorKey] = 'good'
+      }
+    })
+
+    decisions.value = nextDecisions
+
     const length = filteredTutors.value.length
     if (length === 0) {
       currentIndex.value = 0
@@ -148,7 +182,7 @@ watch(
       currentIndex.value = length - 1
     }
   },
-  { deep: true },
+  { deep: true, immediate: true },
 )
 
 function resetSwipe() {
@@ -200,7 +234,6 @@ function moveSwipe(event) {
 function endSwipe(event) {
   if (swipeStartX.value === null) return
 
-  // Release pointer capture
   if (cardRef.value && event.pointerId !== undefined) {
     cardRef.value.releasePointerCapture(event.pointerId)
   }
@@ -208,43 +241,46 @@ function endSwipe(event) {
   const currentX = getSwipeClientX(event)
   const delta = currentX - swipeStartX.value
 
-  if (delta < -80) {
-    handleDecision(false)
-  } else if (delta > 80) {
+  if (props.isTutorAccount) {
+    if (delta < -80 || delta > 80) {
+      nextTutor()
+    } else {
+      resetSwipe()
+    }
+    return
+  }
+
+  if (delta > 80) {
     handleDecision(true)
+  } else if (delta < -80) {
+    handleDecision(false)
   } else {
     resetSwipe()
   }
 }
 
-function nextTutor() {
-  resetSwipe()
-
-  const nextIndex = currentIndex.value
-  const remaining = filteredTutors.value.length
-  if (remaining === 0) {
-    currentIndex.value = 0
-    return
-  }
-
-  currentIndex.value = Math.min(nextIndex, remaining - 1)
-}
-
 function likeTutor() {
-  const tutor = currentTutor.value
-  if (tutor) {
-    const likedTutor = { ...tutor, id: String(tutor.id) }
-    decisions.value[likedTutor.id] = 'good'
-    emit('like-teacher', likedTutor)
-  }
-  nextTutor()
+  addCurrentTutorToList()
 }
 
 function dislikeTutor() {
   const tutor = currentTutor.value
-  if (tutor) {
-    decisions.value[String(tutor.id)] = 'bad'
+  if (!tutor) return
+
+  decisions.value[String(tutor.id)] = 'bad'
+  nextTutor()
+}
+
+function addCurrentTutorToList() {
+  const tutor = currentTutor.value
+  if (!tutor) return
+
+  const likedTutor = { ...tutor, id: String(tutor.id) }
+  const tutorKey = getTutorKey(likedTutor)
+  if (tutorKey) {
+    decisions.value[tutorKey] = 'good'
   }
+  emit('like-teacher', likedTutor)
   nextTutor()
 }
 
@@ -254,6 +290,19 @@ function handleDecision(isLiked) {
   } else {
     dislikeTutor()
   }
+}
+
+function nextTutor() {
+  resetSwipe()
+
+  const remaining = filteredTutors.value.length
+  if (remaining === 0) {
+    currentIndex.value = 0
+    return
+  }
+
+  const nextIndex = currentIndex.value + 1
+  currentIndex.value = nextIndex >= remaining ? 0 : nextIndex
 }
 
 function toggleSelection(category, value) {
@@ -282,11 +331,48 @@ function closePage() {
 </script>
 
 <template>
-  <div class="find-korks-panel">
+  <div class="find-korks-panel" :class="{ 'guest-state': !isAuthenticated }">
     <div class="tutors-content">
+      <!-- Plan lekcji (left) -->
+      <div v-if="currentTutor" class="tt-section">
+        <div class="tt-section-header">Plan lekcji</div>
+        <div class="tt-grid-wrap">
+          <div class="tt-grid">
+            <div class="tt-corner"></div>
+            <div v-for="d in ttDayAbbr" :key="d" class="tt-day-h">{{ d }}</div>
+            <template v-for="hour in ttGridHours" :key="hour">
+              <div class="tt-time-l">{{ String(hour).padStart(2, '0') }}:00</div>
+              <div
+                v-for="day in ttDayKeys"
+                :key="`${day}-${hour}`"
+                class="tt-c"
+                :class="{ on: ttHasSlot(day, hour) }"
+              ></div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- Teacher panel (center) -->
       <div class="tutor-section">
+        <div v-if="!isAuthenticated" class="auth-required-card">
+          <h3>Aby szukać nauczycieli</h3>
+          <p>
+            Zarejestruj konto lub zaloguj się, żeby przeglądać korepetytorów i dodawać ich do swojej
+            listy.
+          </p>
+          <div class="auth-actions">
+            <button class="btn-primary" type="button" @click="openAuthModal('login')">
+              Zaloguj się
+            </button>
+            <button class="btn-secondary" type="button" @click="openAuthModal('signup')">
+              Zarejestruj się
+            </button>
+          </div>
+        </div>
+
         <div
-          v-if="filteredTutors.length && currentTutor"
+          v-else-if="filteredTutors.length && currentTutor"
           ref="cardRef"
           class="tutor-card"
           @pointerdown="startSwipe"
@@ -301,16 +387,22 @@ function closePage() {
         >
           <div
             class="card-image"
-            :class="[
-              swipeOffsetX < -120 ? 'swiping-left' : '',
-              swipeOffsetX > 120 ? 'swiping-right' : '',
-            ]"
+            :class="{
+              'swiping-left': showSwipeOverlay && swipeHintState === 'dislike',
+              'swiping-right': showSwipeOverlay && swipeHintState === 'like',
+            }"
           >
-            <div class="swipe-indicator dislike" aria-hidden="true" v-if="swipeOffsetX < -120">
+            <div
+              v-if="showSwipeOverlay && swipeHintState === 'dislike'"
+              class="swipe-indicator dislike"
+            >
               <span>✕</span>
             </div>
-            <div class="swipe-indicator like" aria-hidden="true" v-if="swipeOffsetX > 120">
-              <span>✔</span>
+            <div
+              v-else-if="showSwipeOverlay && swipeHintState === 'like'"
+              class="swipe-indicator like"
+            >
+              <span>✓</span>
             </div>
             <div v-if="currentTutor.image" class="swipe-image-wrapper">
               <img
@@ -325,6 +417,13 @@ function closePage() {
 
           <div class="card-info">
             <div class="tutor-main-info">
+              <div class="browse-note">
+                {{
+                  props.isTutorAccount
+                    ? 'Przesuń w lewo lub prawo, aby zobaczyć kolejnego korepetytora.'
+                    : 'Przesuń w lewo lub prawo, aby przejść dalej albo dodaj korepetytora.'
+                }}
+              </div>
               <div class="tutor-summary-row">
                 <div class="tutor-summary-card">
                   <h3 class="tutor-name">{{ currentTutor.name }}</h3>
@@ -389,7 +488,7 @@ function closePage() {
         </div>
 
         <div
-          v-if="filteredTutors.length && currentTutor"
+          v-if="filteredTutors.length && currentTutor && !props.isTutorAccount"
           class="actions"
           @pointerdown.stop
           @pointermove.stop
@@ -418,7 +517,7 @@ function closePage() {
           </button>
         </div>
 
-        <div v-else-if="!filteredTutors.length" class="empty-state-card">
+        <div v-else-if="isAuthenticated && !filteredTutors.length" class="empty-state-card">
           <template v-if="allDecided">
             <h3>Dotarłeś do końca</h3>
             <p>Przejrzałeś już wszystkich dostępnych korepetytorów.</p>
@@ -430,7 +529,7 @@ function closePage() {
         </div>
       </div>
 
-      <div class="tags-filter-section">
+      <div v-if="isAuthenticated" class="tags-filter-section">
         <div class="tags-filter-header">
           <h4>Filtry</h4>
         </div>
@@ -512,16 +611,20 @@ function closePage() {
 <style scoped>
 .find-korks-panel {
   width: 100%;
-  max-width: 1280px;
+  max-width: 100%;
   min-height: 0;
   max-height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
   gap: 0;
-
-  border-radius: 16px;
-  overflow: visible;
-  margin: 0 auto;
+  border-radius: 24px;
+  overflow: hidden;
+  margin: 0;
+  padding: 16px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  box-sizing: border-box;
 }
 
 .find-korks-header {
@@ -549,22 +652,28 @@ function closePage() {
 .tutors-content {
   flex: 1;
   padding: 0;
-  display: flex;
-  flex-direction: row;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
   overflow: hidden;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: start;
+  min-height: 0;
+  margin: 0;
 }
 
-.tutor-section {
-  order: 0;
-  flex: 1;
+.find-korks-panel.guest-state .tutors-content {
   display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  padding: 24px 0 24px 0;
-  min-height: 0;
+  justify-content: center;
+  align-items: center;
+  grid-template-columns: 1fr;
+}
+
+.find-korks-panel.guest-state .tutor-section {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 0 8px 0;
 }
 
 .empty-state-card {
@@ -593,21 +702,43 @@ function closePage() {
 }
 
 .tags-filter-section {
-  order: 1;
-  width: min(280px, 32%);
-  min-width: 260px;
-  max-height: calc(100vh - 270px);
-  padding: 24px;
-  border-radius: 28px;
-  overflow-y: auto;
+  width: 100%;
+  min-width: 0;
+  max-height: none;
+  padding: 22px 18px 110px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  margin: 0 0 24px;
+  align-self: stretch;
+  position: relative;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+.tt-section {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 20px;
+  border-radius: 24px;
   background: var(--surface-strong);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-soft);
-  margin-left: auto;
   align-self: flex-start;
   position: sticky;
-  pointer-events: auto;
-  z-index: 10;
+  top: 80px;
+  z-index: 9;
+}
+
+.tt-section-header {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
 }
 
 .tags-filter-header {
@@ -627,24 +758,28 @@ function closePage() {
 
 .filter-group {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .filter-group h5 {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 12px;
   font-weight: 600;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.3px;
+  min-width: 90px;
 }
 
 .filter-options {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .city-select-group {
@@ -681,18 +816,18 @@ function closePage() {
 }
 
 .filter-options label {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 16px;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
   cursor: pointer;
   user-select: none;
   transition:
     background 0.2s ease,
     border-color 0.2s ease,
     transform 0.15s ease;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text);
   background: var(--surface-soft);
   border: 1px solid var(--border);
@@ -712,14 +847,71 @@ function closePage() {
 }
 
 .tutor-section {
-  flex: 1;
-  padding: 0 24px 8px;
+  min-width: 0;
+  width: 100%;
+  padding: 0 12px 8px 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  overflow: visible;
+  overflow: hidden;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
+}
+
+.auth-required-card {
+  width: min(100%, 520px);
+  padding: 28px;
+  border-radius: 24px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+  box-sizing: border-box;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-required-card h3 {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 22px;
+}
+
+.auth-required-card p {
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.auth-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--accent-strong);
+  color: white;
+}
+
+.btn-secondary {
+  background: var(--surface-soft);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .progress {
@@ -742,23 +934,20 @@ function closePage() {
   user-select: none;
   -webkit-user-drag: none;
   -webkit-touch-callout: none;
-  background: var(--surface-strong);
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 24px;
-  flex: 1;
-  height: 100%;
-  max-height: 980px;
-  width: min(100%, 470px);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  max-height: none;
+  width: 100%;
   overflow: visible;
-  margin: 0 auto;
 }
 
 .card-image {
   position: relative;
   display: block;
   width: 100%;
-  height: 460px;
+  aspect-ratio: 1 / 1;
   border-radius: 20px;
   overflow: hidden;
   background: var(--surface-soft);
@@ -1055,11 +1244,12 @@ function closePage() {
 
 .actions {
   display: flex;
-  justify-content: space-between;
-  gap: 200px;
+  justify-content: center;
+  gap: 40px;
   margin-top: 16px;
   position: relative;
   z-index: 2;
+  width: 100%;
 }
 
 .btn-like,
@@ -1138,5 +1328,62 @@ function closePage() {
 
 .find-korks-card {
   display: none;
+}
+</style>
+
+<style>
+.tt-section .tt-grid-wrap {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tt-section .tt-grid {
+  display: grid;
+  grid-template-columns: 38px repeat(7, 1fr);
+  gap: 2px;
+  padding: 3px;
+  background: #f3f4f6;
+}
+
+.tt-section .tt-corner {
+  background: transparent;
+}
+
+.tt-section .tt-day-h {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: #f9fafb;
+  border-radius: 3px;
+  padding: 2px 0;
+}
+
+.tt-section .tt-time-l {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 600;
+  color: #9ca3af;
+  border-radius: 3px;
+}
+
+.tt-section .tt-c {
+  border-radius: 3px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  min-height: 22px;
+}
+
+.tt-section .tt-c.on {
+  background: #4f75c7;
+  border-color: #4f75c7;
 }
 </style>

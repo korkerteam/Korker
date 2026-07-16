@@ -255,7 +255,7 @@ onBeforeUnmount(() => {
 }
 
 .submit-btn {
-  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-color-hover));
   color: #ffffff;
   border: none;
   padding: 9px 14px;

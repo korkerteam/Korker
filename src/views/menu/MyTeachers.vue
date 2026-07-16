@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { supabase } from '@/lib/supabase.js'
 import LoadingBox from '@/components/LoadingBox.vue'
+import { useAuth } from '@/composables/useAuth.js'
 
 const emit = defineEmits(['show-teacher', 'remove-teacher'])
 const props = defineProps({
@@ -8,10 +10,60 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  isTutorAccount: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const loading = ref(false)
 const selectedTeacher = ref(null)
+const { isAuthenticated, openAuthModal } = useAuth()
+
+const showTimetable = ref(false)
+const timetableData = ref(null)
+const timetableLoading = ref(false)
+const timetableError = ref('')
+const dayKeys = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
+const dayAbbr = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd']
+const gridHours = Array.from({ length: 14 }, (_, i) => i + 8)
+
+function slotLabel(hour) {
+  return `${String(hour).padStart(2, '0')}:00-${String((hour + 1) % 24).padStart(2, '0')}:00`
+}
+
+function hasSlot(day, hour) {
+  return timetableData.value?.[day]?.includes(slotLabel(hour))
+}
+
+async function openTimetable(teacher) {
+  showTimetable.value = true
+  timetableLoading.value = true
+  timetableError.value = ''
+  timetableData.value = null
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('tutor_post')
+    .eq('id', teacher.id)
+    .maybeSingle()
+
+  if (error) {
+    timetableError.value = 'Nie udało się załadować planu zajęć.'
+  } else if (data?.tutor_post?.weeklyAvailability) {
+    timetableData.value = data.tutor_post.weeklyAvailability
+  } else {
+    timetableData.value = null
+  }
+  timetableLoading.value = false
+}
+
+function closeTimetable() {
+  showTimetable.value = false
+  timetableData.value = null
+  timetableLoading.value = false
+  timetableError.value = ''
+}
 
 const teacherImageMap = {
   'Anna Kowalska':
@@ -56,12 +108,27 @@ function goBack() {
 
 <template>
   <LoadingBox v-if="loading" />
-  <div v-else class="teacher-panel" :class="{ compact: isMany }">
+  <div v-else class="teacher-panel" :class="{ compact: isMany, 'guest-state': !isAuthenticated }">
+    <div v-if="!isAuthenticated" class="auth-required-card">
+      <h3>Aby zobaczyć swoich nauczycieli</h3>
+      <p>
+        Zarejestruj konto lub zaloguj się, żeby przeglądać swoją listę nauczycieli i zarządzać nią.
+      </p>
+      <div class="auth-actions">
+        <button class="btn-primary" type="button" @click="openAuthModal('login')">
+          Zaloguj się
+        </button>
+        <button class="btn-secondary" type="button" @click="openAuthModal('signup')">
+          Zarejestruj się
+        </button>
+      </div>
+    </div>
+
     <!-- Teacher List View -->
-    <template v-if="!selectedTeacher">
+    <template v-else-if="!selectedTeacher">
       <div class="teacher-header">
         <div>
-          <h3>Moi Nauczyciele</h3>
+          <h3>{{ props.isTutorAccount ? 'Moi Studenci' : 'Moi Nauczyciele' }}</h3>
         </div>
       </div>
 
@@ -82,12 +149,17 @@ function goBack() {
             </div>
             <div class="actions">
               <button class="btn small" @click="onShow(teacher)">Pokaż</button>
+              <button class="btn small accent" @click="openTimetable(teacher)">Plan</button>
               <button class="btn small ghost" @click="onRemove(teacher)">Usuń</button>
             </div>
           </div>
         </template>
         <p v-else class="empty-state">
-          Wybierz nauczycieli korzystając z funkcji "Szukaj korepetycji"
+          {{
+            props.isTutorAccount
+              ? 'Nie masz jeszcze żadnych studentów.'
+              : 'Wybierz nauczycieli korzystając z funkcji "Szukaj korepetycji"'
+          }}
         </p>
       </div>
     </template>
@@ -127,6 +199,40 @@ function goBack() {
         </div>
       </div>
     </template>
+
+    <!-- Timetable Modal (inside root to preserve single-root Transition) -->
+    <Teleport to="body">
+      <div v-if="showTimetable" class="timetable-overlay" @click.self="closeTimetable">
+        <div class="timetable-modal">
+          <div class="timetable-header">
+            <h3>Plan zajęć</h3>
+            <button class="timetable-close" @click="closeTimetable">&times;</button>
+          </div>
+          <div class="timetable-body">
+            <LoadingBox v-if="timetableLoading" />
+            <p v-else-if="timetableError" class="timetable-error">{{ timetableError }}</p>
+            <template v-else-if="timetableData">
+              <div class="tt-grid-wrap">
+                <div class="tt-grid">
+                  <div class="tt-corner"></div>
+                  <div v-for="(d, i) in dayAbbr" :key="d" class="tt-day-header">{{ d }}</div>
+                  <template v-for="hour in gridHours" :key="hour">
+                    <div class="tt-time-label">{{ String(hour).padStart(2, '0') }}:00</div>
+                    <div
+                      v-for="(d, di) in dayKeys"
+                      :key="`${d}-${hour}`"
+                      class="tt-cell"
+                      :class="{ available: hasSlot(d, hour) }"
+                    ></div>
+                  </template>
+                </div>
+              </div>
+            </template>
+            <p v-else class="timetable-empty">Brak danych o planie zajęć.</p>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -143,7 +249,6 @@ function goBack() {
   min-height: 0;
   max-height: calc(100vh - 180px);
   overflow: hidden;
-  z-index: 20;
   display: flex;
   flex-direction: column;
   margin: 0 auto;
@@ -151,6 +256,66 @@ function goBack() {
 
 .teacher-panel.compact {
   max-height: 60vh;
+}
+
+.teacher-panel.guest-state {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  max-height: none;
+  overflow: visible;
+}
+
+.auth-required-card {
+  width: min(100%, 520px);
+  padding: 28px;
+  border-radius: 24px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+  box-sizing: border-box;
+  margin: 24px auto;
+}
+
+.auth-required-card h3 {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 22px;
+}
+
+.auth-required-card p {
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.auth-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--accent-strong);
+  color: white;
+}
+
+.btn-secondary {
+  background: var(--surface-soft);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .teacher-header h3 {
@@ -257,6 +422,15 @@ function goBack() {
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text);
+}
+.btn.accent {
+  background: var(--accent-strong);
+  color: white;
+  border: none;
+}
+.btn.accent:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(79, 117, 199, 0.3);
 }
 
 .empty-state {
@@ -408,5 +582,129 @@ function goBack() {
 
 .remove-button:active {
   transform: translateY(0);
+}
+
+.timetable-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timetable-modal {
+  background: var(--surface-strong);
+  border-radius: 14px;
+  width: 92%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--border);
+}
+
+.timetable-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.timetable-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.timetable-close {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: var(--muted);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.timetable-close:hover {
+  color: var(--text);
+}
+
+.timetable-body {
+  padding: 14px 18px 18px;
+  display: flex;
+  justify-content: center;
+}
+
+.tt-grid-wrap {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.tt-grid {
+  display: grid;
+  grid-template-columns: 40px repeat(7, 1fr);
+  gap: 2px;
+  padding: 4px;
+  background: #f3f4f6;
+}
+
+.tt-corner {
+  background: transparent;
+}
+
+.tt-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: #f9fafb;
+  border-radius: 3px;
+  padding: 3px 0;
+}
+
+.tt-time-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  color: #9ca3af;
+  border-radius: 3px;
+}
+
+.tt-cell {
+  border-radius: 3px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  min-height: 18px;
+  transition: background 0.08s;
+}
+
+.tt-cell.available {
+  background: #4f75c7;
+  border-color: #4f75c7;
+}
+
+.timetable-error {
+  color: #ef4444;
+  font-weight: 600;
+  text-align: center;
+}
+
+.timetable-empty {
+  color: var(--muted);
+  text-align: center;
+  font-weight: 600;
 }
 </style>

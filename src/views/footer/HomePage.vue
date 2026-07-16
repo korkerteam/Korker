@@ -247,7 +247,7 @@ const lessons = ref([
 .dashboard-action {
   border: none;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-color-hover));
   color: white;
   padding: 14px 24px;
   font-weight: 700;
@@ -264,7 +264,7 @@ const lessons = ref([
 }
 
 .dashboard-action:hover {
-  background: linear-gradient(135deg, var(--accent-strong) 0%, var(--accent) 100%);
+  background: linear-gradient(135deg, var(--primary-color-hover) 0%, var(--primary-color) 100%);
   transform: translateY(-2px);
 }
 

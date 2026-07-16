@@ -1,4 +1,15 @@
 <script setup>
+const props = defineProps({
+  showSearch: {
+    type: Boolean,
+    default: true,
+  },
+  isTutorAccount: {
+    type: Boolean,
+    default: false,
+  },
+})
+
 const emit = defineEmits([
   'toggleProfile',
   'toggleRank',
@@ -35,7 +46,7 @@ function handleCalendarClick() {
           />
         </svg>
       </span>
-      <span>Szukaj korepetycji</span>
+      <span>{{ props.isTutorAccount ? 'Zobacz innych nauczycieli' : 'Szukaj korepetycji' }}</span>
     </button>
 
     <button class="menu-item rank" @click="handleRankClick">
@@ -57,7 +68,7 @@ function handleCalendarClick() {
           />
         </svg>
       </span>
-      <span>Moi nauczyciele</span>
+      <span>{{ props.isTutorAccount ? 'Moi studenci' : 'Moi nauczyciele' }}</span>
     </button>
 
     <button class="menu-item menu-item-calendar" @click="handleCalendarClick">

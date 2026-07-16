@@ -1,11 +1,23 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, inject, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 const mapContainer = ref(null)
 const isMapVisible = ref(false)
 let map = null
+
+const { showChatGlobal: showChat } = inject('globalChat', {
+  showChatGlobal: ref(false),
+})
+const isChatOpen = computed(() => showChat.value)
+
+watch(isChatOpen, (isOpen) => {
+  if (isOpen) {
+    isMapVisible.value = false
+    destroyLeaflet()
+  }
+})
 
 const showMap = () => {
   isMapVisible.value = true
@@ -45,12 +57,13 @@ const initLeaflet = () => {
 }
 
 const toggleMap = () => {
+  if (isChatOpen.value) return
   isMapVisible.value = !isMapVisible.value
 }
 </script>
 
 <template>
-  <div class="map-wrapper">
+  <div v-if="!isChatOpen" class="map-wrapper">
     <div class="map-relative-box">
       <Transition name="fade" @after-enter="initLeaflet" @after-leave="destroyLeaflet">
         <div v-if="isMapVisible" ref="mapContainer" class="ramka"></div>
@@ -91,20 +104,20 @@ const toggleMap = () => {
   position: fixed;
   bottom: 24px;
   right: 96px;
-  z-index: 1200;
+  z-index: 1300;
   width: 56px;
   height: 56px;
   border-radius: 50%;
   border: none;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-hover) 100%);
   color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow:
-    0 0 0 1px rgba(51, 102, 255, 0.18),
-    0 10px 28px rgba(51, 102, 255, 0.28);
+    0 0 0 1px rgba(91, 120, 198, 0.2),
+    0 10px 28px rgba(91, 120, 198, 0.24);
   transition:
     transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 0.25s ease;
@@ -113,8 +126,8 @@ const toggleMap = () => {
 .map-fab:hover {
   transform: scale(1.08);
   box-shadow:
-    0 0 0 1px rgba(51, 102, 255, 0.22),
-    0 14px 34px rgba(51, 102, 255, 0.38);
+    0 0 0 1px rgba(91, 120, 198, 0.24),
+    0 14px 34px rgba(91, 120, 198, 0.32);
 }
 
 .map-fab:active {
@@ -138,7 +151,7 @@ const toggleMap = () => {
   border-radius: 18px;
   overflow: hidden;
   box-shadow:
-    0 0 0 1px rgba(51, 102, 255, 0.16),
-    0 0 24px rgba(51, 102, 255, 0.24);
+    0 0 0 1px rgba(91, 120, 198, 0.16),
+    0 0 24px rgba(91, 120, 198, 0.2);
 }
 </style>

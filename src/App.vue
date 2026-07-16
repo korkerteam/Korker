@@ -1,5 +1,5 @@
 <script setup>
-import { ref, provide, onMounted, watch } from 'vue'
+import { ref, provide, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import HeaderKorker from './components/HeaderKorker.vue'
 import SearchBar from './components/header/SearchBar.vue'
@@ -15,7 +15,7 @@ import { useAuth } from '@/composables/useAuth.js'
 
 const route = useRoute()
 const router = useRouter()
-const { showAuthModal, openAuthModal, closeAuthModal } = useAuth()
+const { showAuthModal, openAuthModal, closeAuthModal, profileData, profileLoading } = useAuth()
 
 const selectedFilters = ref({ subjects: [], levels: [], tags: [] })
 const likedTeachers = ref([])
@@ -25,6 +25,12 @@ const homeTrigger = ref(0)
 const isDarkMode = ref(false)
 const isHighContrast = ref(false)
 const showSettingsMenu = ref(false)
+const isTutorAccount = computed(() => {
+  const profile = profileData.value
+  const accountType = [profile?.account_type, profile?.accountType].find(Boolean)
+  return `${accountType || ''}`.toLowerCase().includes('tutor')
+})
+const shouldWaitForProfile = computed(() => false)
 provide('homeTrigger', homeTrigger)
 
 // --- GLOBALNY STAN CZATU (DO PRZEKAZYWANIA MIĘDZY KOMPONENTAMI) ---
@@ -60,6 +66,8 @@ function handleTeacherLike(teacher) {
 function showTeacherProfile(teacher) {
   currentTeacher.value = teacher || null
 }
+
+provide('showTeacherProfile', showTeacherProfile)
 
 function removeLikedTeacher(teacher) {
   if (!teacher) return
@@ -145,13 +153,16 @@ onMounted(() => {
     <div class="main-content-area">
       <template v-if="['home', 'profil', 'nauczyciele', 'user-profile'].includes(route.name)">
         <MainContent
+          v-if="!shouldWaitForProfile || !profileLoading"
           :selected-filters="selectedFilters"
           :liked-teachers="likedTeachers"
+          :show-search="!isTutorAccount"
+          :is-tutor-account="isTutorAccount"
           @update:selected-filters="selectedFilters = $event"
           @show-teacher="showTeacherProfile"
           @like-teacher="handleTeacherLike"
           @remove-liked-teacher="removeLikedTeacher"
-          @open-auth="openAuthModal"
+          @open-auth="() => openAuthModal('login')"
         />
       </template>
 
@@ -246,7 +257,7 @@ onMounted(() => {
   position: fixed;
   right: 16px;
   bottom: 10%;
-  z-index: 5;
+  z-index: 2000;
 }
 
 .settings-fab {
@@ -287,24 +298,25 @@ onMounted(() => {
   align-items: flex-end;
   justify-content: flex-start;
   padding: 0 0 96px 24px;
-  background: rgba(8, 12, 24, 0.18);
+  background: rgba(2, 6, 23, 0.3);
+  backdrop-filter: blur(6px);
 }
 
 .settings-menu {
-  background: var(--surface-color);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(135deg, var(--surface-strong) 0%, var(--surface-soft) 100%);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: 18px;
   padding: 14px 16px;
   min-width: 220px;
-  box-shadow: 0 16px 44px rgba(15, 23, 42, 0.18);
+  box-shadow: var(--shadow);
 }
 
 .settings-menu-title {
   font-size: 0.95rem;
   font-weight: 700;
   margin-bottom: 10px;
-  color: var(--text-color);
+  color: var(--text);
 }
 
 .setting-row {
@@ -314,6 +326,7 @@ onMounted(() => {
   cursor: pointer;
   font-size: 0.92rem;
   margin-top: 8px;
+  color: var(--text);
 }
 
 .setting-row input {
@@ -327,7 +340,7 @@ onMounted(() => {
   width: 46px;
   height: 26px;
   border-radius: 999px;
-  background: var(--border-color);
+  background: var(--border);
   transition: background 0.2s ease;
 }
 
@@ -353,7 +366,7 @@ onMounted(() => {
 }
 
 .setting-label {
-  color: var(--muted-text-color);
+  color: var(--muted);
   flex: 1;
 }
 </style>
