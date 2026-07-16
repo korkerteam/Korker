@@ -47,6 +47,19 @@ export async function upsertProfile(
     throw new Error(`Nazwisko może mieć maksymalnie ${LIMITS.surname} znaków`)
   if (city && city.length > LIMITS.city)
     throw new Error(`Miasto może mieć maksymalnie ${LIMITS.city} znaków`)
+
+  const trimmedNickname = nickname?.trim()
+  if (trimmedNickname) {
+    const { data: duplicate, error: dupError } = await supabase
+      .from(TABLE)
+      .select('auth_id')
+      .eq('nickname', trimmedNickname)
+      .neq('auth_id', uid)
+      .maybeSingle()
+    if (dupError) throw dupError
+    if (duplicate) throw new Error('Ten pseudonim jest już zajęty')
+  }
+
   if (tutor_post) {
     if (tutor_post.street?.length > LIMITS.street)
       throw new Error(`Ulica może mieć maksymalnie ${LIMITS.street} znaków`)

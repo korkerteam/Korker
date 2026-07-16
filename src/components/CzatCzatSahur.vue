@@ -13,14 +13,10 @@ const {
   loadingMessages,
   activeUserId,
   activeConversation,
-  searchResults,
-  searchLoading,
   loadConversations,
   openConversation,
   closeConversation,
   sendMessage,
-  searchUsers,
-  clearSearch,
   setupRealtime,
   teardownRealtime,
 } = useMessaging()
@@ -130,12 +126,8 @@ async function handleSend(content, files) {
       <ChatContactList
         v-if="list"
         :conversations="conversations"
-        :search-results="searchResults"
-        :search-loading="searchLoading"
         @open-chat="handleOpenChat"
         @close="handleClose"
-        @search="searchUsers"
-        @clear-search="clearSearch"
       />
       <ChatConversation
         v-else

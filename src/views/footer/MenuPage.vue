@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, inject } from 'vue'
+import { computed, watch, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth.js'
 import MenuContent from '@/components/MenuContent.vue'
@@ -10,7 +10,7 @@ import MyTeachers from '@/views/menu/MyTeachers.vue'
 import FindKorks from '@/views/menu/FindKorks.vue'
 import CalendarView from '@/views/menu/CalendarView.vue'
 import UserProfilePage from '@/views/UserProfilePage.vue'
-import { toggleProfile, toggleRank } from '@/composables/menuToggle.js'
+import { toggleProfile, toggleRank, toggleTeachers } from '@/composables/menuToggle.js'
 
 const props = defineProps({
   selectedFilters: {
@@ -38,110 +38,85 @@ const router = useRouter()
 const { isAuthenticated, needsProfile, openAuthModal } = useAuth()
 
 const homeTrigger = inject('homeTrigger')
-const active = ref(null)
+
+const currentPanel = computed(() => route.query.panel || null)
 
 watch(homeTrigger, () => {
-  active.value = null
   if (route.path !== '/') router.push('/')
+  else if (route.query.panel) router.replace('/')
 })
 
-const activePanel = computed(() => active.value)
-const searchOpenedFromQuery = ref(false)
+watch(isAuthenticated, (val) => {
+  if (!val && route.query.panel) {
+    router.push('/')
+  }
+})
 
-function isSearchQueryEnabled(search) {
-  return search !== undefined && search !== '0' && search !== 'false' && search !== ''
-}
+watch(needsProfile, (val) => {
+  if (val && route.query.panel !== 'profile') {
+    router.push({ path: '/', query: { panel: 'profile' } })
+  }
+})
 
 watch(
   () => route.query.search,
   (search) => {
-    const shouldOpen = isSearchQueryEnabled(search)
+    const shouldOpen = search !== undefined && search !== '0' && search !== 'false' && search !== ''
     if (shouldOpen) {
-      searchOpenedFromQuery.value = true
       if (!requireAuth()) return
-      active.value = 'search'
-      return
-    }
-
-    if (searchOpenedFromQuery.value && active.value === 'search') {
-      active.value = null
-      searchOpenedFromQuery.value = false
+      router.replace({ path: '/', query: { panel: 'search' } })
     }
   },
   { immediate: true },
 )
 
-function activateProtectedPanel(panel) {
-  if (!isAuthenticated.value) {
-    openAuthModal()
-    router.push('/')
-    return
-  }
-  active.value = panel
-}
-
-onMounted(() => {
-  if (route.path === '/profil') activateProtectedPanel('profile')
-})
-
-watch(isAuthenticated, (val) => {
-  if (!val) active.value = null
-})
-
-watch(needsProfile, (val) => {
-  if (val && route.path !== '/profil') router.push('/profil')
-})
-
-watch(
-  () => route.path,
-  (path) => {
-    if (path === '/profil') activateProtectedPanel('profile')
-    else if (path === '/') {
-      active.value = null
-    }
-  },
-)
-
 function requireAuth() {
   if (!isAuthenticated.value) {
     openAuthModal()
-    router.push('/')
     return false
   }
   return true
 }
 
+function navigateToPanel(panel) {
+  if (currentPanel.value === panel) {
+    router.push('/')
+  } else {
+    router.push({ path: '/', query: { panel } })
+  }
+}
+
+function handleToggleProfile() {
+  toggleProfile(route, router)
+}
+
 function handleToggleRank() {
-  toggleRank(route, router, active)
+  toggleRank(route, router)
 }
 
 function handleToggleTeachers() {
-  active.value = active.value === 'teachers' ? null : 'teachers'
+  if (!requireAuth()) return
+  toggleTeachers(route, router)
 }
 
 function handleToggleSearch() {
-  if (active.value === 'search' && route.query.search !== undefined) {
-    const query = { ...route.query }
-    delete query.search
-    router.replace({ name: route.name, query })
-  }
-
-  active.value = active.value === 'search' ? null : 'search'
+  if (!requireAuth()) return
+  navigateToPanel('search')
 }
 
 function handleToggleCalendar() {
-  active.value = active.value === 'calendar' ? null : 'calendar'
+  if (!requireAuth()) return
+  navigateToPanel('calendar')
 }
 </script>
 
 <template>
   <div class="content-row">
-    <!-- LEWY PANEL (Twoje odzyskane przyciski!) -->
     <div class="left-side">
       <MenuContent
         :show-search="props.showSearch"
         :is-tutor-account="props.isTutorAccount"
-        @toggle-profile="() => toggleProfile(route, router)"
+        @toggle-profile="handleToggleProfile"
         @toggle-rank="handleToggleRank"
         @toggle-teachers="handleToggleTeachers"
         @toggle-search="handleToggleSearch"
@@ -150,13 +125,12 @@ function handleToggleCalendar() {
       />
     </div>
 
-    <!-- PRAWY PANEL (Dynamiczna zawartość) -->
     <div class="right-side">
       <Transition name="fade" mode="out-in">
-        <ProfilePage v-if="activePanel === 'profile'" key="profile" />
-        <Ranks v-else-if="activePanel === 'ranks'" key="ranks" />
+        <ProfilePage v-if="currentPanel === 'profile'" key="profile" />
+        <Ranks v-else-if="currentPanel === 'ranks'" key="ranks" />
         <FindKorks
-          v-else-if="activePanel === 'search'"
+          v-else-if="currentPanel === 'search'"
           key="search"
           :filters="props.selectedFilters"
           :liked-teachers="props.likedTeachers"
@@ -165,16 +139,21 @@ function handleToggleCalendar() {
           @like-teacher="(t) => emit('like-teacher', t)"
         />
         <MyTeachers
-          v-else-if="activePanel === 'teachers'"
+          v-else-if="currentPanel === 'teachers'"
           key="teachers"
           :teachers="props.likedTeachers"
           :is-tutor-account="props.isTutorAccount"
           @show-teacher="(t) => emit('show-teacher', t)"
           @remove-teacher="(t) => emit('remove-liked-teacher', t)"
         />
-        <CalendarView v-else-if="activePanel === 'calendar'" key="calendar" />
-        <!-- Tutaj ładuje się właściwy HomePage -->
-        <UserProfilePage v-else-if="route.name === 'user-profile'" :key="route.params.nickname" />
+        <CalendarView v-else-if="currentPanel === 'calendar'" key="calendar" />
+        <UserProfilePage
+          v-else-if="route.name === 'user-profile'"
+          :key="route.params.nickname"
+          :liked-teachers="props.likedTeachers"
+          @like-teacher="(t) => emit('like-teacher', t)"
+          @remove-liked-teacher="(t) => emit('remove-liked-teacher', t)"
+        />
         <HomePage v-else key="home" />
       </Transition>
     </div>

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, onMounted } from 'vue'
 import ChatMessageBubble from './ChatMessageBubble.vue'
 import ChatInputBar from './ChatInputBar.vue'
 import { useMessaging } from '@/composables/useMessaging.js'
@@ -23,6 +23,8 @@ function scrollDown() {
     }
   })
 }
+
+onMounted(() => scrollDown())
 
 watch(
   () => props.messages?.length,

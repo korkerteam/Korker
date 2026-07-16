@@ -12,6 +12,12 @@ import LoginButton from './components/header/LoginButton.vue'
 import AuthModal from './components/auth/AuthModal.vue'
 import FooterKorker from './components/FooterKorker.vue'
 import { useAuth } from '@/composables/useAuth.js'
+import {
+  fetchSavedTutorIds,
+  addSavedTutor,
+  removeSavedTutor,
+  fetchTutorProfiles,
+} from '@/services/likeService.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -32,6 +38,36 @@ const isTutorAccount = computed(() => {
 })
 const shouldWaitForProfile = computed(() => false)
 provide('homeTrigger', homeTrigger)
+
+async function loadSavedTutors() {
+  try {
+    const authIds = await fetchSavedTutorIds()
+    if (!authIds.length) return
+    const profiles = await fetchTutorProfiles(authIds)
+    const byAuthId = {}
+    for (const p of profiles) {
+      byAuthId[p.auth_id] = { ...p, id: String(p.id) }
+    }
+    likedTeachers.value = authIds
+      .map((id) => byAuthId[id])
+      .filter((p) => {
+        if (!p) return false
+        const accountType = [p.account_type, p.accountType].find(Boolean)
+        return `${accountType || ''}`.toLowerCase().includes('tutor')
+      })
+  } catch (e) {
+    console.error('Failed to load saved tutors:', e)
+  }
+}
+
+watch(
+  () => profileData.value,
+  (profile) => {
+    if (profile) {
+      loadSavedTutors()
+    }
+  },
+)
 
 // --- GLOBALNY STAN CZATU (DO PRZEKAZYWANIA MIĘDZY KOMPONENTAMI) ---
 const showChatGlobal = ref(false)
@@ -60,6 +96,11 @@ function handleTeacherLike(teacher) {
       ...likedTeachers.value,
       teacherId ? { ...teacher, id: teacherId } : { ...teacher },
     ]
+
+    const authId = teacher.auth_id
+    if (authId) {
+      addSavedTutor(authId).catch(console.error)
+    }
   }
 }
 
@@ -87,6 +128,11 @@ function removeLikedTeacher(teacher) {
       : currentTeacher.value.name === teacher.name)
   ) {
     currentTeacher.value = null
+  }
+
+  const authId = teacher.auth_id
+  if (authId) {
+    removeSavedTutor(authId).catch(console.error)
   }
 }
 
@@ -151,7 +197,7 @@ onMounted(() => {
     <TeacherOverlay :teacher="currentTeacher" @close="currentTeacher = null" />
 
     <div class="main-content-area">
-      <template v-if="['home', 'profil', 'nauczyciele', 'user-profile'].includes(route.name)">
+      <template v-if="['home', 'user-profile'].includes(route.name)">
         <MainContent
           v-if="!shouldWaitForProfile || !profileLoading"
           :selected-filters="selectedFilters"

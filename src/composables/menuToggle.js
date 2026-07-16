@@ -1,33 +1,23 @@
 export function toggleProfile(route, router) {
-  if (route.path === '/profil') {
+  if (route.query.panel === 'profile') {
     router.push('/')
   } else {
-    router.push('/profil')
+    router.push({ path: '/', query: { panel: 'profile' } })
   }
 }
 
 export function toggleTeachers(route, router) {
-  if (route.path === '/nauczyciele') {
+  if (route.query.panel === 'teachers') {
     router.push('/')
   } else {
-    router.push('/nauczyciele')
+    router.push({ path: '/', query: { panel: 'teachers' } })
   }
 }
 
-export function toggleFilter(route, router, active) {
-  if (route.path === '/profil' || route.path === '/nauczyciele') {
+export function toggleRank(route, router) {
+  if (route.query.panel === 'ranks') {
     router.push('/')
-  }
-  if (active) {
-    active.value = active.value === 'filter' ? null : 'filter'
-  }
-}
-
-export function toggleRank(route, router, active) {
-  if (route.path === '/profil' || route.path === '/nauczyciele') {
-    router.push('/')
-  }
-  if (active) {
-    active.value = active.value === 'ranks' ? null : 'ranks'
+  } else {
+    router.push({ path: '/', query: { panel: 'ranks' } })
   }
 }

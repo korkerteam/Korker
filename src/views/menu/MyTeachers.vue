@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase.js'
 import LoadingBox from '@/components/LoadingBox.vue'
 import { useAuth } from '@/composables/useAuth.js'
@@ -16,6 +17,7 @@ const props = defineProps({
   },
 })
 
+const router = useRouter()
 const loading = ref(false)
 const selectedTeacher = ref(null)
 const { isAuthenticated, openAuthModal } = useAuth()
@@ -89,11 +91,22 @@ const teacherImageMap = {
 const isMany = computed(() => (props.teachers || []).length > 5)
 
 function getTeacherImage(teacher) {
-  return teacher?.image || teacherImageMap[teacher?.name] || ''
+  return teacher?.profile_picture || teacherImageMap[teacher?.name] || ''
+}
+
+function getTeacherSubject(teacher) {
+  return teacher?.tutor_post?.subject || ''
+}
+
+function getTeacherLevel(teacher) {
+  return teacher?.tutor_post?.level || ''
 }
 
 function onShow(teacher) {
-  selectedTeacher.value = teacher
+  const identifier = teacher.nickname || teacher.auth_id
+  if (identifier) {
+    router.push('/user/' + identifier)
+  }
 }
 
 function onRemove(teacher) {
@@ -145,7 +158,10 @@ function goBack() {
             </div>
             <div class="meta">
               <div class="name">{{ teacher.name }}</div>
-              <div class="details">{{ teacher.subject }} • {{ teacher.level }}</div>
+              <div class="details">
+                {{ getTeacherSubject(teacher)
+                }}<span v-if="getTeacherLevel(teacher)"> • {{ getTeacherLevel(teacher) }}</span>
+              </div>
             </div>
             <div class="actions">
               <button class="btn small" @click="onShow(teacher)">Pokaż</button>
@@ -182,7 +198,12 @@ function goBack() {
 
         <div class="profile-info">
           <h2 class="profile-name">{{ selectedTeacher.name }}</h2>
-          <p class="profile-meta">{{ selectedTeacher.subject }} • {{ selectedTeacher.level }}</p>
+          <p class="profile-meta">
+            {{ getTeacherSubject(selectedTeacher)
+            }}<span v-if="getTeacherLevel(selectedTeacher)">
+              • {{ getTeacherLevel(selectedTeacher) }}</span
+            >
+          </p>
 
           <div class="bio-section">
             <p class="profile-bio">{{ selectedTeacher.bio }}</p>

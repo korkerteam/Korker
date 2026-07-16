@@ -75,7 +75,7 @@ async function loadTutors() {
 
   const { data: rows, error } = await supabase
     .from('users')
-    .select('id, name, surname, profile_picture, tutor_post')
+    .select('id, auth_id, name, surname, profile_picture, tutor_post')
     .eq('account_type', 'tutor')
     .not('tutor_post', 'is', null)
 
@@ -87,6 +87,7 @@ async function loadTutors() {
         const renderedName = [r.name, r.surname].filter(Boolean).join(' ') || 'Korepetytor'
         return {
           id: r.id || `${renderedName}-${tp.subject || 'unknown'}-${index}`,
+          auth_id: r.auth_id,
           name: renderedName,
           subject: tp.subject || '',
           level: tp.level || '',
