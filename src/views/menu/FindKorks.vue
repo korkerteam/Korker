@@ -432,6 +432,17 @@ function toggleSelection(category, value) {
   emitFilterState()
 }
 
+function clearFilters() {
+  selectedSubjects.value = []
+  selectedLevels.value = []
+  selectedTags.value = []
+  selectedLessonPlaces.value = []
+  selectedCity.value = ''
+  citySearchInput.value = ''
+  currentIndex.value = 0
+  resetSwipe()
+}
+
 function closePage() {
   emit('close')
 }
@@ -440,7 +451,7 @@ function closePage() {
 <template>
   <div>
     <div
-      v-if="!isAuthenticated || filteredTutors.length"
+      v-if="!isAuthenticated || isAuthenticated"
       class="find-korks-panel"
       :class="{ 'guest-state': !isAuthenticated }"
     >
@@ -553,6 +564,23 @@ function closePage() {
                 <span v-for="tag in currentTutor.tags" :key="tag" class="tag">{{ tag }}</span>
               </div>
             </div>
+          </div>
+
+          <div
+            v-else-if="isAuthenticated && !filteredTutors.length"
+            class="empty-state-card inline-empty-state"
+          >
+            <template v-if="allDecided">
+              <h3>Dotarłeś do końca</h3>
+              <p>Przejrzałeś już wszystkich dostępnych korepetytorów.</p>
+            </template>
+            <template v-else>
+              <h3>Brak nauczycieli</h3>
+              <p>Nie ma wyników dla tych filtrów. Zmień kryteria albo wyczyść filtry.</p>
+            </template>
+            <button class="btn-secondary clear-filters-btn" type="button" @click="clearFilters">
+              Wyczyść filtry
+            </button>
           </div>
 
           <div
@@ -753,14 +781,6 @@ function closePage() {
   padding: 0 0 8px 0;
 }
 
-.empty-state-fullscreen {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: calc(100vh - 160px);
-}
-
 .empty-state-card {
   width: min(100%, 480px);
   max-width: 480px;
@@ -771,10 +791,20 @@ function closePage() {
   box-shadow: var(--shadow-soft);
   text-align: center;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.inline-empty-state {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 .empty-state-card h3 {
-  margin: 0 0 10px;
+  margin: 0;
   color: var(--text);
   font-size: 22px;
 }
