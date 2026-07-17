@@ -28,6 +28,7 @@ const selectedSubjects = ref([])
 const selectedLevels = ref([])
 const selectedTags = ref([])
 const selectedCity = ref('')
+const citySearchInput = ref('')
 const selectedLessonPlaces = ref([])
 const swipeStartX = ref(null)
 const swipeOffsetX = ref(0)
@@ -56,7 +57,6 @@ function hasSlot(availability, day, hour) {
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
 const tagOptions = ['Matura', 'Egzamin', 'Online', 'Na miejscu']
-const cityOptions = ['Warszawa', 'Kraków', 'Wrocław', 'Poznań']
 const lessonPlaceOptions = ['Online', 'Na miejscu']
 
 function getTutorKey(tutor) {
@@ -139,7 +139,8 @@ const filteredTutors = computed(() => {
       allSelectedTags.length === 0 || allSelectedTags.some((tag) => tutor.tags.includes(tag))
     const matchesLessonPlaces =
       allSelectedLessonPlaces.length === 0 || allSelectedLessonPlaces.includes(tutor.lessonPlace)
-    const matchesCity = !selectedCity.value || tutor.city === selectedCity.value
+    const cityQuery = selectedCity.value.trim().toLowerCase()
+    const matchesCity = !cityQuery || (tutor.city || '').toLowerCase().includes(cityQuery)
 
     return matchesSubject && matchesLevel && matchesTags && matchesLessonPlaces && matchesCity
   })
@@ -199,6 +200,10 @@ function resetSwipe() {
   swipeRotation.value = 0
   showSwipeOverlay.value = false
   swipeHintState.value = 'neutral'
+}
+
+function applyCityFilter() {
+  selectedCity.value = citySearchInput.value.trim()
 }
 
 function getSwipeClientX(event) {
@@ -505,7 +510,7 @@ function closePage() {
           </div>
         </div>
 
-        <div v-if="isAuthenticated && filteredTutors.length" class="tags-filter-section">
+        <div v-if="isAuthenticated" class="tags-filter-section">
           <div class="tags-filter-header">
             <h4>Filtry</h4>
           </div>
@@ -514,13 +519,16 @@ function closePage() {
             <h5>Miasto</h5>
             <div class="filter-options city-select-group">
               <label class="city-select-label">
-                <select v-model="selectedCity">
-                  <option value="" disabled>Wybierz miasto</option>
-                  <option v-for="option in cityOptions" :key="option" :value="option">
-                    {{ option }}
-                  </option>
-                </select>
+                <input
+                  v-model="citySearchInput"
+                  type="text"
+                  placeholder="Wyszukaj miasto"
+                  autocomplete="off"
+                />
               </label>
+              <button class="city-apply-button" type="button" @click="applyCityFilter">
+                Zastosuj
+              </button>
             </div>
           </div>
 
@@ -782,14 +790,19 @@ function closePage() {
 
 .city-select-group {
   padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
 }
 
 .city-select-label {
   display: block;
-  width: 100%;
+  flex: 1 1 220px;
 }
 
-.city-select-label select {
+.city-select-label input {
   width: 100%;
   padding: 12px 14px;
   border-radius: 16px;
@@ -797,14 +810,33 @@ function closePage() {
   background: var(--surface-strong);
   color: var(--text);
   font-size: 14px;
-  appearance: none;
-  cursor: pointer;
   pointer-events: auto;
+  box-sizing: border-box;
 }
 
-.city-select-label select option {
-  background: var(--surface-strong);
-  color: var(--text);
+.city-select-label input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79, 117, 199, 0.12);
+}
+
+.city-apply-button {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    opacity 0.2s ease;
+}
+
+.city-apply-button:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
 }
 
 .filter-hint {
