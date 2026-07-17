@@ -505,6 +505,57 @@ function toggleTeachingFormat(format) {
     draft.teachingFormats.push(format)
   }
 }
+
+function onFormatOptionsClick(e) {
+  // ignore clicks on blank area inside the container
+  const btn = e.target.closest && e.target.closest('.format-option')
+  if (!btn) {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      const active = document.activeElement
+      if (active && active.classList && active.classList.contains('format-option')) {
+        active.blur()
+      }
+    } catch (err) {
+      // ignore in non-browser test envs
+    }
+  }
+}
+
+function onFormatHover(e, enter) {
+  const btn = e.currentTarget || e.target
+  if (!btn || !btn.classList) return
+  if (enter) btn.classList.add('hover')
+  else btn.classList.remove('hover')
+}
+
+function onSubjectTableClick(e) {
+  const btn = e.target.closest && e.target.closest('.subject-option')
+  if (!btn) {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      const active = document.activeElement
+      if (active && active.classList && active.classList.contains('subject-option')) {
+        active.blur()
+      }
+      // remove hover classes from subject options
+      document
+        .querySelectorAll?.('.subject-option.hover')
+        ?.forEach((el) => el.classList.remove('hover'))
+    } catch (err) {
+      // ignore
+    }
+  }
+}
+
+function onSubjectHover(e, enter) {
+  const btn = e.currentTarget || e.target
+  if (!btn || !btn.classList) return
+  if (enter) btn.classList.add('hover')
+  else btn.classList.remove('hover')
+}
 </script>
 
 <template>
@@ -584,7 +635,7 @@ function toggleTeachingFormat(format) {
           <template v-if="draft.accountType === 'tutor'">
             <label class="field-row">
               <span class="field-label">Forma nauczania<span class="req">*</span></span>
-              <div class="format-options-row">
+              <div class="format-options-row" @click.stop="onFormatOptionsClick">
                 <button
                   v-for="fmt in teachingFormats"
                   :key="fmt"
@@ -592,6 +643,8 @@ function toggleTeachingFormat(format) {
                   class="format-option"
                   :class="{ selected: draft.teachingFormats.includes(fmt) }"
                   @click="toggleTeachingFormat(fmt)"
+                  @mouseenter="onFormatHover($event, true)"
+                  @mouseleave="onFormatHover($event, false)"
                 >
                   {{ fmt }}
                 </button>
@@ -651,7 +704,7 @@ function toggleTeachingFormat(format) {
             <div class="tutor-offer-header">Twój post korepetytora</div>
             <label class="field-row">
               <span class="field-label">Przedmiot<span class="req">*</span></span>
-              <div class="subject-table">
+              <div class="subject-table" @click.stop="onSubjectTableClick">
                 <button
                   v-for="subject in subjectOptions"
                   :key="subject"
@@ -659,6 +712,8 @@ function toggleTeachingFormat(format) {
                   class="subject-option"
                   :class="{ selected: draft.lessonSubject === subject }"
                   @click="draft.lessonSubject = subject"
+                  @mouseenter="onSubjectHover($event, true)"
+                  @mouseleave="onSubjectHover($event, false)"
                 >
                   {{ subject }}
                 </button>
@@ -1134,11 +1189,20 @@ function toggleTeachingFormat(format) {
   color: var(--text);
 }
 
-.subject-option:hover {
+.subject-option.hover {
   background: rgba(138, 180, 255, 0.16);
 }
 
+.subject-option.selected.hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
 .format-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1.5px solid #d1d5db;
   border-radius: 999px;
   background: #f8fafc;
@@ -1149,6 +1213,9 @@ function toggleTeachingFormat(format) {
   font-weight: 600;
   transition: background 0.2s ease;
   outline: none;
+  pointer-events: auto;
+  width: auto;
+  min-width: 0;
 }
 
 .format-option.selected {
@@ -1157,12 +1224,18 @@ function toggleTeachingFormat(format) {
   color: #1f2937;
 }
 
-.format-option:hover {
+/* Hover is managed via .hover class to avoid persistent :hover state when clicking blank areas */
+.format-option.hover {
   background: #e2e8f0;
 }
 
 .format-option:focus-visible {
   box-shadow: 0 0 0 2px rgba(79, 117, 199, 0.4);
+}
+
+.format-option.selected.hover {
+  background: #3d64b0;
+  border-color: #3d64b0;
 }
 
 .req {
@@ -1181,6 +1254,7 @@ function toggleTeachingFormat(format) {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: flex-start;
 }
 
 .address-row {
