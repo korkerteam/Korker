@@ -7,7 +7,7 @@ import { getBlockedIds, getBlockingMeIds } from '@/services/blockService.js'
 const props = defineProps({
   filters: {
     type: Object,
-    default: () => ({ subjects: [], levels: [], tags: [] }),
+    default: () => ({ subjects: [], levels: [], tags: [], lessonPlaces: [], city: '' }),
   },
   likedTeachers: {
     type: Array,
@@ -19,7 +19,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['close', 'like-teacher'])
+const emit = defineEmits(['close', 'like-teacher', 'update:selected-filters'])
 const { isAuthenticated, openAuthModal } = useAuth()
 const tutors = ref([])
 const loading = ref(true)
@@ -59,7 +59,39 @@ function hasSlot(availability, day, hour) {
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
 const tagOptions = ['Matura', 'Egzamin']
-const lessonPlaceOptions = ['Online', 'Na miejscu', 'Z dojazdem']
+const lessonPlaceOptions = ['Online', 'Stacjonarnie', 'Z dojazdem']
+
+function normalizeChoice(value) {
+  if (value == null) return ''
+  const text = `${value}`.trim().toLowerCase().replace(/\s+/g, ' ')
+  if (['na miejscu', 'stacjonarnie'].includes(text)) return 'stacjonarnie'
+  return text
+}
+
+function normalizeChoiceList(values = []) {
+  return (Array.isArray(values) ? values : [values]).map(normalizeChoice).filter(Boolean)
+}
+
+function getTutorTags(tutorPost = {}) {
+  const candidates = [
+    Array.isArray(tutorPost?.teachingFormats) ? tutorPost.teachingFormats : [],
+    tutorPost?.teachingFormat ? [tutorPost.teachingFormat] : [],
+    Array.isArray(tutorPost?.tags) ? tutorPost.tags : [],
+    tutorPost?.tag ? [tutorPost.tag] : [],
+  ]
+
+  return candidates.flat().filter(Boolean)
+}
+
+function emitFilterState() {
+  emit('update:selected-filters', {
+    subjects: [...selectedSubjects.value],
+    levels: [...selectedLevels.value],
+    tags: [...selectedTags.value],
+    lessonPlaces: [...selectedLessonPlaces.value],
+    city: selectedCity.value,
+  })
+}
 
 function getTutorKey(tutor) {
   if (!tutor) return null
@@ -89,7 +121,7 @@ async function loadTutors() {
     tutors.value = rows
       .filter((r) => r.tutor_post && !blockedIds.value.has(r.auth_id))
       .map((r, index) => {
-        const tp = r.tutor_post
+        const tp = r.tutor_post || {}
         const renderedName = [r.name, r.surname].filter(Boolean).join(' ') || 'Korepetytor'
         return {
           id: r.id || `${renderedName}-${tp.subject || 'unknown'}-${index}`,
@@ -97,7 +129,7 @@ async function loadTutors() {
           name: renderedName,
           subject: tp.subject || '',
           level: tp.level || '',
-          tags: tp.teachingFormats || [],
+          tags: getTutorTags(tp),
           image: tp.photo || r.profile_picture || null,
           bio: tp.description || '',
           price: tp.price || 50,
@@ -131,20 +163,45 @@ const filteredTutors = computed(() => {
       return false
     }
 
-    const localSubjects =
-      selectedSubjects.value.length > 0 ? selectedSubjects.value : props.filters.subjects
-    const localLevels =
-      selectedLevels.value.length > 0 ? selectedLevels.value : props.filters.levels
-    const allSelectedTags = [...props.filters.tags, ...selectedTags.value]
-    const allSelectedLessonPlaces = selectedLessonPlaces.value
+    const activeSubjects = [
+      ...(Array.isArray(props.filters?.subjects) ? props.filters.subjects : []),
+      ...selectedSubjects.value,
+    ]
+    const activeLevels = [
+      ...(Array.isArray(props.filters?.levels) ? props.filters.levels : []),
+      ...selectedLevels.value,
+    ]
+    const activeTags = [
+      ...(Array.isArray(props.filters?.tags) ? props.filters.tags : []),
+      ...selectedTags.value,
+    ]
+    const activeLessonPlaces = [
+      ...(Array.isArray(props.filters?.lessonPlaces) ? props.filters.lessonPlaces : []),
+      ...selectedLessonPlaces.value,
+    ]
 
-    const matchesSubject = localSubjects.length === 0 || localSubjects.includes(tutor.subject)
-    const matchesLevel = localLevels.length === 0 || localLevels.includes(tutor.level)
+    const normalizedSubjects = normalizeChoiceList(activeSubjects)
+    const normalizedLevels = normalizeChoiceList(activeLevels)
+    const normalizedTags = normalizeChoiceList(activeTags)
+    const normalizedLessonPlaces = normalizeChoiceList(activeLessonPlaces)
+
+    const matchesSubject =
+      normalizedSubjects.length === 0 ||
+      normalizedSubjects.some(
+        (subject) => normalizeChoice(tutor.subject) === normalizeChoice(subject),
+      )
+    const matchesLevel =
+      normalizedLevels.length === 0 ||
+      normalizedLevels.some((level) => normalizeChoice(tutor.level) === normalizeChoice(level))
     const matchesTags =
-      allSelectedTags.length === 0 || allSelectedTags.some((tag) => tutor.tags.includes(tag))
+      normalizedTags.length === 0 ||
+      normalizedTags.some((tag) => normalizeChoiceList(tutor.tags).includes(tag))
     const matchesLessonPlaces =
-      allSelectedLessonPlaces.length === 0 || allSelectedLessonPlaces.includes(tutor.lessonPlace)
-    const cityQuery = selectedCity.value.trim().toLowerCase()
+      normalizedLessonPlaces.length === 0 ||
+      normalizedLessonPlaces.some(
+        (place) => normalizeChoice(tutor.lessonPlace) === normalizeChoice(place),
+      )
+    const cityQuery = `${selectedCity.value || props.filters?.city || ''}`.trim().toLowerCase()
     const matchesCity = !cityQuery || (tutor.city || '').toLowerCase().includes(cityQuery)
 
     return matchesSubject && matchesLevel && matchesTags && matchesLessonPlaces && matchesCity
@@ -209,6 +266,19 @@ function resetSwipe() {
 
 function applyCityFilter() {
   selectedCity.value = citySearchInput.value.trim()
+  emitFilterState()
+}
+
+function clearFilters() {
+  selectedSubjects.value = []
+  selectedLevels.value = []
+  selectedTags.value = []
+  selectedLessonPlaces.value = []
+  selectedCity.value = ''
+  citySearchInput.value = ''
+  currentIndex.value = 0
+  resetSwipe()
+  emitFilterState()
 }
 
 function getSwipeClientX(event) {
@@ -359,6 +429,7 @@ function toggleSelection(category, value) {
   }
   currentIndex.value = 0
   resetSwipe()
+  emitFilterState()
 }
 
 function closePage() {
@@ -605,6 +676,9 @@ function closePage() {
         <template v-else>
           <h3>Brak nauczycieli</h3>
           <p>Nie ma wyników dla tych filtrów. Spróbuj zmienić tagi lub wybrać inne kryteria.</p>
+          <button class="empty-state-action" type="button" @click="clearFilters">
+            Wyczyść filtry
+          </button>
         </template>
       </div>
     </div>
@@ -710,6 +784,21 @@ function closePage() {
   color: var(--muted);
   line-height: 1.6;
   font-size: 15px;
+}
+
+.empty-state-action {
+  margin-top: 16px;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--accent-strong);
+  color: white;
+}
+
+.empty-state-action:hover {
+  opacity: 0.95;
 }
 
 .tags-filter-section {
