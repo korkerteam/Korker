@@ -11,7 +11,7 @@ onMounted(async () => {
   try {
     const { data: rows, error } = await supabase
       .from('users')
-      .select('id, name, surname, profile_picture, tutor_post')
+      .select('id, auth_id, nickname, name, surname, profile_picture, tutor_post')
       .eq('account_type', 'tutor')
       .not('tutor_post', 'is', null)
 
@@ -24,6 +24,8 @@ onMounted(async () => {
 
           return {
             id: row.id || `${renderedName}-${index}`,
+            auth_id: row.auth_id || null,
+            nickname: row.nickname || null,
             name: renderedName,
             subject: tutorPost.subject || 'Brak danych',
             level: tutorPost.level || 'Brak danych',
@@ -33,6 +35,9 @@ onMounted(async () => {
             lessonPlace: tutorPost.lessonPlace || '',
             tags: tutorPost.teachingFormats || [],
             image: tutorPost.photo || row.profile_picture || null,
+            profile_picture: row.profile_picture || null,
+            tutor_post: tutorPost || null,
+            account_type: 'tutor',
           }
         })
         .slice(0, 10)
@@ -47,6 +52,8 @@ function openTeacher(entry) {
 
   showTeacherProfile({
     id: entry.id,
+    auth_id: entry.auth_id,
+    nickname: entry.nickname,
     name: entry.name,
     subject: entry.subject,
     level: entry.level,
@@ -56,6 +63,9 @@ function openTeacher(entry) {
     lessonPlace: entry.lessonPlace,
     tags: entry.tags,
     image: entry.image,
+    profile_picture: entry.profile_picture,
+    tutor_post: entry.tutor_post,
+    account_type: entry.account_type,
   })
 }
 </script>
