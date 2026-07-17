@@ -348,6 +348,39 @@ export function useMessaging() {
     return true
   }
 
+  async function deleteConversation(otherUserId) {
+    if (!user.value) return false
+
+    const { error } = await supabase
+      .from('messages')
+      .delete()
+      .or(
+        `and(sender_id.eq.${user.value.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.value.id})`,
+      )
+
+    if (error) {
+      console.error('deleteConversation error:', error)
+      return false
+    }
+
+    messages.value = messages.value.filter(
+      (m) =>
+        !(
+          (m.sender_id === user.value.id && m.receiver_id === otherUserId) ||
+          (m.sender_id === otherUserId && m.receiver_id === user.value.id)
+        ),
+    )
+
+    conversations.value = conversations.value.filter((c) => c.userId !== otherUserId)
+
+    if (activeUserId.value === otherUserId) {
+      activeUserId.value = null
+      currentContact.value = null
+    }
+
+    return true
+  }
+
   async function markAsRead(otherUserId) {
     if (!user.value) return
 
@@ -604,6 +637,7 @@ export function useMessaging() {
     sendMessage,
     editMessage,
     deleteMessage,
+    deleteConversation,
     markAsRead,
     searchUsers,
     clearSearch,
