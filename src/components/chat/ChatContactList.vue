@@ -52,6 +52,7 @@ defineEmits(['openChat', 'close'])
       </div>
       <div class="contact-item-right">
         <span class="contact-time">{{ c.lastTimeLabel }}</span>
+        <span v-if="c.blockedByMe" class="blocked-badge">Zablokowany</span>
         <span v-if="c.unread > 0" class="unread-badge">{{ c.unread }}</span>
       </div>
     </div>
@@ -247,5 +248,15 @@ defineEmits(['openChat', 'close'])
   align-items: center;
   justify-content: center;
   padding: 0 6px;
+}
+.blocked-badge {
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 </style>

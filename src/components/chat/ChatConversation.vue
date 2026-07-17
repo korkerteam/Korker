@@ -8,6 +8,7 @@ const props = defineProps({
   contact: Object,
   messages: Array,
   loading: Boolean,
+  blocked: Boolean,
 })
 const emit = defineEmits(['back', 'close', 'send'])
 
@@ -97,7 +98,10 @@ function handleDelete(id) {
       @delete="handleDelete"
     />
   </div>
-  <ChatInputBar v-model="newMsg" @send="handleSend" />
+  <div v-if="blocked" class="blocked-bar">
+    Zablokowałeś tego użytkownika. Nie możesz wysyłać wiadomości.
+  </div>
+  <ChatInputBar v-else v-model="newMsg" @send="handleSend" />
 </template>
 
 <style scoped>
@@ -200,5 +204,15 @@ function handleDelete(id) {
 .message-scroll::-webkit-scrollbar-thumb {
   background: #d1dcee;
   border-radius: 4px;
+}
+.blocked-bar {
+  padding: 14px 20px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.06);
+  border-top: 1px solid #fca5a5;
+  flex-shrink: 0;
 }
 </style>

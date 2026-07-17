@@ -11,8 +11,13 @@ const emit = defineEmits(['edit', 'delete'])
 
 const { user } = useAuth()
 
+const DELETED_CONTENT = '[ Usunięto ]'
+
 const isMine = computed(() => props.message?.sender_id === user.value?.id)
-const attachments = computed(() => props.message?.attachments || [])
+const isDeleted = computed(
+  () => props.message?.content === DELETED_CONTENT && !props.message?.attachments?.length,
+)
+const attachments = computed(() => (isDeleted.value ? [] : props.message?.attachments || []))
 
 const MAX_EDIT_LENGTH = 500
 
@@ -120,32 +125,37 @@ function formatSize(bytes) {
       </div>
       <div v-else class="bubble-row">
         <div class="bubble" :class="isMine ? 'bubble-mine' : 'bubble-them'">
-          <template v-if="message?.content">
-            <div class="bubble-text">{{ message.content }}</div>
+          <template v-if="isDeleted">
+            <div class="bubble-text bubble-deleted">Ta wiadomość została usunięta</div>
           </template>
-          <template v-if="attachments.length">
-            <div class="attachments-grid">
-              <template v-for="(att, i) in attachments" :key="i">
-                <a v-if="isImage(att)" :href="att.url" target="_blank" class="att-image-wrap">
-                  <img :src="att.url" :alt="att.name" class="att-image" loading="lazy" />
-                </a>
-                <a v-else :href="att.url" target="_blank" class="att-file" download>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM6 20V4h7v5h5v11H6z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                  <div class="att-file-info">
-                    <span class="att-file-name">{{ att.name }}</span>
-                    <span class="att-file-size">{{ formatSize(att.size) }}</span>
-                  </div>
-                </a>
-              </template>
-            </div>
+          <template v-else>
+            <template v-if="message?.content">
+              <div class="bubble-text">{{ message.content }}</div>
+            </template>
+            <template v-if="attachments.length">
+              <div class="attachments-grid">
+                <template v-for="(att, i) in attachments" :key="i">
+                  <a v-if="isImage(att)" :href="att.url" target="_blank" class="att-image-wrap">
+                    <img :src="att.url" :alt="att.name" class="att-image" loading="lazy" />
+                  </a>
+                  <a v-else :href="att.url" target="_blank" class="att-file" download>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM6 20V4h7v5h5v11H6z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                    <div class="att-file-info">
+                      <span class="att-file-name">{{ att.name }}</span>
+                      <span class="att-file-size">{{ formatSize(att.size) }}</span>
+                    </div>
+                  </a>
+                </template>
+              </div>
+            </template>
           </template>
         </div>
-        <div v-if="isMine" class="msg-actions">
+        <div v-if="isMine && !isDeleted" class="msg-actions">
           <button v-if="!showDeleteConfirm" class="action-btn" title="Edytuj" @click="startEdit">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
               <path
@@ -326,6 +336,11 @@ function formatSize(bytes) {
 .bubble-text {
   white-space: pre-wrap;
   word-break: break-all;
+}
+.bubble-deleted {
+  font-style: italic;
+  opacity: 0.6;
+  white-space: normal;
 }
 .attachments-grid {
   display: flex;
