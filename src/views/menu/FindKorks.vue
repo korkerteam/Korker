@@ -33,6 +33,8 @@ const swipeStartX = ref(null)
 const swipeOffsetX = ref(0)
 const swipeRotation = ref(0)
 const cardRef = ref(null)
+const showSwipeOverlay = ref(false)
+const swipeHintState = ref('neutral')
 
 const weekdayLabels = [
   'Poniedziałek',
@@ -195,6 +197,8 @@ function resetSwipe() {
   swipeStartX.value = null
   swipeOffsetX.value = 0
   swipeRotation.value = 0
+  showSwipeOverlay.value = false
+  swipeHintState.value = 'neutral'
 }
 
 function getSwipeClientX(event) {
@@ -217,6 +221,8 @@ function startSwipe(event) {
   swipeStartX.value = getSwipeClientX(event)
   swipeOffsetX.value = 0
   swipeRotation.value = 0
+  showSwipeOverlay.value = false
+  swipeHintState.value = 'neutral'
 
   // Capture pointer to track movement even outside the card
   if (cardRef.value && event.pointerId !== undefined) {
@@ -231,6 +237,17 @@ function moveSwipe(event) {
   const delta = currentX - swipeStartX.value
   swipeOffsetX.value = Math.max(-140, Math.min(140, delta))
   swipeRotation.value = Math.max(-18, Math.min(18, delta / 8))
+
+  if (delta > 110) {
+    showSwipeOverlay.value = true
+    swipeHintState.value = 'like'
+  } else if (delta < -110) {
+    showSwipeOverlay.value = true
+    swipeHintState.value = 'dislike'
+  } else {
+    showSwipeOverlay.value = false
+    swipeHintState.value = 'neutral'
+  }
 
   if (Math.abs(delta) > 3) {
     event.preventDefault?.()
@@ -979,9 +996,10 @@ function closePage() {
   width: 120px;
   height: 120px;
   border-radius: 999px;
-  border: 3px solid rgba(255, 255, 255, 0.7);
+  border: 3px solid rgba(255, 255, 255, 0.85);
   background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 .swipe-indicator.dislike {
@@ -990,8 +1008,8 @@ function closePage() {
 }
 
 .swipe-indicator.like {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.18);
+  color: #ffffff;
+  background: rgba(34, 197, 94, 0.5);
 }
 
 .card-image.swiping-left .swipe-indicator.dislike,
