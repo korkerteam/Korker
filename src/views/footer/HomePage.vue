@@ -5,100 +5,60 @@
         <p class="dashboard-welcome">Witamy w Kirker</p>
         <h2 class="dashboard-title">Znajdź korepetytora w kilka sekund</h2>
       </div>
-      <div class="dashboard-actions">
-        <button class="dashboard-action" @click="openLessonsModal">Najbliższe lekcje</button>
+    </div>
 
-        <!-- Powiadomienia zintegrowane z czatem -->
-        <div class="notifications-wrapper" ref="notifWrapper">
-          <button class="dashboard-action action-secondary" @click="toggleNotifications">
-            Powiadomienia
-            <span v-if="unreadCount > 0" class="notif-badge">{{ unreadCount }}</span>
-          </button>
-
-          <!-- Dropdown powiadomień (dodano @click.stop aby kliknięcia wewnątrz nie zamykały czatu) -->
-          <div v-if="isNotificationsOpen" class="notifications-dropdown" @click.stop>
-            <div class="dropdown-header">
-              <h4>Powiadomienia czatu</h4>
-            </div>
-
-            <div v-if="notificationsToShow.length === 0" class="notifications-empty">
-              Brak nowych powiadomień 🎉
-            </div>
-
-            <ul v-else class="notifications-list">
-              <li
-                v-for="notif in notificationsToShow"
-                :key="notif.id"
-                class="unread"
-                @click.stop="handleNotificationClick(notif.id, notif.senderId)"
-              >
-                <div class="notif-status-dot"></div>
-                <div class="notif-info">
-                  <p class="notif-text">{{ notif.sender }}: {{ notif.message }}</p>
-                  <span class="notif-time">{{ notif.time }}</span>
-                </div>
-              </li>
-            </ul>
+    <div class="dashboard-panels">
+      <div class="dashboard-panel lessons-panel">
+        <div class="panel-header">
+          <div class="panel-text-block">
+            <span class="panel-label">Najbliższe lekcje</span>
+            <span class="panel-value">Sprawdź nadchodzące spotkania</span>
           </div>
         </div>
+
+        <div class="panel-content-window">
+          <div class="notifications-empty">Brak nadchodzących lekcji 🗓️</div>
+        </div>
       </div>
-    </div>
 
-    <div class="dashboard-grid">
-      <article class="dashboard-card clickable-card" @click="openLessonsModal">
-        <h3>Najbliższe lekcje</h3>
-        <ul>
-          <li v-for="lesson in lessons.slice(0, 2)" :key="lesson.id">
-            <strong>{{ lesson.subject }} z {{ lesson.teacher }}</strong>
-            <span>{{ lesson.date }} o {{ lesson.time }}</span>
-          </li>
-        </ul>
-      </article>
-
-      <article class="dashboard-card">
-        <h3>Polecani nauczyciele</h3>
-        <p>Sprawdź nauczycieli dopasowanych do Twoich filtrów i preferencji.</p>
-      </article>
-
-      <article class="dashboard-card">
-        <h3>Ostatnie wiadomości</h3>
-        <p>Przeglądaj ostatnie rozmowy i informacje od nauczycieli.</p>
-      </article>
-    </div>
-
-    <!-- Modal Terminarza -->
-    <Transition name="fade">
-      <div v-if="isLessonsModalOpen" class="modal-backdrop" @click.self="closeLessonsModal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>Twój terminarz lekcji</h3>
-            <button class="close-modal-btn" @click="closeLessonsModal">&times;</button>
+      <div class="dashboard-panel panel-secondary notifications-panel">
+        <div class="panel-header">
+          <div class="panel-text-block">
+            <span class="panel-label">Powiadomienia</span>
+            <span class="panel-value">
+              {{ unreadCount > 0 ? `${unreadCount} nowe` : 'Brak nowych' }}
+            </span>
           </div>
-          <div class="modal-body">
-            <div class="timeline">
-              <div v-for="lesson in lessons" :key="lesson.id" class="timeline-item">
-                <div class="timeline-icon">📚</div>
-                <div class="timeline-details">
-                  <h4>{{ lesson.subject }}</h4>
-                  <p class="teacher">
-                    Nauczyciel: <strong>{{ lesson.teacher }}</strong>
-                  </p>
-                  <div class="timeline-meta">
-                    <span class="time">📅 {{ lesson.date }} | ⏰ {{ lesson.time }}</span>
-                    <span :class="['status-badge', lesson.status]">{{ lesson.statusLabel }}</span>
-                  </div>
-                </div>
+          <span v-if="unreadCount > 0" class="notif-badge">{{ unreadCount }}</span>
+        </div>
+
+        <div class="panel-content-window">
+          <div v-if="notificationsToShow.length === 0" class="notifications-empty">
+            Brak nowych powiadomień 🎉
+          </div>
+
+          <ul v-else class="notifications-list">
+            <li
+              v-for="notif in notificationsToShow"
+              :key="notif.id"
+              class="unread"
+              @click.stop="handleNotificationClick(notif.id, notif.senderId)"
+            >
+              <div class="notif-status-dot"></div>
+              <div class="notif-info">
+                <p class="notif-text">{{ notif.sender }}: {{ notif.message }}</p>
+                <span class="notif-time">{{ notif.time }}</span>
               </div>
-            </div>
-          </div>
+            </li>
+          </ul>
         </div>
       </div>
-    </Transition>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
+import { computed, inject } from 'vue'
 import { useMessaging } from '@/composables/useMessaging.js'
 
 const { conversations, notifications, markNotificationRead } = useMessaging()
@@ -106,10 +66,6 @@ const { conversations, notifications, markNotificationRead } = useMessaging()
 const { openChatWithUser } = inject('globalChat', {
   openChatWithUser: () => {},
 })
-
-const isLessonsModalOpen = ref(false)
-const isNotificationsOpen = ref(false)
-const notifWrapper = ref(null)
 
 const notificationsToShow = computed(() => {
   const pendingFromChat = (notifications.value || []).filter((notif) => !notif.isRead)
@@ -124,71 +80,49 @@ const notificationsToShow = computed(() => {
       isRead: false,
     }))
 
-  const combined = [...pendingFromConversations, ...pendingFromChat]
-  const unique = new Map()
-  for (const notif of combined) {
-    if (!unique.has(notif.id)) {
-      unique.set(notif.id, notif)
+  const merged = new Map()
+
+  const upsert = (entry) => {
+    if (!entry?.senderId) return
+
+    const existing = merged.get(entry.senderId)
+    if (!existing) {
+      merged.set(entry.senderId, { ...entry })
+      return
     }
+
+    merged.set(entry.senderId, {
+      ...existing,
+      ...entry,
+      id: entry.id ?? existing.id,
+      sender: entry.sender || existing.sender,
+      message: entry.message || existing.message,
+      time: entry.time || existing.time,
+      isRead: existing.isRead || entry.isRead,
+    })
   }
-  return Array.from(unique.values())
+
+  pendingFromConversations.forEach(upsert)
+  pendingFromChat.forEach((notif) => {
+    upsert({
+      id: notif.id,
+      senderId: notif.senderId,
+      sender: notif.sender,
+      message: notif.message,
+      time: notif.time,
+      isRead: notif.isRead,
+    })
+  })
+
+  return Array.from(merged.values())
 })
 
 const unreadCount = computed(() => notificationsToShow.value.length)
 
-const toggleNotifications = () => {
-  isNotificationsOpen.value = !isNotificationsOpen.value
-}
-
 const handleNotificationClick = (notificationId, senderId) => {
   openChatWithUser(senderId)
   markNotificationRead(notificationId)
-  isNotificationsOpen.value = false
 }
-
-const openLessonsModal = () => {
-  isLessonsModalOpen.value = true
-  isNotificationsOpen.value = false
-}
-
-const closeLessonsModal = () => {
-  isLessonsModalOpen.value = false
-}
-
-const handleClickOutside = (event) => {
-  if (notifWrapper.value && !notifWrapper.value.contains(event.target)) {
-    isNotificationsOpen.value = false
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
-
-const lessons = ref([
-  {
-    id: 1,
-    subject: 'Matematyka',
-    teacher: 'Anna Kowalska',
-    date: 'Dziś',
-    time: '16:00',
-    status: 'upcoming',
-    statusLabel: 'Wkrótce',
-  },
-  {
-    id: 2,
-    subject: 'Fizyka',
-    teacher: 'Jan Nowak',
-    date: 'Jutro',
-    time: '12:30',
-    status: 'confirmed',
-    statusLabel: 'Potwierdzona',
-  },
-])
 </script>
 
 <style scoped>
@@ -237,53 +171,105 @@ const lessons = ref([
   color: #111827;
 }
 
-.dashboard-actions {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  align-items: center;
+.dashboard-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
 }
 
-.dashboard-action {
-  border: none;
-  border-radius: 999px;
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-color-hover));
-  color: white;
-  padding: 14px 24px;
-  font-weight: 700;
-  font-size: 0.95rem;
+.dashboard-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 22px 24px;
+  color: #0f172a;
+  text-align: left;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
   cursor: pointer;
+  min-height: 260px;
+  height: 100%;
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease,
-    background 0.18s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 18px 40px rgba(79, 117, 199, 0.18);
+    border-color 0.18s ease;
 }
 
-.dashboard-action:hover {
-  background: linear-gradient(135deg, var(--primary-color-hover) 0%, var(--primary-color) 100%);
-  transform: translateY(-2px);
+.panel-label {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--accent-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
 }
 
-.action-secondary {
-  background: rgba(241, 245, 249, 0.92);
+.panel-value {
+  font-size: 1rem;
+  font-weight: 600;
   color: #1f2937;
-  border: 1px solid rgba(79, 117, 199, 0.12);
-  box-shadow: none;
 }
 
-.action-secondary:hover {
-  background: rgba(229, 236, 255, 0.92);
-  box-shadow: none;
+.panel-secondary {
+  background: rgba(241, 245, 249, 0.92);
+  position: relative;
+  justify-content: flex-start;
+  cursor: default;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.lessons-panel {
+  justify-content: flex-start;
+}
+
+.notifications-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+
+.panel-text-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+}
+
+.notif-badge {
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
+}
+
+.dashboard-card:first-child {
+  grid-column: 1 / -1;
 }
 
 .dashboard-card {
@@ -350,56 +336,31 @@ const lessons = ref([
   color: #111827;
 }
 
-.notifications-wrapper {
-  position: relative;
-}
-
-.notif-badge {
-  background: #ef4444;
-  color: white;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 999px;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.notifications-dropdown {
-  position: absolute;
-  top: calc(100% + 12px);
-  right: 0;
-  width: 320px;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 24px;
-  box-shadow: 0 26px 70px rgba(15, 23, 42, 0.16);
-  z-index: 100;
+.panel-content-window {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(255, 255, 255, 0.74);
+  padding: 4px 0;
   overflow: hidden;
-  backdrop-filter: blur(16px);
-  animation: slideIn 0.2s ease-out;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
 }
 
-.dropdown-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px 22px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
-}
-
-.dropdown-header h4 {
-  margin: 0;
-  font-size: 1rem;
-  color: #0f172a;
+.lessons-panel .panel-content-window:hover,
+.notifications-panel .panel-content-window:hover {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(79, 117, 199, 0.2);
 }
 
 .notifications-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 280px;
+  max-height: 100%;
   overflow-y: auto;
 }
 
@@ -452,10 +413,25 @@ const lessons = ref([
 }
 
 .notifications-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
   padding: 24px;
   text-align: center;
   color: #64748b;
   font-size: 0.95rem;
+}
+
+.lessons-panel .panel-content-window {
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.lessons-panel:hover .panel-content-window {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(79, 117, 199, 0.2);
 }
 
 .modal-backdrop {
