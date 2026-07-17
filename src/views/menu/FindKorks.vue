@@ -432,17 +432,6 @@ function toggleSelection(category, value) {
   emitFilterState()
 }
 
-function clearFilters() {
-  selectedSubjects.value = []
-  selectedLevels.value = []
-  selectedTags.value = []
-  selectedLessonPlaces.value = []
-  selectedCity.value = ''
-  citySearchInput.value = ''
-  currentIndex.value = 0
-  resetSwipe()
-}
-
 function closePage() {
   emit('close')
 }
