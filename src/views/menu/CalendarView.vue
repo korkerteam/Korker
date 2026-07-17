@@ -97,17 +97,36 @@ const daysInMonth = computed(() => {
   return date.getDate()
 })
 
-const calendarDays = computed(() =>
-  Array.from({ length: daysInMonth.value }, (_, index) => index + 1),
-)
-
-const selectedDateLabel = computed(() => {
-  const date = new Date(
+const calendarDays = computed(() => {
+  const firstDayOfMonth = new Date(
     currentDate.value.getFullYear(),
     currentDate.value.getMonth(),
-    selectedDay.value,
+    1,
+  ).getDay()
+  const leadingEmptyDays = Array.from(
+    { length: firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1 },
+    (_, index) => ({ type: 'empty', key: `empty-${index}` }),
   )
-  return formatDateLabel(date)
+
+  const monthDays = Array.from({ length: daysInMonth.value }, (_, index) => ({
+    type: 'day',
+    value: index + 1,
+    key: `day-${index + 1}`,
+  }))
+
+  return [...leadingEmptyDays, ...monthDays]
+})
+
+const selectedDate = computed(() => {
+  return new Date(currentDate.value.getFullYear(), currentDate.value.getMonth(), selectedDay.value)
+})
+
+const selectedDateLabel = computed(() => formatDateLabel(selectedDate.value))
+
+const selectedWeekdayLabel = computed(() => {
+  const jsDay = selectedDate.value.getDay()
+  const weekdayIndex = jsDay === 0 ? 6 : jsDay - 1
+  return weekdayLabels[weekdayIndex]
 })
 
 const pendingNotifications = computed(() =>
@@ -187,9 +206,9 @@ function handleNotificationDecision(id, decision) {
       <div class="calendar-card">
         <div class="calendar-top">
           <div>
-            <p class="calendar-weekday">Śr</p>
+            <p class="calendar-weekday">{{ selectedWeekdayLabel }}</p>
             <h2>{{ monthLabel }}</h2>
-            <p class="calendar-meta">Dzień 196, Tydzień 29</p>
+            <p class="calendar-meta">{{ selectedDateLabel }}</p>
           </div>
           <div class="calendar-actions">
             <div class="month-switcher">
@@ -224,19 +243,21 @@ function handleNotificationDecision(id, decision) {
             {{ weekday }}
           </div>
 
-          <button
-            v-for="day in calendarDays"
-            :key="day"
-            class="day"
-            :class="{
-              active: day === selectedDay,
-              hasLesson: hasLessons(day),
-            }"
-            @click="selectDay(day)"
-          >
-            <span>{{ day }}</span>
-            <span v-if="hasLessons(day)" class="lesson-dot" />
-          </button>
+          <template v-for="item in calendarDays" :key="item.key">
+            <div v-if="item.type === 'empty'" class="day empty" />
+            <button
+              v-else
+              class="day"
+              :class="{
+                active: item.value === selectedDay,
+                hasLesson: hasLessons(item.value),
+              }"
+              @click="selectDay(item.value)"
+            >
+              <span>{{ item.value }}</span>
+              <span v-if="hasLessons(item.value)" class="lesson-dot" />
+            </button>
+          </template>
         </div>
       </div>
 
