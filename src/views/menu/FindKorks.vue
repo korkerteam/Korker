@@ -238,7 +238,10 @@ function moveSwipe(event) {
   swipeOffsetX.value = Math.max(-140, Math.min(140, delta))
   swipeRotation.value = Math.max(-18, Math.min(18, delta / 8))
 
-  if (delta > 110) {
+  if (props.isTutorAccount) {
+    showSwipeOverlay.value = false
+    swipeHintState.value = 'neutral'
+  } else if (delta > 110) {
     showSwipeOverlay.value = true
     swipeHintState.value = 'like'
   } else if (delta < -110) {
@@ -419,8 +422,10 @@ function closePage() {
             <div
               class="card-image"
               :class="{
-                'swiping-left': showSwipeOverlay && swipeHintState === 'dislike',
-                'swiping-right': showSwipeOverlay && swipeHintState === 'like',
+                'swiping-left':
+                  !props.isTutorAccount && showSwipeOverlay && swipeHintState === 'dislike',
+                'swiping-right':
+                  !props.isTutorAccount && showSwipeOverlay && swipeHintState === 'like',
               }"
             >
               <div
