@@ -429,13 +429,13 @@ function closePage() {
               }"
             >
               <div
-                v-if="!props.isTutorAccount && showSwipeOverlay && swipeHintState === 'dislike'"
+                v-if="showSwipeOverlay && swipeHintState === 'dislike' && !props.isTutorAccount"
                 class="swipe-indicator dislike"
               >
                 <span>✕</span>
               </div>
               <div
-                v-else-if="!props.isTutorAccount && showSwipeOverlay && swipeHintState === 'like'"
+                v-else-if="showSwipeOverlay && swipeHintState === 'like' && !props.isTutorAccount"
                 class="swipe-indicator like"
               >
                 <span>✓</span>
@@ -972,6 +972,14 @@ function closePage() {
   background: var(--surface-soft);
 }
 
+.swipe-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
 .card-image.swiping-left .swipe-image-wrapper,
 .card-image.swiping-right .swipe-image-wrapper {
   opacity: 0.4;
@@ -992,6 +1000,8 @@ function closePage() {
     opacity 0.2s ease,
     transform 0.2s ease;
   transform: scale(0.94);
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(15, 23, 42, 0.16);
 }
 
 .swipe-indicator span {
@@ -1001,45 +1011,23 @@ function closePage() {
   width: 120px;
   height: 120px;
   border-radius: 999px;
-  border: 3px solid rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.2);
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.16);
   backdrop-filter: blur(2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  color: rgba(255, 255, 255, 0.95);
 }
 
-.swipe-indicator.dislike {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.18);
-}
-
+.swipe-indicator.dislike,
 .swipe-indicator.like {
-  color: #ffffff;
-  background: rgba(34, 197, 94, 0.5);
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(15, 23, 42, 0.12);
 }
 
 .card-image.swiping-left .swipe-indicator.dislike,
 .card-image.swiping-right .swipe-indicator.like {
   opacity: 1;
   transform: scale(1.02);
-}
-.card-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  border-radius: 0;
-  border: none;
-  box-shadow: none;
-  display: block;
-  flex-shrink: 0;
-  -webkit-user-drag: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-  pointer-events: auto;
-  cursor: pointer;
 }
 
 .card-image:hover {
@@ -1237,9 +1225,10 @@ function closePage() {
 <style>
 .tt-section .tt-grid-wrap {
   width: 100%;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
+  background: var(--surface-strong);
 }
 
 .tt-section .tt-grid {
@@ -1247,7 +1236,7 @@ function closePage() {
   grid-template-columns: 38px repeat(7, 1fr);
   gap: 2px;
   padding: 3px;
-  background: #f3f4f6;
+  background: var(--surface-soft);
 }
 
 .tt-section .tt-corner {
@@ -1260,10 +1249,10 @@ function closePage() {
   justify-content: center;
   font-size: 8px;
   font-weight: 700;
-  color: #374151;
+  color: var(--text);
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  background: #f9fafb;
+  background: var(--surface-strong);
   border-radius: 3px;
   padding: 2px 0;
 }
@@ -1274,19 +1263,30 @@ function closePage() {
   justify-content: center;
   font-size: 8px;
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--muted);
   border-radius: 3px;
 }
 
 .tt-section .tt-c {
   border-radius: 3px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
   min-height: 22px;
 }
 
 .tt-section .tt-c.on {
-  background: #4f75c7;
-  border-color: #4f75c7;
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+:root[data-theme='dark'] .tt-section .tt-grid-wrap,
+:root[data-theme='dark'] .tt-section .tt-grid,
+:root[data-theme='dark'] .tt-section .tt-day-h,
+:root[data-theme='dark'] .tt-section .tt-time-l,
+:root[data-theme='dark'] .tt-section .tt-c {
+  transition:
+    background-color var(--theme-transition-duration) var(--theme-transition-easing),
+    color var(--theme-transition-duration) var(--theme-transition-easing),
+    border-color var(--theme-transition-duration) var(--theme-transition-easing);
 }
 </style>
