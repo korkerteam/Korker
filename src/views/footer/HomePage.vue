@@ -140,9 +140,9 @@ const handleNotificationClick = (notificationId, senderId) => {
   gap: 24px;
   align-items: center;
   padding: 32px 36px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--surface-strong);
   border-radius: 36px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--border);
   box-shadow: 0 30px 80px rgba(15, 23, 42, 0.1);
   backdrop-filter: blur(18px);
 }
@@ -168,7 +168,7 @@ const handleNotificationClick = (notificationId, senderId) => {
   margin: 0;
   font-size: clamp(2.4rem, 3vw, 3.5rem);
   line-height: 1.02;
-  color: #111827;
+  color: var(--text-strong);
 }
 
 .dashboard-panels {
@@ -181,12 +181,12 @@ const handleNotificationClick = (notificationId, senderId) => {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  gap: 10px;
+  border: 1px solid var(--border);
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--surface);
   padding: 22px 24px;
-  color: #0f172a;
+  color: var(--text);
   text-align: left;
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
   cursor: pointer;
@@ -209,11 +209,11 @@ const handleNotificationClick = (notificationId, senderId) => {
 .panel-value {
   font-size: 1rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-strong);
 }
 
 .panel-secondary {
-  background: rgba(241, 245, 249, 0.92);
+  background: var(--surface-muted);
   position: relative;
   justify-content: flex-start;
   cursor: default;
@@ -225,6 +225,7 @@ const handleNotificationClick = (notificationId, senderId) => {
 
 .lessons-panel {
   justify-content: flex-start;
+  background: var(--surface-muted);
 }
 
 .notifications-panel {
@@ -239,6 +240,7 @@ const handleNotificationClick = (notificationId, senderId) => {
   align-items: flex-start;
   gap: 12px;
   width: 100%;
+  flex-shrink: 0;
 }
 
 .panel-text-block {
@@ -341,19 +343,11 @@ const handleNotificationClick = (notificationId, senderId) => {
   min-height: 0;
   width: 100%;
   border-radius: 20px;
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid var(--border-soft);
+  background: var(--surface-strong);
   padding: 4px 0;
   overflow: hidden;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease;
-}
-
-.lessons-panel .panel-content-window:hover,
-.notifications-panel .panel-content-window:hover {
-  background: rgba(255, 255, 255, 0.92);
-  border-color: rgba(79, 117, 199, 0.2);
+  margin-top: 2px;
 }
 
 .notifications-list {
@@ -362,6 +356,7 @@ const handleNotificationClick = (notificationId, senderId) => {
   padding: 0;
   max-height: 100%;
   overflow-y: auto;
+  background: transparent;
 }
 
 .notifications-list li {
@@ -369,16 +364,16 @@ const handleNotificationClick = (notificationId, senderId) => {
   gap: 12px;
   padding: 16px 20px;
   cursor: pointer;
-  border-bottom: 1px solid rgba(241, 245, 249, 0.9);
+  border-bottom: 1px solid var(--border-soft);
   transition: background 0.15s ease;
 }
 
 .notifications-list li:hover {
-  background: rgba(239, 246, 255, 0.9);
+  background: var(--surface-hover);
 }
 
 .notifications-list li.unread {
-  background: rgba(239, 247, 255, 0.96);
+  background: var(--accent-soft);
 }
 
 .notif-status-dot {
@@ -398,14 +393,14 @@ const handleNotificationClick = (notificationId, senderId) => {
 .notif-text {
   margin: 0;
   font-size: 0.95rem;
-  color: #1f2937;
+  color: var(--text-strong);
   font-weight: 600;
   line-height: 1.5;
 }
 
 .notif-time {
   font-size: 0.85rem;
-  color: #64748b;
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -419,19 +414,8 @@ const handleNotificationClick = (notificationId, senderId) => {
   height: 100%;
   padding: 24px;
   text-align: center;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.95rem;
-}
-
-.lessons-panel .panel-content-window {
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease;
-}
-
-.lessons-panel:hover .panel-content-window {
-  background: rgba(255, 255, 255, 0.92);
-  border-color: rgba(79, 117, 199, 0.2);
 }
 
 .modal-backdrop {
