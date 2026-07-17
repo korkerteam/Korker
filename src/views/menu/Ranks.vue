@@ -1,11 +1,12 @@
 <script setup>
-import { inject, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import LoadingBox from '@/components/LoadingBox.vue'
 import { supabase } from '@/lib/supabase.js'
 
+const router = useRouter()
 const loading = ref(true)
 const rankingData = ref([])
-const showTeacherProfile = inject('showTeacherProfile', null)
 
 onMounted(async () => {
   try {
@@ -48,25 +49,12 @@ onMounted(async () => {
 })
 
 function openTeacher(entry) {
-  if (!showTeacherProfile || !entry) return
+  if (!entry) return
 
-  showTeacherProfile({
-    id: entry.id,
-    auth_id: entry.auth_id,
-    nickname: entry.nickname,
-    name: entry.name,
-    subject: entry.subject,
-    level: entry.level,
-    bio: entry.bio,
-    price: entry.price,
-    city: entry.city,
-    lessonPlace: entry.lessonPlace,
-    tags: entry.tags,
-    image: entry.image,
-    profile_picture: entry.profile_picture,
-    tutor_post: entry.tutor_post,
-    account_type: entry.account_type,
-  })
+  const identifier = entry.nickname || entry.auth_id || entry.id
+  if (!identifier) return
+
+  router.push({ name: 'user-profile', params: { nickname: identifier } })
 }
 </script>
 
