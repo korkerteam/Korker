@@ -56,8 +56,8 @@ function hasSlot(availability, day, hour) {
 
 const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
-const tagOptions = ['Matura', 'Egzamin', 'Online', 'Na miejscu']
-const lessonPlaceOptions = ['Online', 'Na miejscu']
+const tagOptions = ['Matura', 'Egzamin']
+const lessonPlaceOptions = ['Online', 'Na miejscu', 'Z dojazdem']
 
 function getTutorKey(tutor) {
   if (!tutor) return null
