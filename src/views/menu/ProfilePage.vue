@@ -1280,7 +1280,7 @@ function toggleTeachingFormat(format) {
 .mirror-label {
   font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -1288,8 +1288,9 @@ function toggleTeachingFormat(format) {
 .av-grid-wrap {
   overflow: hidden;
   transition: max-height 0.35s ease;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 10px;
+  background: var(--surface-soft);
 }
 
 .av-grid {
@@ -1300,7 +1301,7 @@ function toggleTeachingFormat(format) {
   overflow: auto;
   max-height: inherit;
   padding: 4px;
-  background: #f3f4f6;
+  background: var(--surface-soft);
   user-select: none;
   overflow: hidden;
 }
@@ -1311,8 +1312,8 @@ function toggleTeachingFormat(format) {
   justify-content: center;
   font-size: 12px;
   font-weight: 600;
-  color: #6b7280;
-  background: #fff;
+  color: var(--muted);
+  background: var(--surface);
   border-radius: 3px;
   padding: 2px;
   position: sticky;
@@ -1329,12 +1330,12 @@ function toggleTeachingFormat(format) {
 .av-day-header {
   top: 0;
   z-index: 2;
-  background: #f9fafb;
+  background: var(--surface-soft);
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 9px;
   font-weight: 700;
-  color: #374151;
+  color: var(--text);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -1343,13 +1344,13 @@ function toggleTeachingFormat(format) {
   left: 0;
   z-index: 1;
   background: transparent;
-  color: #9ca3af;
+  color: var(--muted);
 }
 
 .av-cell {
   border-radius: 3px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
   cursor: pointer;
   transition: background 0.08s;
   outline: none;
@@ -1357,22 +1358,22 @@ function toggleTeachingFormat(format) {
 }
 
 .av-cell.selected {
-  background: #4f75c7;
-  border-color: #4f75c7;
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .av-cell:hover {
-  background: #dbeafe;
-  border-color: #93b4e8;
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }
 
 .av-cell.selected:hover {
-  background: #3d64b0;
-  border-color: #3d64b0;
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
 }
 
 .av-cell:focus-visible {
-  box-shadow: 0 0 0 2px rgba(79, 117, 199, 0.5);
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 .offer-label {
