@@ -424,10 +424,35 @@ function removeLesson(index) {
 }
 
 :root[data-theme='dark'] .calendar-card,
-:root[data-theme='dark'] .lessons-card {
-  background: #111827;
+:root[data-theme='dark'] .lessons-card,
+:root[data-theme='dark'] .lesson-item,
+:root[data-theme='dark'] .lesson-empty {
+  background: var(--surface-strong);
   border-color: rgba(148, 163, 184, 0.22);
-  color: #f8fafc;
+  color: var(--text);
+}
+
+:root[data-theme='dark'] .nav-button,
+:root[data-theme='dark'] .month-select,
+:root[data-theme='dark'] .calendar-button,
+:root[data-theme='dark'] .remove-lesson-button,
+:root[data-theme='dark'] .day,
+:root[data-theme='dark'] .lesson-form input,
+:root[data-theme='dark'] .lesson-form select {
+  background: var(--surface-soft);
+  color: var(--text);
+  border-color: var(--border);
+  color-scheme: dark;
+}
+
+:root[data-theme='dark'] .month-select option,
+:root[data-theme='dark'] .lesson-form select option {
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+:root[data-theme='dark'] .lesson-form input::placeholder {
+  color: var(--muted);
 }
 
 .calendar-top {
@@ -508,12 +533,9 @@ h2 {
   border-radius: 16px;
 }
 
-.nav-button:hover,
-.month-select:hover,
-.calendar-button:hover {
-  background: var(--primary-color-hover);
+:root[data-theme='dark'] .calendar-button {
+  background: var(--primary-color);
   color: white;
-  transform: translateY(-1px);
 }
 
 .calendar-grid {
