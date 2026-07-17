@@ -24,6 +24,57 @@ const monthNames = [
   'Grudzień',
 ]
 
+const notifications = ref([
+  {
+    id: 1,
+    student: 'Anna Kowalska',
+    topic: 'Angielski - mówienie',
+    requestedAt: '18:30 · 18 lipca',
+    message: 'Cześć! Chciałabym umówić lekcję na rozmowę i poprawę wymowy.',
+    status: 'pending',
+  },
+  {
+    id: 2,
+    student: 'Michał Nowak',
+    topic: 'Matematyka - funkcje',
+    requestedAt: '20:00 · 19 lipca',
+    message: 'Czy mogę przyjść na lekcję online w tym tygodniu?',
+    status: 'pending',
+  },
+  {
+    id: 3,
+    student: 'Kasia Zielińska',
+    topic: 'Biologia - genetyka',
+    requestedAt: '16:15 · 20 lipca',
+    message: 'Mam pytanie dotyczące sprawdzianu i chciałabym zrobić krótkie powtórzenie.',
+    status: 'pending',
+  },
+  {
+    id: 4,
+    student: 'Piotr Wróbel',
+    topic: 'Historia - antyk',
+    requestedAt: '19:45 · 21 lipca',
+    message: 'Czy da się zrobić lekcję w weekend? Chciałbym uporządkować notatki.',
+    status: 'pending',
+  },
+  {
+    id: 5,
+    student: 'Ola Janicka',
+    topic: 'Chemia - reakcje',
+    requestedAt: '17:00 · 22 lipca',
+    message: 'Chciałabym szybko przejrzeć zadania domowe przed sprawdzianem.',
+    status: 'pending',
+  },
+  {
+    id: 6,
+    student: 'Tomasz Krawczyk',
+    topic: 'Fizyka - ruch',
+    requestedAt: '14:30 · 23 lipca',
+    message: 'Czy możemy zrobić lekcję w środę po południu? Potrzebuję pomocy z wykresami.',
+    status: 'pending',
+  },
+])
+
 function formatDateLabel(date) {
   return new Intl.DateTimeFormat('pl-PL', {
     weekday: 'long',
@@ -50,23 +101,6 @@ const calendarDays = computed(() =>
   Array.from({ length: daysInMonth.value }, (_, index) => index + 1),
 )
 
-const lessonsByDay = ref({})
-const lessonForm = ref({
-  time: '',
-  title: '',
-  student: '',
-  location: 'Online',
-})
-const formError = ref('')
-const timeInput = ref(null)
-const titleInput = ref(null)
-const studentInput = ref(null)
-
-function getLessonKey(day = selectedDay.value) {
-  return `${currentDate.value.getFullYear()}-${currentDate.value.getMonth() + 1}-${String(day).padStart(2, '0')}`
-}
-
-const selectedLessons = computed(() => lessonsByDay.value[getLessonKey()] || [])
 const selectedDateLabel = computed(() => {
   const date = new Date(
     currentDate.value.getFullYear(),
@@ -76,9 +110,22 @@ const selectedDateLabel = computed(() => {
   return formatDateLabel(date)
 })
 
+const pendingNotifications = computed(() =>
+  notifications.value.filter((notification) => notification.status === 'pending'),
+)
+
+const notificationsCountLabel = computed(() => {
+  if (pendingNotifications.value.length === 0) {
+    return 'Brak próśb'
+  }
+
+  return pendingNotifications.value.length === 1
+    ? '1 prośba'
+    : `${pendingNotifications.value.length} prośby`
+})
+
 function hasLessons(day) {
-  const lessonKey = getLessonKey(day)
-  return Array.isArray(lessonsByDay.value[lessonKey]) && lessonsByDay.value[lessonKey].length > 0
+  return day === selectedDay.value
 }
 
 function selectDay(day) {
@@ -112,101 +159,11 @@ function goToToday() {
   selectedDay.value = today.value
 }
 
-function showValidationPopup(
-  input,
-  message = 'Wprowadź prawidłową wartość. Pole jest niekompletne lub ma nieprawidłową datę.',
-) {
-  if (input?.value) {
-    input.value.setCustomValidity(message)
-    input.value.reportValidity()
-  }
-}
+function handleNotificationDecision(id, decision) {
+  notifications.value = notifications.value.filter((notification) => notification.id !== id)
 
-function clearValidation(input) {
-  if (input?.value) {
-    input.value.setCustomValidity('')
-  }
-}
-
-function addLesson() {
-  const timeValue = lessonForm.value.time.trim()
-  const titleValue = lessonForm.value.title.trim()
-  const studentValue = lessonForm.value.student.trim()
-
-  if (!timeValue) {
-    formError.value =
-      'Wprowadź prawidłową wartość. Pole jest niekompletne lub ma nieprawidłową datę.'
-    showValidationPopup(timeInput)
-    return
-  }
-
-  if (!titleValue) {
-    formError.value = 'Wprowadź prawidłową wartość. Pole jest niekompletne.'
-    return
-  }
-
-  if (!studentValue) {
-    formError.value = 'Wprowadź prawidłową wartość. Pole jest niekompletne.'
-    return
-  }
-
-  const studentWords = studentValue.split(/\s+/).filter(Boolean)
-  if (studentWords.length !== 2) {
-    formError.value = 'Wprowadź prawidłową wartość. Pole jest niekompletne.'
-    return
-  }
-
-  const validTimePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/
-  if (!validTimePattern.test(timeValue)) {
-    formError.value =
-      'Wprowadź prawidłową wartość. Pole jest niekompletne lub ma nieprawidłową datę.'
-    showValidationPopup(timeInput)
-    return
-  }
-
-  formError.value = ''
-  clearValidation(timeInput)
-  clearValidation(titleInput)
-  clearValidation(studentInput)
-
-  const lessonKey = getLessonKey(selectedDay.value)
-  const dayLessons = lessonsByDay.value[lessonKey] || []
-  lessonsByDay.value = {
-    ...lessonsByDay.value,
-    [lessonKey]: [
-      ...dayLessons,
-      {
-        time: timeValue,
-        title: titleValue,
-        student: studentValue,
-        location: lessonForm.value.location,
-      },
-    ],
-  }
-
-  lessonForm.value = {
-    time: '',
-    title: '',
-    student: '',
-    location: 'Online',
-  }
-}
-
-function removeLesson(index) {
-  const lessonKey = getLessonKey(selectedDay.value)
-  const dayLessons = [...(lessonsByDay.value[lessonKey] || [])]
-  dayLessons.splice(index, 1)
-
-  if (dayLessons.length === 0) {
-    const updatedLessons = { ...lessonsByDay.value }
-    delete updatedLessons[lessonKey]
-    lessonsByDay.value = updatedLessons
-    return
-  }
-
-  lessonsByDay.value = {
-    ...lessonsByDay.value,
-    [lessonKey]: dayLessons,
+  if (decision === 'accept') {
+    console.info(`Zaakceptowano prośbę o lekcję ${id}`)
   }
 }
 </script>
@@ -286,57 +243,47 @@ function removeLesson(index) {
       <div class="lessons-card">
         <div class="lessons-header">
           <div>
-            <p class="lessons-label">Zaplanowane lekcje</p>
+            <p class="lessons-label">Zapytania o lekcję</p>
             <h3>{{ selectedDateLabel }}</h3>
           </div>
-          <span class="lessons-count">{{
-            selectedLessons.length === 0
-              ? 'Brak lekcji'
-              : selectedLessons.length === 1
-                ? '1 lekcja'
-                : `${selectedLessons.length} lekcje`
-          }}</span>
+          <span class="lessons-count">{{ notificationsCountLabel }}</span>
         </div>
 
-        <form class="lesson-form" @submit.prevent="addLesson">
-          <input
-            ref="timeInput"
-            v-model="lessonForm.time"
-            type="time"
-            placeholder="Godzina"
-            @input="clearValidation(timeInput)"
-          />
-          <input v-model="lessonForm.title" type="text" placeholder="Temat" />
-          <input v-model="lessonForm.student" type="text" placeholder="Imię i nazwisko ucznia" />
-          <p v-if="formError" class="form-error">{{ formError }}</p>
-          <select v-model="lessonForm.location">
-            <option value="Online">Online</option>
-            <option value="Studio">Studio</option>
-          </select>
-          <button class="add-lesson-button" type="submit">Dodaj lekcję</button>
-        </form>
-
-        <div v-if="selectedLessons.length > 0" class="lesson-list">
+        <div v-if="pendingNotifications.length > 0" class="notification-list">
           <article
-            v-for="(lesson, index) in selectedLessons"
-            :key="`${lesson.time}-${lesson.title}`"
-            class="lesson-item"
+            v-for="notification in pendingNotifications"
+            :key="notification.id"
+            class="notification-item"
           >
-            <div>
-              <p class="lesson-time">{{ lesson.time }}</p>
-              <p class="lesson-title">{{ lesson.title }}</p>
+            <div class="notification-top">
+              <div>
+                <p class="notification-student">{{ notification.student }}</p>
+                <p class="notification-topic">{{ notification.topic }}</p>
+              </div>
+              <span class="notification-pill">Nowe</span>
             </div>
-            <div class="lesson-meta">
-              <span>{{ lesson.student }}</span>
-              <span>{{ lesson.location }}</span>
+            <p class="notification-meta">{{ notification.requestedAt }}</p>
+            <p class="notification-message">{{ notification.message }}</p>
+            <div class="notification-actions">
+              <button
+                class="accept-button"
+                type="button"
+                @click="handleNotificationDecision(notification.id, 'accept')"
+              >
+                Akceptuj
+              </button>
+              <button
+                class="decline-button"
+                type="button"
+                @click="handleNotificationDecision(notification.id, 'decline')"
+              >
+                Odrzuć
+              </button>
             </div>
-            <button class="remove-lesson-button" type="button" @click="removeLesson(index)">
-              Usuń
-            </button>
           </article>
         </div>
 
-        <div v-else class="lesson-empty">Brak zaplanowanych lekcji tego dnia.</div>
+        <div v-else class="lesson-empty">Brak nowych próśb o lekcję.</div>
       </div>
     </div>
   </section>
@@ -409,23 +356,39 @@ function removeLesson(index) {
 .calendar-layout {
   width: 100%;
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: 24px;
+  grid-template-columns: 1.2fr 0.95fr;
+  gap: 16px;
+  align-items: start;
 }
 
-.calendar-card,
-.lessons-card {
+.calendar-card {
   background: var(--surface-strong);
   border-radius: 28px;
-  padding: 24px;
+  padding: 18px;
   box-shadow: var(--shadow-soft);
   border: 1px solid var(--border);
   color: var(--text);
+  align-self: start;
+  height: fit-content;
+}
+
+.lessons-card {
+  background: var(--surface-strong);
+  border-radius: 28px;
+  padding: 18px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--border);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: fit-content;
+  align-self: start;
 }
 
 :root[data-theme='dark'] .calendar-card,
 :root[data-theme='dark'] .lessons-card,
-:root[data-theme='dark'] .lesson-item,
+:root[data-theme='dark'] .notification-item,
 :root[data-theme='dark'] .lesson-empty {
   background: var(--surface-strong);
   border-color: rgba(148, 163, 184, 0.22);
@@ -435,24 +398,17 @@ function removeLesson(index) {
 :root[data-theme='dark'] .nav-button,
 :root[data-theme='dark'] .month-select,
 :root[data-theme='dark'] .calendar-button,
-:root[data-theme='dark'] .remove-lesson-button,
-:root[data-theme='dark'] .day,
-:root[data-theme='dark'] .lesson-form input,
-:root[data-theme='dark'] .lesson-form select {
+:root[data-theme='dark'] .decline-button,
+:root[data-theme='dark'] .day {
   background: var(--surface-soft);
   color: var(--text);
   border-color: var(--border);
   color-scheme: dark;
 }
 
-:root[data-theme='dark'] .month-select option,
-:root[data-theme='dark'] .lesson-form select option {
+:root[data-theme='dark'] .month-select option {
   background: var(--surface-strong);
   color: var(--text);
-}
-
-:root[data-theme='dark'] .lesson-form input::placeholder {
-  color: var(--muted);
 }
 
 .calendar-top {
@@ -460,7 +416,7 @@ function removeLesson(index) {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  margin-bottom: 22px;
+  margin-bottom: 14px;
 }
 
 .calendar-weekday {
@@ -553,7 +509,7 @@ h2 {
 }
 
 .day {
-  min-height: 72px;
+  min-height: 58px;
   border-radius: 20px;
   background: var(--surface-soft);
   color: var(--text);
@@ -603,7 +559,7 @@ h2 {
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
 }
 
 .lessons-header h3 {
@@ -616,75 +572,94 @@ h2 {
   font-weight: 700;
 }
 
-.lesson-form {
+.notification-list {
   display: grid;
   gap: 10px;
-  margin-bottom: 16px;
+  overflow-y: auto;
+  padding-right: 4px;
+  min-height: 0;
+  flex: 1;
+  max-height: calc(2 * 132px + 10px);
 }
 
-.lesson-form input,
-.lesson-form select {
-  width: 100%;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px 12px;
+.notification-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 18px;
   background: var(--surface-soft);
+  border: 1px solid var(--border);
+  min-height: 132px;
+}
+
+.notification-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.notification-student {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
   color: var(--text);
 }
 
-.add-lesson-button,
-.remove-lesson-button {
+.notification-topic {
+  margin: 4px 0 0;
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.notification-pill {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(91, 120, 198, 0.12);
+  color: var(--accent-strong);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.notification-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.notification-message {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.notification-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.accept-button,
+.decline-button {
   border: none;
-  border-radius: 12px;
-  padding: 10px 12px;
+  border-radius: 10px;
+  padding: 8px 10px;
   font-weight: 700;
   cursor: pointer;
 }
 
-.add-lesson-button {
+.accept-button {
   background: var(--primary-color);
   color: white;
 }
 
-.remove-lesson-button {
+.decline-button {
   background: var(--surface-soft);
   color: var(--text);
   border: 1px solid var(--border);
-}
-
-.lesson-list {
-  display: grid;
-  gap: 16px;
-}
-
-.lesson-item {
-  display: grid;
-  gap: 10px;
-  padding: 18px;
-  border-radius: 20px;
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
-}
-
-.lesson-time {
-  margin: 0;
-  font-size: 0.95rem;
-  color: var(--accent-strong);
-  font-weight: 700;
-}
-
-.lesson-title {
-  margin: 2px 0 0;
-  font-size: 1rem;
-  color: var(--text);
-}
-
-.lesson-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  color: var(--muted);
-  font-size: 0.95rem;
 }
 
 .lesson-empty {
