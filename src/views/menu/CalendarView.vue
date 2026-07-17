@@ -8,6 +8,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  resetKey: {
+    type: Number,
+    default: 0,
+  },
 })
 
 const { isAuthenticated, openAuthModal, user } = useAuth()
@@ -35,6 +39,7 @@ const monthNames = [
 const lessonRequests = ref([])
 const userCache = ref({})
 const loadingRequests = ref(false)
+const selectedDayLessons = ref([])
 
 function formatDateLabel(date) {
   return new Intl.DateTimeFormat('pl-PL', {
@@ -79,7 +84,8 @@ const calendarDays = computed(() => {
 })
 
 const selectedDate = computed(() => {
-  return new Date(currentDate.value.getFullYear(), currentDate.value.getMonth(), selectedDay.value)
+  const day = selectedDay.value ?? today.value
+  return new Date(currentDate.value.getFullYear(), currentDate.value.getMonth(), day)
 })
 
 const selectedDateLabel = computed(() => formatDateLabel(selectedDate.value))
@@ -225,12 +231,60 @@ async function handleReject(entry) {
   entry.status = 'rejected'
 }
 
+const lessonsByDay = computed(() => {
+  const map = {}
+  const approvedRequests = lessonRequests.value.filter((r) => r.status === 'approved')
+
+  for (const request of approvedRequests) {
+    const masks = request.requested_slots
+    if (!Array.isArray(masks)) continue
+
+    for (let dayOfWeek = 0; dayOfWeek < masks.length; dayOfWeek++) {
+      const mask = masks[dayOfWeek]
+      if (typeof mask !== 'number' || mask === 0) continue
+
+      const hours = []
+      for (let h = 0; h < 24; h++) {
+        if (mask & (1 << h)) {
+          hours.push(`${String(h).padStart(2, '0')}:00`)
+        }
+      }
+      if (hours.length === 0) continue
+
+      const year = currentDate.value.getFullYear()
+      const month = currentDate.value.getMonth()
+      const daysInMonthCount = new Date(year, month + 1, 0).getDate()
+
+      for (let d = 1; d <= daysInMonthCount; d++) {
+        const date = new Date(year, month, d)
+        const jsDay = date.getDay()
+        const mondayBased = jsDay === 0 ? 6 : jsDay - 1
+
+        if (mondayBased === dayOfWeek) {
+          if (!map[d]) map[d] = []
+          map[d].push({
+            name: getOtherName(request),
+            subject: getOtherSubject(request),
+            hours,
+            id: request.id,
+          })
+        }
+      }
+    }
+  }
+
+  return map
+})
+
 function hasLessons(day) {
-  return day === selectedDay.value
+  if (!day || day.type !== 'day') return false
+  return lessonsByDay.value[day.value] && lessonsByDay.value[day.value].length > 0
 }
 
 function selectDay(day) {
-  selectedDay.value = day
+  if (!day || day.type !== 'day') return
+  selectedDay.value = day.value
+  selectedDayLessons.value = lessonsByDay.value[day.value] || []
 }
 
 function changeMonth(event) {
@@ -272,6 +326,14 @@ watch(
   () => props.isTutorAccount,
   () => {
     if (user.value) fetchLessonRequests()
+  },
+)
+
+watch(
+  () => props.resetKey,
+  () => {
+    selectedDay.value = null
+    selectedDayLessons.value = []
   },
 )
 </script>
@@ -333,82 +395,38 @@ watch(
             v-for="day in calendarDays"
             :key="day"
             class="day"
-            :class="{ active: day === selectedDay, hasLesson: hasLessons(day) }"
+            :class="{
+              active: day.type === 'day' && day.value === selectedDay,
+              hasLesson: hasLessons(day),
+            }"
             @click="selectDay(day)"
           >
-            <span>{{ day }}</span>
+            <span>{{ day.value }}</span>
             <span v-if="hasLessons(day)" class="lesson-dot" />
           </button>
         </div>
       </div>
 
-      <div class="lessons-card">
+      <div class="lessons-card" :class="{ hidden: selectedDayLessons.length === 0 }">
         <div class="lessons-header">
           <div>
-            <p class="lessons-label">
-              {{ props.isTutorAccount ? 'Prośby o lekcję' : 'Moje lekcje' }}
-            </p>
+            <p class="lessons-label">Szczegóły dnia</p>
             <h3>{{ selectedDateLabel }}</h3>
           </div>
-          <span class="lessons-count">{{ requestsCountLabel }}</span>
         </div>
 
-        <div v-if="loadingRequests" class="lesson-empty">Ładowanie...</div>
-
-        <div v-else-if="filteredRequests.length > 0" class="notification-list">
-          <article v-for="entry in filteredRequests" :key="entry.id" class="notification-item">
-            <div class="notification-top">
-              <div>
-                <p class="notification-student">{{ getOtherName(entry) }}</p>
-                <p v-if="getOtherSubject(entry)" class="notification-topic">
-                  {{ getOtherSubject(entry) }}
-                </p>
-              </div>
-              <span v-if="entry.status === 'pending'" class="notification-pill new-pill">Nowe</span>
-              <span v-else-if="entry.status === 'approved'" class="notification-pill approved-pill"
-                >Zaakceptowano</span
-              >
-              <span v-else-if="entry.status === 'rejected'" class="notification-pill rejected-pill"
-                >Odrzucono</span
-              >
+        <div class="day-lessons-list">
+          <article v-for="lesson in selectedDayLessons" :key="lesson.id" class="day-lesson-item">
+            <div class="day-lesson-info">
+              <p class="day-lesson-name">{{ lesson.name }}</p>
+              <p v-if="lesson.subject" class="day-lesson-subject">{{ lesson.subject }}</p>
             </div>
-
-            <div class="notification-slots">
-              <span
-                v-for="slot in slotLabelsFromMasks(entry.requested_slots)"
-                :key="slot"
-                class="slot-chip"
-                >{{ slot }}</span
-              >
-            </div>
-
-            <p class="notification-meta">
-              {{
-                new Date(entry.created_at).toLocaleDateString('pl-PL', {
-                  day: 'numeric',
-                  month: 'long',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-              }}
-            </p>
-
-            <div
-              v-if="props.isTutorAccount && entry.status === 'pending'"
-              class="notification-actions"
-            >
-              <button class="accept-button" type="button" @click="handleAccept(entry)">
-                Akceptuj
-              </button>
-              <button class="decline-button" type="button" @click="handleReject(entry)">
-                Odrzuć
-              </button>
+            <div class="day-lesson-hours">
+              <span v-for="hour in lesson.hours" :key="hour" class="day-lesson-hour">{{
+                hour
+              }}</span>
             </div>
           </article>
-        </div>
-
-        <div v-else class="lesson-empty">
-          {{ props.isTutorAccount ? 'Brak nowych próśb o lekcję.' : 'Brak lekcji w tym miesiącu.' }}
         </div>
       </div>
     </div>
@@ -482,7 +500,7 @@ watch(
 .calendar-layout {
   width: 100%;
   display: grid;
-  grid-template-columns: 1.2fr 0.95fr;
+  grid-template-columns: 1fr 340px;
   gap: 16px;
   align-items: start;
 }
@@ -510,6 +528,12 @@ watch(
   overflow: hidden;
   height: fit-content;
   align-self: start;
+  transition: opacity var(--theme-transition-duration) var(--theme-transition-easing);
+}
+
+.lessons-card.hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 :root[data-theme='dark'] .calendar-card,
@@ -782,6 +806,56 @@ h2 {
   border-radius: 6px;
   font-size: 0.78rem;
   font-weight: 600;
+}
+
+.day-lessons-list {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.day-lesson-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+}
+
+.day-lesson-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.day-lesson-name {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.day-lesson-subject {
+  margin: 4px 0 0;
+  color: var(--accent-strong);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.day-lesson-hours {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.day-lesson-hour {
+  background: var(--primary-color);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .notification-actions {

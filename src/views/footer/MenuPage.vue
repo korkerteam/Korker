@@ -1,5 +1,5 @@
 <script setup>
-import { computed, watch, inject } from 'vue'
+import { computed, ref, watch, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth.js'
 import MenuContent from '@/components/MenuContent.vue'
@@ -38,6 +38,8 @@ const router = useRouter()
 const { isAuthenticated, needsProfile, openAuthModal } = useAuth()
 
 const homeTrigger = inject('homeTrigger')
+
+const calendarResetKey = ref(0)
 
 const currentPanel = computed(() => route.query.panel || null)
 
@@ -106,7 +108,11 @@ function handleToggleSearch() {
 
 function handleToggleCalendar() {
   if (!requireAuth()) return
-  navigateToPanel('calendar')
+  if (currentPanel.value === 'calendar') {
+    calendarResetKey.value++
+  } else {
+    navigateToPanel('calendar')
+  }
 }
 </script>
 
@@ -150,6 +156,7 @@ function handleToggleCalendar() {
           v-else-if="currentPanel === 'calendar'"
           key="calendar"
           :is-tutor-account="props.isTutorAccount"
+          :reset-key="calendarResetKey"
         />
         <UserProfilePage
           v-else-if="route.name === 'user-profile'"
