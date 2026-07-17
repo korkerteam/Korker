@@ -146,7 +146,11 @@ function handleToggleCalendar() {
           @show-teacher="(t) => emit('show-teacher', t)"
           @remove-teacher="(t) => emit('remove-liked-teacher', t)"
         />
-        <CalendarView v-else-if="currentPanel === 'calendar'" key="calendar" />
+        <CalendarView
+          v-else-if="currentPanel === 'calendar'"
+          key="calendar"
+          :is-tutor-account="props.isTutorAccount"
+        />
         <UserProfilePage
           v-else-if="route.name === 'user-profile'"
           :key="route.params.nickname"

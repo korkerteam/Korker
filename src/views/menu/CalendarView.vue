@@ -1,8 +1,16 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 
-const { isAuthenticated, openAuthModal } = useAuth()
+const props = defineProps({
+  isTutorAccount: {
+    type: Boolean,
+    default: false,
+  },
+})
+
+const { isAuthenticated, openAuthModal, user } = useAuth()
 
 const todayDate = new Date()
 const currentDate = ref(new Date(todayDate.getFullYear(), todayDate.getMonth(), 1))
@@ -24,56 +32,9 @@ const monthNames = [
   'Grudzień',
 ]
 
-const notifications = ref([
-  {
-    id: 1,
-    student: 'Anna Kowalska',
-    topic: 'Angielski - mówienie',
-    requestedAt: '18:30 · 18 lipca',
-    message: 'Cześć! Chciałabym umówić lekcję na rozmowę i poprawę wymowy.',
-    status: 'pending',
-  },
-  {
-    id: 2,
-    student: 'Michał Nowak',
-    topic: 'Matematyka - funkcje',
-    requestedAt: '20:00 · 19 lipca',
-    message: 'Czy mogę przyjść na lekcję online w tym tygodniu?',
-    status: 'pending',
-  },
-  {
-    id: 3,
-    student: 'Kasia Zielińska',
-    topic: 'Biologia - genetyka',
-    requestedAt: '16:15 · 20 lipca',
-    message: 'Mam pytanie dotyczące sprawdzianu i chciałabym zrobić krótkie powtórzenie.',
-    status: 'pending',
-  },
-  {
-    id: 4,
-    student: 'Piotr Wróbel',
-    topic: 'Historia - antyk',
-    requestedAt: '19:45 · 21 lipca',
-    message: 'Czy da się zrobić lekcję w weekend? Chciałbym uporządkować notatki.',
-    status: 'pending',
-  },
-  {
-    id: 5,
-    student: 'Ola Janicka',
-    topic: 'Chemia - reakcje',
-    requestedAt: '17:00 · 22 lipca',
-    message: 'Chciałabym szybko przejrzeć zadania domowe przed sprawdzianem.',
-    status: 'pending',
-  },
-  {
-    id: 6,
-    student: 'Tomasz Krawczyk',
-    topic: 'Fizyka - ruch',
-    requestedAt: '14:30 · 23 lipca',
-    message: 'Czy możemy zrobić lekcję w środę po południu? Potrzebuję pomocy z wykresami.',
-    status: 'pending',
-  },
-])
+const lessonRequests = ref([])
+const userCache = ref({})
+const loadingRequests = ref(false)
 
 function formatDateLabel(date) {
   return new Intl.DateTimeFormat('pl-PL', {
@@ -110,19 +71,140 @@ const selectedDateLabel = computed(() => {
   return formatDateLabel(date)
 })
 
-const pendingNotifications = computed(() =>
-  notifications.value.filter((notification) => notification.status === 'pending'),
-)
+const filteredRequests = computed(() => {
+  if (props.isTutorAccount) {
+    return lessonRequests.value.filter((r) => r.status === 'pending')
+  }
+  return lessonRequests.value.filter((r) => r.status === 'approved')
+})
 
-const notificationsCountLabel = computed(() => {
-  if (pendingNotifications.value.length === 0) {
-    return 'Brak próśb'
+const requestsCountLabel = computed(() => {
+  const count = filteredRequests.value.length
+  if (count === 0) return props.isTutorAccount ? 'Brak próśb' : 'Brak lekcji'
+  return props.isTutorAccount
+    ? count === 1
+      ? '1 prośba'
+      : `${count} prośby`
+    : count === 1
+      ? '1 lekcja'
+      : `${count} lekcji`
+})
+
+function getOtherProfile(entry) {
+  const authId = props.isTutorAccount ? entry.student_id : entry.tutor_id
+  return userCache.value[authId] || null
+}
+
+function getOtherName(entry) {
+  const p = getOtherProfile(entry)
+  if (!p) return 'Ładowanie...'
+  return p.nickname || [p.name, p.surname].filter(Boolean).join(' ') || 'Nieznany'
+}
+
+function getOtherSubject(entry) {
+  const p = getOtherProfile(entry)
+  return p?.tutor_post?.subject || ''
+}
+
+function slotLabelsFromMasks(masks) {
+  const dayKeys = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
+  const labels = []
+  if (!Array.isArray(masks)) return labels
+  for (let di = 0; di < masks.length; di++) {
+    const mask = masks[di]
+    if (typeof mask === 'number' && mask > 0) {
+      for (let h = 0; h < 24; h++) {
+        if (mask & (1 << h)) {
+          labels.push(`${dayKeys[di]} ${String(h).padStart(2, '0')}:00`)
+        }
+      }
+    }
+  }
+  return labels
+}
+
+async function fetchLessonRequests() {
+  if (!user.value) return
+  loadingRequests.value = true
+
+  const column = props.isTutorAccount ? 'tutor_id' : 'student_id'
+  const { data, error } = await supabase
+    .from('lesson_requests')
+    .select('*')
+    .eq(column, user.value.id)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Failed to fetch lesson requests:', error)
+    lessonRequests.value = []
+    loadingRequests.value = false
+    return
   }
 
-  return pendingNotifications.value.length === 1
-    ? '1 prośba'
-    : `${pendingNotifications.value.length} prośby`
-})
+  lessonRequests.value = data || []
+
+  const otherIds = new Set()
+  for (const r of data || []) {
+    otherIds.add(props.isTutorAccount ? r.student_id : r.tutor_id)
+  }
+
+  if (otherIds.size > 0) {
+    const { data: profiles } = await supabase
+      .from('users')
+      .select('*')
+      .in('auth_id', [...otherIds])
+
+    const map = {}
+    for (const p of profiles || []) {
+      map[p.auth_id] = p
+    }
+    userCache.value = map
+  }
+
+  loadingRequests.value = false
+}
+
+async function handleAccept(entry) {
+  const { error } = await supabase
+    .from('lesson_requests')
+    .update({ status: 'approved', updated_at: new Date().toISOString() })
+    .eq('id', entry.id)
+
+  if (error) {
+    console.error('Failed to accept request:', error)
+    return
+  }
+
+  const { data: tutorProfile } = await supabase
+    .from('users')
+    .select('saved_tutors')
+    .eq('auth_id', user.value.id)
+    .maybeSingle()
+
+  const current = tutorProfile?.saved_tutors || []
+  if (!current.includes(entry.student_id)) {
+    await supabase
+      .from('users')
+      .update({ saved_tutors: [...current, entry.student_id] })
+      .eq('auth_id', user.value.id)
+  }
+
+  entry.status = 'approved'
+}
+
+async function handleReject(entry) {
+  const { error } = await supabase
+    .from('lesson_requests')
+    .update({ status: 'rejected', updated_at: new Date().toISOString() })
+    .eq('id', entry.id)
+
+  if (error) {
+    console.error('Failed to reject request:', error)
+    return
+  }
+
+  entry.status = 'rejected'
+}
 
 function hasLessons(day) {
   return day === selectedDay.value
@@ -159,13 +241,20 @@ function goToToday() {
   selectedDay.value = today.value
 }
 
-function handleNotificationDecision(id, decision) {
-  notifications.value = notifications.value.filter((notification) => notification.id !== id)
+watch(
+  () => user.value,
+  (u) => {
+    if (u) fetchLessonRequests()
+  },
+  { immediate: true },
+)
 
-  if (decision === 'accept') {
-    console.info(`Zaakceptowano prośbę o lekcję ${id}`)
-  }
-}
+watch(
+  () => props.isTutorAccount,
+  () => {
+    if (user.value) fetchLessonRequests()
+  },
+)
 </script>
 
 <template>
@@ -220,18 +309,12 @@ function handleNotificationDecision(id, decision) {
         </div>
 
         <div class="calendar-grid">
-          <div class="weekday" v-for="weekday in weekdayLabels" :key="weekday">
-            {{ weekday }}
-          </div>
-
+          <div class="weekday" v-for="weekday in weekdayLabels" :key="weekday">{{ weekday }}</div>
           <button
             v-for="day in calendarDays"
             :key="day"
             class="day"
-            :class="{
-              active: day === selectedDay,
-              hasLesson: hasLessons(day),
-            }"
+            :class="{ active: day === selectedDay, hasLesson: hasLessons(day) }"
             @click="selectDay(day)"
           >
             <span>{{ day }}</span>
@@ -243,47 +326,71 @@ function handleNotificationDecision(id, decision) {
       <div class="lessons-card">
         <div class="lessons-header">
           <div>
-            <p class="lessons-label">Zapytania o lekcję</p>
+            <p class="lessons-label">
+              {{ props.isTutorAccount ? 'Prośby o lekcję' : 'Moje lekcje' }}
+            </p>
             <h3>{{ selectedDateLabel }}</h3>
           </div>
-          <span class="lessons-count">{{ notificationsCountLabel }}</span>
+          <span class="lessons-count">{{ requestsCountLabel }}</span>
         </div>
 
-        <div v-if="pendingNotifications.length > 0" class="notification-list">
-          <article
-            v-for="notification in pendingNotifications"
-            :key="notification.id"
-            class="notification-item"
-          >
+        <div v-if="loadingRequests" class="lesson-empty">Ładowanie...</div>
+
+        <div v-else-if="filteredRequests.length > 0" class="notification-list">
+          <article v-for="entry in filteredRequests" :key="entry.id" class="notification-item">
             <div class="notification-top">
               <div>
-                <p class="notification-student">{{ notification.student }}</p>
-                <p class="notification-topic">{{ notification.topic }}</p>
+                <p class="notification-student">{{ getOtherName(entry) }}</p>
+                <p v-if="getOtherSubject(entry)" class="notification-topic">
+                  {{ getOtherSubject(entry) }}
+                </p>
               </div>
-              <span class="notification-pill">Nowe</span>
-            </div>
-            <p class="notification-meta">{{ notification.requestedAt }}</p>
-            <p class="notification-message">{{ notification.message }}</p>
-            <div class="notification-actions">
-              <button
-                class="accept-button"
-                type="button"
-                @click="handleNotificationDecision(notification.id, 'accept')"
+              <span v-if="entry.status === 'pending'" class="notification-pill new-pill">Nowe</span>
+              <span v-else-if="entry.status === 'approved'" class="notification-pill approved-pill"
+                >Zaakceptowano</span
               >
+              <span v-else-if="entry.status === 'rejected'" class="notification-pill rejected-pill"
+                >Odrzucono</span
+              >
+            </div>
+
+            <div class="notification-slots">
+              <span
+                v-for="slot in slotLabelsFromMasks(entry.requested_slots)"
+                :key="slot"
+                class="slot-chip"
+                >{{ slot }}</span
+              >
+            </div>
+
+            <p class="notification-meta">
+              {{
+                new Date(entry.created_at).toLocaleDateString('pl-PL', {
+                  day: 'numeric',
+                  month: 'long',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              }}
+            </p>
+
+            <div
+              v-if="props.isTutorAccount && entry.status === 'pending'"
+              class="notification-actions"
+            >
+              <button class="accept-button" type="button" @click="handleAccept(entry)">
                 Akceptuj
               </button>
-              <button
-                class="decline-button"
-                type="button"
-                @click="handleNotificationDecision(notification.id, 'decline')"
-              >
+              <button class="decline-button" type="button" @click="handleReject(entry)">
                 Odrzuć
               </button>
             </div>
           </article>
         </div>
 
-        <div v-else class="lesson-empty">Brak nowych próśb o lekcję.</div>
+        <div v-else class="lesson-empty">
+          {{ props.isTutorAccount ? 'Brak nowych próśb o lekcję.' : 'Brak lekcji w tym miesiącu.' }}
+        </div>
       </div>
     </div>
   </section>
@@ -579,7 +686,7 @@ h2 {
   padding-right: 4px;
   min-height: 0;
   flex: 1;
-  max-height: calc(2 * 132px + 10px);
+  max-height: calc(2 * 200px);
 }
 
 .notification-item {
@@ -617,11 +724,24 @@ h2 {
 .notification-pill {
   border-radius: 999px;
   padding: 6px 10px;
-  background: rgba(91, 120, 198, 0.12);
-  color: var(--accent-strong);
   font-size: 0.8rem;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.new-pill {
+  background: rgba(91, 120, 198, 0.12);
+  color: var(--accent-strong);
+}
+
+.approved-pill {
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+}
+
+.rejected-pill {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
 }
 
 .notification-meta {
@@ -630,10 +750,19 @@ h2 {
   font-size: 0.92rem;
 }
 
-.notification-message {
-  margin: 0;
-  color: var(--text);
-  line-height: 1.6;
+.notification-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.slot-chip {
+  background: rgba(79, 117, 199, 0.1);
+  color: var(--accent-strong);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
 .notification-actions {
