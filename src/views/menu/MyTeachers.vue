@@ -26,23 +26,46 @@ const showTimetable = ref(false)
 const timetableData = ref(null)
 const timetableLoading = ref(false)
 const timetableError = ref('')
+const selectedSlots = ref(new Set())
 const dayKeys = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
 const dayAbbr = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd']
-const gridHours = Array.from({ length: 14 }, (_, i) => i + 8)
+const gridHours = Array.from({ length: 24 }, (_, i) => i)
 
 function slotLabel(hour) {
   return `${String(hour).padStart(2, '0')}:00-${String((hour + 1) % 24).padStart(2, '0')}:00`
+}
+
+function slotKey(day, hour) {
+  return `${day}-${hour}`
 }
 
 function hasSlot(day, hour) {
   return timetableData.value?.[day]?.includes(slotLabel(hour))
 }
 
+function isSelected(day, hour) {
+  return selectedSlots.value.has(slotKey(day, hour))
+}
+
+function toggleSlot(day, hour) {
+  if (!hasSlot(day, hour)) return
+  const key = slotKey(day, hour)
+  const next = new Set(selectedSlots.value)
+  if (next.has(key)) {
+    next.delete(key)
+  } else {
+    next.add(key)
+  }
+  selectedSlots.value = next
+}
+
 async function openTimetable(teacher) {
+  selectedTeacher.value = teacher
   showTimetable.value = true
   timetableLoading.value = true
   timetableError.value = ''
   timetableData.value = null
+  selectedSlots.value = new Set()
 
   const { data, error } = await supabase
     .from('users')
@@ -62,9 +85,19 @@ async function openTimetable(teacher) {
 
 function closeTimetable() {
   showTimetable.value = false
+  selectedTeacher.value = null
   timetableData.value = null
   timetableLoading.value = false
   timetableError.value = ''
+  selectedSlots.value = new Set()
+}
+
+function getDisplayName(teacher) {
+  const fullName = [teacher.name, teacher.surname].filter(Boolean).join(' ')
+  if (teacher.nickname) {
+    return `${teacher.nickname} (${fullName})`
+  }
+  return fullName || teacher.name
 }
 
 const teacherImageMap = {
@@ -121,7 +154,15 @@ function goBack() {
 
 <template>
   <LoadingBox v-if="loading" />
-  <div v-else class="teacher-panel" :class="{ compact: isMany, 'guest-state': !isAuthenticated }">
+  <div
+    v-else
+    class="teacher-panel"
+    :class="{
+      compact: isMany && !showTimetable,
+      'guest-state': !isAuthenticated,
+      'plan-full': showTimetable,
+    }"
+  >
     <div v-if="!isAuthenticated" class="auth-required-card">
       <h3>Aby zobaczyć swoich nauczycieli</h3>
       <p>
@@ -152,12 +193,12 @@ function goBack() {
               <img
                 v-if="getTeacherImage(teacher)"
                 :src="getTeacherImage(teacher)"
-                :alt="teacher.name"
+                :alt="getDisplayName(teacher)"
               />
-              <span v-else>{{ teacher.name.charAt(0) }}</span>
+              <span v-else>{{ getDisplayName(teacher).charAt(0) }}</span>
             </div>
             <div class="meta">
-              <div class="name">{{ teacher.name }}</div>
+              <div class="name">{{ getDisplayName(teacher) }}</div>
               <div class="details">
                 {{ getTeacherSubject(teacher)
                 }}<span v-if="getTeacherLevel(teacher)"> • {{ getTeacherLevel(teacher) }}</span>
@@ -181,7 +222,7 @@ function goBack() {
     </template>
 
     <!-- Teacher Profile View -->
-    <template v-else>
+    <template v-else-if="selectedTeacher && !showTimetable">
       <div class="profile-header">
         <button class="back-button" @click="goBack">← Wróć</button>
       </div>
@@ -191,13 +232,15 @@ function goBack() {
           <img
             v-if="getTeacherImage(selectedTeacher)"
             :src="getTeacherImage(selectedTeacher)"
-            :alt="selectedTeacher.name"
+            :alt="getDisplayName(selectedTeacher)"
           />
-          <div v-else class="image-placeholder">{{ selectedTeacher.name.charAt(0) }}</div>
+          <div v-else class="image-placeholder">
+            {{ getDisplayName(selectedTeacher).charAt(0) }}
+          </div>
         </div>
 
         <div class="profile-info">
-          <h2 class="profile-name">{{ selectedTeacher.name }}</h2>
+          <h2 class="profile-name">{{ getDisplayName(selectedTeacher) }}</h2>
           <p class="profile-meta">
             {{ getTeacherSubject(selectedTeacher)
             }}<span v-if="getTeacherLevel(selectedTeacher)">
@@ -221,46 +264,72 @@ function goBack() {
       </div>
     </template>
 
-    <!-- Timetable Modal (inside root to preserve single-root Transition) -->
-    <Teleport to="body">
-      <div v-if="showTimetable" class="timetable-overlay" @click.self="closeTimetable">
-        <div class="timetable-modal">
-          <div class="timetable-header">
-            <h3>Plan zajęć</h3>
-            <button class="timetable-close" @click="closeTimetable">&times;</button>
+    <!-- Timetable Page View (Plan) -->
+    <template v-else-if="selectedTeacher && showTimetable">
+      <div class="profile-header">
+        <button class="back-button" @click="closeTimetable">← Wróć</button>
+      </div>
+
+      <div class="plan-layout">
+        <div class="plan-sidebar">
+          <div class="plan-avatar">
+            <img
+              v-if="getTeacherImage(selectedTeacher)"
+              :src="getTeacherImage(selectedTeacher)"
+              :alt="getDisplayName(selectedTeacher)"
+            />
+            <span v-else>{{ getDisplayName(selectedTeacher).charAt(0) }}</span>
           </div>
-          <div class="timetable-body">
-            <LoadingBox v-if="timetableLoading" />
-            <p v-else-if="timetableError" class="timetable-error">{{ timetableError }}</p>
-            <template v-else-if="timetableData">
-              <div class="tt-grid-wrap">
-                <div class="tt-grid">
-                  <div class="tt-corner"></div>
-                  <div v-for="(d, i) in dayAbbr" :key="d" class="tt-day-header">{{ d }}</div>
-                  <template v-for="hour in gridHours" :key="hour">
-                    <div class="tt-time-label">{{ String(hour).padStart(2, '0') }}:00</div>
-                    <div
-                      v-for="(d, di) in dayKeys"
-                      :key="`${d}-${hour}`"
-                      class="tt-cell"
-                      :class="{ available: hasSlot(d, hour) }"
-                    ></div>
-                  </template>
-                </div>
-              </div>
-            </template>
-            <p v-else class="timetable-empty">Brak danych o planie zajęć.</p>
+          <h2 class="plan-name">{{ getDisplayName(selectedTeacher) }}</h2>
+          <p class="plan-meta">
+            {{ getTeacherSubject(selectedTeacher)
+            }}<span v-if="getTeacherLevel(selectedTeacher)">
+              • {{ getTeacherLevel(selectedTeacher) }}</span
+            >
+          </p>
+
+          <button class="plan-action-button">Umów lekcję</button>
+        </div>
+
+        <div class="plan-main">
+          <h3 class="plan-section-title">Plan zajęć</h3>
+
+          <div class="plan-legend">
+            <span class="legend-item"><span class="legend-dot available-dot"></span> Dostępne</span>
+            <span class="legend-item"><span class="legend-dot selected-dot"></span> Wybrane</span>
+          </div>
+
+          <LoadingBox v-if="timetableLoading" />
+          <p v-if="timetableError" class="timetable-error">{{ timetableError }}</p>
+          <div class="tt-grid-wrap">
+            <div class="tt-grid">
+              <div class="tt-corner"></div>
+              <div v-for="d in dayAbbr" :key="d" class="tt-day-header">{{ d }}</div>
+              <template v-for="hour in gridHours" :key="hour">
+                <div class="tt-time-label">{{ String(hour).padStart(2, '0') }}:00</div>
+                <div
+                  v-for="(d, di) in dayKeys"
+                  :key="`${d}-${hour}`"
+                  class="tt-cell"
+                  :class="{
+                    available: hasSlot(d, hour),
+                    selected: isSelected(d, hour),
+                  }"
+                  @click="toggleSlot(d, hour)"
+                ></div>
+              </template>
+            </div>
           </div>
         </div>
       </div>
-    </Teleport>
+    </template>
   </div>
 </template>
 
 <style scoped>
 .teacher-panel {
   width: 100%;
-  max-width: 760px;
+  max-width: 1100px;
   background: var(--surface-strong);
   border-radius: 16px;
   padding: 0;
@@ -276,7 +345,12 @@ function goBack() {
 }
 
 .teacher-panel.compact {
-  max-height: 60vh;
+  max-height: 75vh;
+}
+
+.teacher-panel.plan-full {
+  max-height: none;
+  overflow: visible;
 }
 
 .teacher-panel.guest-state {
@@ -482,52 +556,60 @@ function goBack() {
 }
 
 .profile-content {
-  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 32px;
   overflow-y: auto;
   flex: 1;
 }
 
 .profile-image {
-  display: flex;
-  justify-content: center;
-}
-
-.profile-image img {
-  width: 100%;
-  max-width: 240px;
-  height: 240px;
-  object-fit: cover;
-  border-radius: 12px;
-  border: 1px solid rgba(79, 117, 199, 0.1);
-}
-
-.image-placeholder {
-  width: 240px;
-  height: 240px;
+  width: 120px;
+  height: 120px;
   border-radius: 12px;
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 72px;
   font-weight: 700;
+  font-size: 42px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.profile-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .profile-info {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 400px;
 }
 
 .profile-name {
   margin: 0;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--text);
+  text-align: center;
 }
 
 .profile-meta {
@@ -541,8 +623,8 @@ function goBack() {
   background: var(--surface-soft);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 12px;
-  border-left: 3px solid var(--accent);
+  padding: 16px;
+  width: 100%;
 }
 
 .profile-bio {
@@ -553,15 +635,18 @@ function goBack() {
 }
 
 .tags-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  width: 100%;
 }
 
 .tags-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--muted);
+  margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -605,60 +690,118 @@ function goBack() {
   transform: translateY(0);
 }
 
-.timetable-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: rgba(0, 0, 0, 0.45);
+.plan-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 24px;
+  padding: 24px 32px;
+}
+
+.plan-sidebar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.plan-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 700;
+  font-size: 42px;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
-.timetable-modal {
-  background: var(--surface-strong);
-  border-radius: 14px;
-  width: 92%;
-  max-width: 520px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
-  border: 1px solid var(--border);
+.plan-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
-.timetable-header {
+.plan-avatar span {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border);
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
-.timetable-header h3 {
+.plan-name {
   margin: 0;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--text);
 }
 
-.timetable-close {
-  background: transparent;
-  border: none;
-  font-size: 24px;
+.plan-meta {
+  margin: 0;
   color: var(--muted);
-  cursor: pointer;
-  line-height: 1;
-  padding: 0 4px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 2px;
 }
 
-.timetable-close:hover {
+.plan-action-button {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 6px;
+  width: 100%;
+}
+
+.plan-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.plan-section-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
   color: var(--text);
 }
 
-.timetable-body {
-  padding: 14px 18px 18px;
+.plan-legend {
   display: flex;
-  justify-content: center;
+  gap: 18px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.legend-dot.available-dot {
+  background: #4f75c7;
+}
+
+.legend-dot.selected-dot {
+  background: #22c55e;
 }
 
 .tt-grid-wrap {
@@ -670,10 +813,12 @@ function goBack() {
 
 .tt-grid {
   display: grid;
-  grid-template-columns: 40px repeat(7, 1fr);
+  grid-template-columns: 44px repeat(7, 1fr);
+  grid-template-rows: 24px repeat(24, 22px);
   gap: 2px;
   padding: 4px;
   background: #f3f4f6;
+  width: 100%;
 }
 
 .tt-corner {
@@ -691,7 +836,7 @@ function goBack() {
   letter-spacing: 0.03em;
   background: #f9fafb;
   border-radius: 3px;
-  padding: 3px 0;
+  padding: 2px;
 }
 
 .tt-time-label {
@@ -708,24 +853,26 @@ function goBack() {
   border-radius: 3px;
   background: #fff;
   border: 1px solid #e5e7eb;
-  min-height: 18px;
+  min-width: 0;
+  min-height: 0;
   transition: background 0.08s;
 }
 
 .tt-cell.available {
   background: #4f75c7;
   border-color: #4f75c7;
+  cursor: pointer;
+}
+
+.tt-cell.selected {
+  background: #22c55e;
+  border-color: #22c55e;
+  cursor: pointer;
 }
 
 .timetable-error {
   color: #ef4444;
   font-weight: 600;
   text-align: center;
-}
-
-.timetable-empty {
-  color: var(--muted);
-  text-align: center;
-  font-weight: 600;
 }
 </style>
