@@ -17,7 +17,28 @@
         </div>
 
         <div class="panel-content-window">
-          <div class="notifications-empty">Brak nadchodzących lekcji 🗓️</div>
+          <div v-if="upcomingLoading" class="notifications-empty">Ładowanie...</div>
+          <div v-else-if="upcomingLessons.length === 0" class="notifications-empty">
+            Brak nadchodzących lekcji 🗓️
+          </div>
+          <div v-else class="upcoming-list">
+            <div v-for="lesson in upcomingLessons" :key="lesson.id" class="upcoming-item">
+              <div class="upcoming-top">
+                <strong class="upcoming-name">{{ getOtherName(lesson) }}</strong>
+                <span v-if="getOtherSubject(lesson)" class="upcoming-subject">{{
+                  getOtherSubject(lesson)
+                }}</span>
+              </div>
+              <div class="upcoming-slots">
+                <span
+                  v-for="slot in slotLabelsFromMasks(lesson.requested_slots)"
+                  :key="slot"
+                  class="upcoming-slot-chip"
+                  >{{ slot }}</span
+                >
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -58,9 +79,12 @@
 </template>
 
 <script setup>
-import { computed, inject } from 'vue'
+import { computed, ref, inject, watch } from 'vue'
+import { supabase } from '@/lib/supabase.js'
+import { useAuth } from '@/composables/useAuth.js'
 import { useMessaging } from '@/composables/useMessaging.js'
 
+const { isAuthenticated, profileData, user } = useAuth()
 const { conversations, notifications, markNotificationRead } = useMessaging()
 
 const { openChatWithUser } = inject('globalChat', {
@@ -118,6 +142,103 @@ const notificationsToShow = computed(() => {
 })
 
 const unreadCount = computed(() => notificationsToShow.value.length)
+
+const isTutorAccount = computed(() => {
+  const p = profileData.value
+  const t = [p?.account_type, p?.accountType].find(Boolean)
+  return `${t || ''}`.toLowerCase().includes('tutor')
+})
+
+const upcomingLessons = ref([])
+const upcomingLoading = ref(false)
+const otherUsers = ref({})
+
+function slotLabelsFromMasks(masks) {
+  const dayKeys = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
+  const labels = []
+  if (!Array.isArray(masks)) return labels
+  for (let di = 0; di < masks.length; di++) {
+    const mask = masks[di]
+    if (typeof mask === 'number' && mask > 0) {
+      for (let h = 0; h < 24; h++) {
+        if (mask & (1 << h)) {
+          labels.push(`${dayKeys[di]} ${String(h).padStart(2, '0')}:00`)
+        }
+      }
+    }
+  }
+  return labels
+}
+
+async function fetchUpcomingLessons() {
+  if (!user.value) return
+  upcomingLoading.value = true
+
+  const column = isTutorAccount.value ? 'tutor_id' : 'student_id'
+  const { data, error } = await supabase
+    .from('lesson_requests')
+    .select('*')
+    .eq(column, user.value.id)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Failed to fetch upcoming lessons:', error)
+    upcomingLessons.value = []
+    upcomingLoading.value = false
+    return
+  }
+
+  upcomingLessons.value = data || []
+
+  const otherIds = new Set()
+  for (const r of data || []) {
+    otherIds.add(isTutorAccount.value ? r.student_id : r.tutor_id)
+  }
+
+  if (otherIds.size > 0) {
+    const { data: profiles } = await supabase
+      .from('users')
+      .select('*')
+      .in('auth_id', [...otherIds])
+
+    const map = {}
+    for (const p of profiles || []) {
+      map[p.auth_id] = p
+    }
+    otherUsers.value = map
+  }
+
+  upcomingLoading.value = false
+}
+
+function getOtherName(entry) {
+  const authId = isTutorAccount.value ? entry.student_id : entry.tutor_id
+  const p = otherUsers.value[authId]
+  if (!p) return 'Ładowanie...'
+  return p.nickname || [p.name, p.surname].filter(Boolean).join(' ') || 'Nieznany'
+}
+
+function getOtherSubject(entry) {
+  const authId = isTutorAccount.value ? entry.student_id : entry.tutor_id
+  const p = otherUsers.value[authId]
+  return p?.tutor_post?.subject || ''
+}
+
+watch(
+  () => user.value,
+  (u) => {
+    if (u) fetchUpcomingLessons()
+  },
+  { immediate: true },
+)
+
+watch(
+  () => profileData.value,
+  () => {
+    if (user.value) fetchUpcomingLessons()
+  },
+)
 
 const handleNotificationClick = (notificationId, senderId) => {
   openChatWithUser(senderId)
@@ -405,6 +526,57 @@ const handleNotificationClick = (notificationId, senderId) => {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 240px;
+}
+
+.upcoming-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.upcoming-item {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.upcoming-item:last-child {
+  border-bottom: none;
+}
+
+.upcoming-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.upcoming-name {
+  font-size: 0.95rem;
+  color: var(--text-strong);
+}
+
+.upcoming-subject {
+  font-size: 0.82rem;
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.upcoming-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.upcoming-slot-chip {
+  background: rgba(79, 117, 199, 0.1);
+  color: var(--accent-strong);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
 .notifications-empty {

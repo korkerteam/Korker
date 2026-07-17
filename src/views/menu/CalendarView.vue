@@ -100,19 +100,25 @@ const filteredRequests = computed(() => {
   if (props.isTutorAccount) {
     return lessonRequests.value.filter((r) => r.status === 'pending')
   }
-  return lessonRequests.value.filter((r) => r.status === 'approved')
+  return lessonRequests.value
 })
 
 const requestsCountLabel = computed(() => {
   const count = filteredRequests.value.length
   if (count === 0) return props.isTutorAccount ? 'Brak próśb' : 'Brak lekcji'
-  return props.isTutorAccount
-    ? count === 1
-      ? '1 prośba'
-      : `${count} prośby`
-    : count === 1
-      ? '1 lekcja'
-      : `${count} lekcji`
+
+  if (props.isTutorAccount) {
+    return count === 1 ? '1 prośba' : `${count} prośby`
+  }
+
+  const approved = lessonRequests.value.filter((r) => r.status === 'approved').length
+  const rejected = lessonRequests.value.filter((r) => r.status === 'rejected').length
+  const pending = lessonRequests.value.filter((r) => r.status === 'pending').length
+  const parts = []
+  if (approved) parts.push(`${approved} zaakceptowanych`)
+  if (pending) parts.push(`${pending} oczekujących`)
+  if (rejected) parts.push(`${rejected} odrzuconych`)
+  return parts.join(', ')
 })
 
 function getOtherProfile(entry) {
@@ -410,7 +416,9 @@ watch(
       <div class="lessons-card" :class="{ hidden: selectedDayLessons.length === 0 }">
         <div class="lessons-header">
           <div>
-            <p class="lessons-label">Szczegóły dnia</p>
+            <p class="lessons-label">
+              {{ props.isTutorAccount ? 'Prośby o lekcję' : 'Moje zgłoszenia' }}
+            </p>
             <h3>{{ selectedDateLabel }}</h3>
           </div>
         </div>

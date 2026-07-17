@@ -92,7 +92,7 @@ async function openTimetable(teacher) {
           .select('requested_slots')
           .eq('student_id', user.value.id)
           .eq('tutor_id', tutorId)
-          .eq('status', 'pending')
+          .in('status', ['pending', 'approved'])
       : Promise.resolve({ data: [] }),
   ])
 
