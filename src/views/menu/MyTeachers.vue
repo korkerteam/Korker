@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase.js'
 import LoadingBox from '@/components/LoadingBox.vue'
@@ -21,6 +21,7 @@ const router = useRouter()
 const loading = ref(false)
 const selectedTeacher = ref(null)
 const { isAuthenticated, openAuthModal } = useAuth()
+const { openChatWithUser } = inject('globalChat')
 
 const showTimetable = ref(false)
 const timetableData = ref(null)
@@ -150,6 +151,11 @@ function onRemove(teacher) {
 function goBack() {
   selectedTeacher.value = null
 }
+
+function openChat(teacher) {
+  if (!teacher) return
+  openChatWithUser(teacher.auth_id || teacher.id)
+}
 </script>
 
 <template>
@@ -206,6 +212,7 @@ function goBack() {
             </div>
             <div class="actions">
               <button class="btn small" @click="onShow(teacher)">Pokaż</button>
+              <button class="btn small" @click.stop="openChat(teacher)">Napisz</button>
               <button class="btn small accent" @click="openTimetable(teacher)">Plan</button>
               <button class="btn small ghost" @click="onRemove(teacher)">Usuń</button>
             </div>
