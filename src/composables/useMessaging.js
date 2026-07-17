@@ -1,8 +1,10 @@
 import { ref, computed, watch } from 'vue'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from './useAuth.js'
+import { getBlockedIds, getBlockingMeIds, getBlockedPeriods } from '@/services/blockService.js'
 
 const ATTACHMENT_BUCKET = 'profile_pictures'
+const DELETED_CONTENT = '[ Usunięto ]'
 
 const conversations = ref([])
 const messages = ref([])
@@ -18,6 +20,9 @@ const nextNotificationId = ref(1)
 let realtimeChannel = null
 
 const profileCache = new Map()
+const blockedIds = ref(new Set())
+const blockingMeIds = ref(new Set())
+const blockedPeriods = ref([])
 
 function isImageFile(type) {
   return type?.startsWith('image/')
@@ -89,6 +94,33 @@ async function getProfileByAuthId(authId) {
   return result
 }
 
+function isMessageDeleted(msg) {
+  return msg?.content === DELETED_CONTENT && !msg?.attachments?.length
+}
+
+function isMessageBlocked(msg, myId) {
+  const senderId = msg.sender_id
+  if (senderId === myId) return false
+
+  const period = blockedPeriods.value.find((p) => p.blocked_id === senderId)
+  if (!period) return false
+
+  const msgTime = new Date(msg.created_at).getTime()
+  const blockedAt = new Date(period.blocked_at).getTime()
+  if (msgTime < blockedAt) return false
+
+  if (period.unblocked_at) {
+    const unblockedAt = new Date(period.unblocked_at).getTime()
+    if (msgTime >= unblockedAt) return false
+  }
+
+  return true
+}
+
+function filterMessages(msgs, myId) {
+  return msgs.filter((msg) => !isMessageBlocked(msg, myId))
+}
+
 export function useMessaging() {
   const { user } = useAuth()
 
@@ -123,8 +155,14 @@ export function useMessaging() {
     const groups = {}
     for (const msg of data) {
       const otherId = msg.sender_id === user.value.id ? msg.receiver_id : msg.sender_id
+
+      const isFromBlocked = msg.sender_id !== user.value.id && isMessageBlocked(msg, user.value.id)
+      if (isFromBlocked) continue
+
       if (!groups[otherId]) {
-        const displayText = msg.content || (msg.attachments?.length ? '[Załącznik]' : '')
+        const displayText = isMessageDeleted(msg)
+          ? ''
+          : msg.content || (msg.attachments?.length ? '[Załącznik]' : '')
         groups[otherId] = {
           userId: otherId,
           lastMessage: displayText,
@@ -133,7 +171,7 @@ export function useMessaging() {
           unread: 0,
         }
       }
-      if (msg.receiver_id === user.value.id && msg.read_at === null) {
+      if (msg.receiver_id === user.value.id && msg.read_at === null && !isMessageDeleted(msg)) {
         groups[otherId].unread++
       }
     }
@@ -144,6 +182,7 @@ export function useMessaging() {
         return {
           ...g,
           ...makeContact(g.userId, profile),
+          blockedByMe: blockedIds.value.has(g.userId),
         }
       }),
     )
@@ -183,7 +222,7 @@ export function useMessaging() {
       return
     }
 
-    messages.value = data || []
+    messages.value = filterMessages(data || [], uid)
     loadingMessages.value = false
 
     await markAsRead(otherUserId)
@@ -223,6 +262,7 @@ export function useMessaging() {
     if (!user.value || !activeUserId.value) return false
     if (!content?.trim() && (!files || files.length === 0)) return false
     if (content && content.length > MAX_MESSAGE_LENGTH) return false
+    if (blockedIds.value.has(activeUserId.value)) return false
 
     const attachments = files?.length ? await uploadAttachments(files) : []
 
@@ -266,6 +306,7 @@ export function useMessaging() {
         lastTime: data.created_at,
         lastTimeLabel: formatRelativeTime(data.created_at),
         unread: 0,
+        blockedByMe: blockedIds.value.has(activeUserId.value),
       }
       conversations.value = [entry, ...conversations.value]
     }
@@ -311,7 +352,7 @@ export function useMessaging() {
 
     const { error } = await supabase
       .from('messages')
-      .delete()
+      .update({ content: DELETED_CONTENT, attachments: null })
       .eq('id', messageId)
       .eq('sender_id', user.value.id)
 
@@ -321,19 +362,22 @@ export function useMessaging() {
     }
 
     const deleted = messages.value.find((m) => m.id === messageId)
-    messages.value = messages.value.filter((m) => m.id !== messageId)
-
     if (deleted) {
+      messages.value = messages.value.map((m) =>
+        m.id === messageId ? { ...m, content: DELETED_CONTENT, attachments: null } : m,
+      )
+
       const otherId =
         deleted.receiver_id === user.value.id ? deleted.sender_id : deleted.receiver_id
-      const remaining = messages.value.filter(
-        (m) =>
-          (m.sender_id === user.value.id && m.receiver_id === otherId) ||
-          (m.sender_id === otherId && m.receiver_id === user.value.id),
-      )
-      const lastMsg = remaining[remaining.length - 1]
       const convIdx = conversations.value.findIndex((c) => c.userId === otherId)
       if (convIdx >= 0) {
+        const remaining = messages.value.filter(
+          (m) =>
+            !isMessageDeleted(m) &&
+            ((m.sender_id === user.value.id && m.receiver_id === otherId) ||
+              (m.sender_id === otherId && m.receiver_id === user.value.id)),
+        )
+        const lastMsg = remaining[remaining.length - 1]
         const arr = [...conversations.value]
         arr[convIdx] = {
           ...arr[convIdx],
@@ -382,13 +426,15 @@ export function useMessaging() {
       return
     }
 
-    searchResults.value = (data || []).map((u) => ({
-      userId: u.auth_id,
-      nickname: u.nickname || null,
-      name: u.nickname || [u.name, u.surname].filter(Boolean).join(' '),
-      avatarColor: stringToColor(u.auth_id),
-      profilePicture: u.profile_picture || null,
-    }))
+    searchResults.value = (data || [])
+      .filter((u) => !blockedIds.value.has(u.auth_id) && !blockingMeIds.value.has(u.auth_id))
+      .map((u) => ({
+        userId: u.auth_id,
+        nickname: u.nickname || null,
+        name: u.nickname || [u.name, u.surname].filter(Boolean).join(' '),
+        avatarColor: stringToColor(u.auth_id),
+        profilePicture: u.profile_picture || null,
+      }))
     searchLoading.value = false
   }
 
@@ -443,7 +489,7 @@ export function useMessaging() {
   }
 
   function setupRealtime() {
-    teardownRealtime()
+    if (realtimeChannel) return
 
     realtimeChannel = supabase.channel('messages-realtime')
 
@@ -452,6 +498,8 @@ export function useMessaging() {
 
       const involvesMe = msg.sender_id === user.value.id || msg.receiver_id === user.value.id
       if (!involvesMe) return
+
+      if (isMessageBlocked(msg, user.value.id)) return
 
       if (
         activeUserId.value &&
@@ -467,7 +515,7 @@ export function useMessaging() {
       if (!otherId) return
 
       const isIncoming = msg.receiver_id === user.value.id && msg.sender_id !== user.value.id
-      if (isIncoming) {
+      if (isIncoming && !isMessageDeleted(msg)) {
         lastIncomingMessage.value = msg
         if (msg.sender_id !== activeUserId.value) {
           await addChatNotification(msg)
@@ -476,7 +524,9 @@ export function useMessaging() {
 
       const idx = conversations.value.findIndex((c) => c.userId === otherId)
 
-      const displayText = msg.content || (msg.attachments?.length ? '[Załącznik]' : '')
+      const displayText = isMessageDeleted(msg)
+        ? ''
+        : msg.content || (msg.attachments?.length ? '[Załącznik]' : '')
 
       if (idx >= 0) {
         const isUnread = msg.receiver_id === user.value.id && otherId !== activeUserId.value
@@ -500,6 +550,7 @@ export function useMessaging() {
           lastTime: msg.created_at,
           lastTimeLabel: formatRelativeTime(msg.created_at),
           unread: isUnread ? 1 : 0,
+          blockedByMe: blockedIds.value.has(otherId),
         }
         conversations.value = [entry, ...conversations.value]
       }
@@ -510,43 +561,42 @@ export function useMessaging() {
       const involvesMe = msg.sender_id === user.value.id || msg.receiver_id === user.value.id
       if (!involvesMe) return
 
+      if (isMessageBlocked(msg, user.value.id)) return
+
+      const isDeleted = isMessageDeleted(msg)
+
       messages.value = messages.value.map((m) =>
         m.id === msg.id ? { ...m, content: msg.content, attachments: msg.attachments } : m,
       )
 
-      const otherId = msg.sender_id === user.value.id ? msg.receiver_id : msg.sender_id
-      const convIdx = conversations.value.findIndex((c) => c.userId === otherId)
-      if (convIdx >= 0) {
-        const arr = [...conversations.value]
-        arr[convIdx] = { ...arr[convIdx], lastMessage: msg.content }
-        conversations.value = arr
-      }
-    }
-
-    function handleDeletedMessage(oldMsg) {
-      if (!user.value) return
-      const involvesMe = oldMsg.sender_id === user.value.id || oldMsg.receiver_id === user.value.id
-      if (!involvesMe) return
-
-      messages.value = messages.value.filter((m) => m.id !== oldMsg.id)
-
-      const otherId = oldMsg.sender_id === user.value.id ? oldMsg.receiver_id : oldMsg.sender_id
-      const remaining = messages.value.filter(
-        (m) =>
-          (m.sender_id === user.value.id && m.receiver_id === otherId) ||
-          (m.sender_id === otherId && m.receiver_id === user.value.id),
-      )
-      const lastMsg = remaining[remaining.length - 1]
-      const convIdx = conversations.value.findIndex((c) => c.userId === otherId)
-      if (convIdx >= 0) {
-        const arr = [...conversations.value]
-        arr[convIdx] = {
-          ...arr[convIdx],
-          lastMessage: lastMsg ? lastMsg.content : '',
-          lastTime: lastMsg ? lastMsg.created_at : '',
-          lastTimeLabel: lastMsg ? formatRelativeTime(lastMsg.created_at) : '',
+      if (isDeleted) {
+        const otherId = msg.sender_id === user.value.id ? msg.receiver_id : msg.sender_id
+        const convIdx = conversations.value.findIndex((c) => c.userId === otherId)
+        if (convIdx >= 0) {
+          const remaining = messages.value.filter(
+            (m) =>
+              !isMessageDeleted(m) &&
+              ((m.sender_id === user.value.id && m.receiver_id === otherId) ||
+                (m.sender_id === otherId && m.receiver_id === user.value.id)),
+          )
+          const lastMsg = remaining[remaining.length - 1]
+          const arr = [...conversations.value]
+          arr[convIdx] = {
+            ...arr[convIdx],
+            lastMessage: lastMsg ? lastMsg.content : '',
+            lastTime: lastMsg ? lastMsg.created_at : '',
+            lastTimeLabel: lastMsg ? formatRelativeTime(lastMsg.created_at) : '',
+          }
+          conversations.value = arr
         }
-        conversations.value = arr
+      } else {
+        const otherId = msg.sender_id === user.value.id ? msg.receiver_id : msg.sender_id
+        const convIdx = conversations.value.findIndex((c) => c.userId === otherId)
+        if (convIdx >= 0) {
+          const arr = [...conversations.value]
+          arr[convIdx] = { ...arr[convIdx], lastMessage: msg.content }
+          conversations.value = arr
+        }
       }
     }
 
@@ -562,12 +612,6 @@ export function useMessaging() {
       (payload) => handleUpdatedMessage(payload.new),
     )
 
-    realtimeChannel.on(
-      'postgres_changes',
-      { event: 'DELETE', schema: 'public', table: 'messages' },
-      (payload) => handleDeletedMessage(payload.old),
-    )
-
     realtimeChannel.subscribe()
   }
 
@@ -578,12 +622,45 @@ export function useMessaging() {
     }
   }
 
+  async function refreshBlockedIds() {
+    if (!user.value) {
+      blockedIds.value = new Set()
+      blockingMeIds.value = new Set()
+      blockedPeriods.value = []
+      return
+    }
+    try {
+      const [b, bm, periods] = await Promise.all([
+        getBlockedIds(),
+        getBlockingMeIds(),
+        getBlockedPeriods(),
+      ])
+      blockedIds.value = new Set(b)
+      blockingMeIds.value = new Set(bm)
+      blockedPeriods.value = periods
+    } catch {
+      // non-critical
+    }
+  }
+
+  function isBlockedByMe(userId) {
+    return blockedIds.value.has(userId)
+  }
+
+  function isBlockingMe(userId) {
+    return blockingMeIds.value.has(userId)
+  }
+
   watch(
     () => user.value?.id,
     (userId) => {
       if (userId) {
+        refreshBlockedIds()
         setupRealtime()
       } else {
+        blockedIds.value = new Set()
+        blockingMeIds.value = new Set()
+        blockedPeriods.value = []
         teardownRealtime()
       }
     },
@@ -613,5 +690,8 @@ export function useMessaging() {
     lastIncomingMessage,
     setupRealtime,
     teardownRealtime,
+    refreshBlockedIds,
+    isBlockedByMe,
+    isBlockingMe,
   }
 }

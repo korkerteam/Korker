@@ -2,6 +2,7 @@
 import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
+import { getBlockedIds, getBlockingMeIds } from '@/services/blockService.js'
 
 const props = defineProps({
   filters: {
@@ -24,6 +25,7 @@ const tutors = ref([])
 const loading = ref(true)
 const decisions = ref({})
 const currentIndex = ref(0)
+const blockedIds = ref(new Set())
 const selectedSubjects = ref([])
 const selectedLevels = ref([])
 const selectedTags = ref([])
@@ -74,6 +76,9 @@ async function loadTutors() {
 
   loading.value = true
 
+  const [blocked, blocking] = await Promise.all([getBlockedIds(), getBlockingMeIds()])
+  blockedIds.value = new Set([...blocked, ...blocking])
+
   const { data: rows, error } = await supabase
     .from('users')
     .select('id, auth_id, name, surname, profile_picture, tutor_post')
@@ -82,7 +87,7 @@ async function loadTutors() {
 
   if (!error && rows) {
     tutors.value = rows
-      .filter((r) => r.tutor_post)
+      .filter((r) => r.tutor_post && !blockedIds.value.has(r.auth_id))
       .map((r, index) => {
         const tp = r.tutor_post
         const renderedName = [r.name, r.surname].filter(Boolean).join(' ') || 'Korepetytor'

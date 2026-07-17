@@ -17,8 +17,7 @@ const {
   openConversation,
   closeConversation,
   sendMessage,
-  setupRealtime,
-  teardownRealtime,
+  isBlockedByMe,
 } = useMessaging()
 
 // Wstrzykujemy globalny stan czatu zamiast tworzyć lokalny ref(false)
@@ -66,7 +65,6 @@ const originalOverflow = document.body.style.overflow || ''
 
 onMounted(() => {
   document.addEventListener('click', onClickOutside)
-  setupRealtime()
   if (isAuthenticated.value) {
     loadConversations()
   }
@@ -74,12 +72,12 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('click', onClickOutside)
-  teardownRealtime()
   document.body.style.overflow = originalOverflow
 })
 
 const list = computed(() => !activeUserId.value)
 const hideFab = computed(() => showChat.value && !!activeUserId.value)
+const activeBlocked = computed(() => activeUserId.value && isBlockedByMe(activeUserId.value))
 
 function toggle() {
   if (!isAuthenticated.value) {
@@ -134,6 +132,7 @@ async function handleSend(content, files) {
         :messages="messages"
         :loading="loadingMessages"
         :contact="activeConversation"
+        :blocked="activeBlocked"
         @back="handleBack"
         @close="handleClose"
         @send="handleSend"

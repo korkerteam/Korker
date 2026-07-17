@@ -282,7 +282,6 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   gap: 18px;
-  padding-bottom: 10px;
   position: relative;
   z-index: 10;
 }

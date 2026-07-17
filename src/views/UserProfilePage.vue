@@ -3,6 +3,8 @@ import { ref, inject, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
+import { useMessaging } from '@/composables/useMessaging.js'
+import { blockUser, unblockUser, isBlockedByMe, isBlockingMe } from '@/services/blockService.js'
 import LoadingBox from '@/components/LoadingBox.vue'
 
 const props = defineProps({
@@ -16,11 +18,16 @@ const emit = defineEmits(['like-teacher', 'remove-liked-teacher'])
 const route = useRoute()
 const router = useRouter()
 const { user, isAuthenticated, profileData: myProfile, openAuthModal } = useAuth()
+const { refreshBlockedIds } = useMessaging()
 
 const profile = ref(null)
 const tutorPost = ref(null)
 const loading = ref(true)
 const error = ref('')
+const blockedByMe = ref(false)
+const blockingMe = ref(false)
+const showBlockConfirm = ref(false)
+const blockLoading = ref(false)
 
 const weeklyDayLabels = [
   'Poniedziałek',
@@ -54,6 +61,8 @@ watch(
 async function fetchProfile(identifier) {
   loading.value = true
   error.value = ''
+  blockedByMe.value = false
+  blockingMe.value = false
 
   const { data, error: err } = await supabase
     .from('users')
@@ -83,13 +92,58 @@ async function fetchProfile(identifier) {
 
     profile.value = dataById
     tutorPost.value = dataById.tutor_post || null
+    await checkBlockStatus(dataById.auth_id)
     loading.value = false
     return
   }
 
   profile.value = data
   tutorPost.value = data.tutor_post || null
+  await checkBlockStatus(data.auth_id)
   loading.value = false
+}
+
+async function checkBlockStatus(targetAuthId) {
+  if (!user.value || user.value.id === targetAuthId) return
+  try {
+    const [byMe, toMe] = await Promise.all([
+      isBlockedByMe(targetAuthId),
+      isBlockingMe(targetAuthId),
+    ])
+    blockedByMe.value = byMe
+    blockingMe.value = toMe
+  } catch {
+    // ignore — profile still loads
+  }
+}
+
+async function handleBlock() {
+  if (!profile.value) return
+  blockLoading.value = true
+  try {
+    await blockUser(profile.value.auth_id)
+    blockedByMe.value = true
+    showBlockConfirm.value = false
+    await refreshBlockedIds()
+  } catch (e) {
+    console.error('blockUser error:', e)
+  } finally {
+    blockLoading.value = false
+  }
+}
+
+async function handleUnblock() {
+  if (!profile.value) return
+  blockLoading.value = true
+  try {
+    await unblockUser(profile.value.auth_id)
+    blockedByMe.value = false
+    await refreshBlockedIds()
+  } catch (e) {
+    console.error('unblockUser error:', e)
+  } finally {
+    blockLoading.value = false
+  }
 }
 
 const isLiked = computed(() => {
@@ -182,7 +236,24 @@ function handleSendMessage() {
     </div>
 
     <div v-else class="profile-container">
-      <div class="profile-card">
+      <div v-if="blockingMe" class="blocked-notice">
+        <p>Ten użytkownik Cię zablokował. Nie możesz zobaczyć tego profilu.</p>
+        <button class="btn btn-secondary" @click="router.push('/')">Wróć do strony głównej</button>
+      </div>
+
+      <div v-else-if="blockedByMe" class="blocked-notice">
+        <p>Zablokowałeś tego użytkownika.</p>
+        <div class="blocked-actions">
+          <button class="btn btn-secondary" :disabled="blockLoading" @click="handleUnblock">
+            {{ blockLoading ? '...' : 'Odblokuj' }}
+          </button>
+          <button class="btn btn-secondary" @click="router.push('/')">
+            Wróć do strony głównej
+          </button>
+        </div>
+      </div>
+
+      <div v-else class="profile-card">
         <div class="profile-left">
           <div class="avatar-wrapper">
             <img
@@ -253,11 +324,25 @@ function handleSendMessage() {
             {{ isLiked ? 'Dodano' : 'Dodaj' }}
           </button>
           <button
-            v-if="profile && user?.id !== profile.auth_id"
+            v-if="profile && user?.id !== profile.auth_id && !blockedByMe && !blockingMe"
             class="btn btn-primary message-btn"
             @click.stop="handleSendMessage"
           >
             Wyślij wiadomość
+          </button>
+          <button
+            v-if="profile && user?.id !== profile.auth_id && !blockedByMe"
+            class="btn block-btn"
+            @click="showBlockConfirm = true"
+          >
+            Zablokuj użytkownika
+          </button>
+          <button
+            v-if="profile && user?.id === profile.auth_id"
+            class="btn btn-primary message-btn"
+            style="background: var(--muted); cursor: default; opacity: 0.5"
+          >
+            To Twój profil
           </button>
         </div>
 
@@ -331,6 +416,28 @@ function handleSendMessage() {
               <p class="empty-offer-text">Użytkownik nie jest korepetytorem.</p>
             </div>
           </template>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showBlockConfirm" class="block-overlay" @click.self="showBlockConfirm = false">
+      <div class="block-dialog">
+        <h3>Zablokuj użytkownika</h3>
+        <p>
+          Czy na pewno chcesz zablokować tego użytkownika? Nie będzie on mógł zobaczyć Twojego
+          profilu ani wysyłać Ci wiadomości.
+        </p>
+        <div class="block-dialog-actions">
+          <button
+            class="btn btn-secondary"
+            :disabled="blockLoading"
+            @click="showBlockConfirm = false"
+          >
+            Anuluj
+          </button>
+          <button class="btn block-confirm-btn" :disabled="blockLoading" @click="handleBlock">
+            {{ blockLoading ? '...' : 'Zablokuj' }}
+          </button>
         </div>
       </div>
     </div>
@@ -665,5 +772,97 @@ function handleSendMessage() {
 .save-btn.saved:hover {
   background: var(--accent-strong);
   border-color: var(--accent-strong);
+}
+.block-btn {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #fca5a5;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.block-btn:hover {
+  background: rgba(239, 68, 68, 0.08);
+}
+.blocked-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 48px 20px;
+  text-align: center;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.blocked-notice p {
+  color: var(--muted);
+  font-size: 16px;
+  margin: 0;
+}
+.blocked-actions {
+  display: flex;
+  gap: 12px;
+}
+.block-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.block-dialog {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+}
+.block-dialog h3 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  color: var(--text);
+}
+.block-dialog p {
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.block-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+.block-confirm-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  font-family: inherit;
+  background: #ef4444;
+  color: #ffffff;
+  transition: background 0.2s;
+}
+.block-confirm-btn:hover {
+  background: #dc2626;
+}
+.block-confirm-btn:disabled,
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>
