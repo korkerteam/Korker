@@ -1,5 +1,5 @@
 ﻿<script setup>
-import { reactive, ref, watch, computed } from 'vue'
+import { reactive, ref, watch, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { upsertProfile, deleteProfile } from '@/services/profileService.js'
 import { supabase } from '@/lib/supabase.js'
@@ -37,33 +37,13 @@ const weeklyTimeSlots = Array.from(
 
 const mirrorWeekdays = ref(false)
 const showAllHours = ref(false)
-const extraRowsVisible = ref(false)
-const gridWrapRef = ref(null)
 const visibleHours = computed(() => {
-  if (showAllHours.value || extraRowsVisible.value) return Array.from({ length: 24 }, (_, h) => h)
+  if (showAllHours.value) return Array.from({ length: 24 }, (_, h) => h)
   return [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
 })
 
 function toggleShowAllHours() {
-  const wrap = gridWrapRef.value
-  if (!wrap) return
-  if (showAllHours.value) {
-    const fullH = wrap.scrollHeight
-    showAllHours.value = false
-    extraRowsVisible.value = false
-    wrap.style.maxHeight = fullH + 'px'
-    void wrap.offsetHeight
-    wrap.style.maxHeight = '420px'
-  } else {
-    extraRowsVisible.value = true
-    wrap.style.maxHeight = '420px'
-    showAllHours.value = true
-    void wrap.offsetHeight
-    wrap.style.maxHeight = wrap.scrollHeight + 'px'
-    setTimeout(() => {
-      wrap.style.maxHeight = ''
-    }, 380)
-  }
+  showAllHours.value = !showAllHours.value
 }
 
 const isEditing = ref(false)
@@ -739,7 +719,7 @@ function onSubjectHover(e, enter) {
                   <span class="mirror-label">Lustro (Pn–Pt)</span>
                 </label>
               </div>
-              <div ref="gridWrapRef" class="av-grid-wrap" :class="{ expanded: showAllHours }">
+              <div class="av-grid-wrap">
                 <div class="av-grid" @mouseup="onGridMouseUp" @mouseleave="onGridMouseUp">
                   <div class="av-header-cell av-corner"></div>
                   <div
@@ -1360,8 +1340,6 @@ function onSubjectHover(e, enter) {
 }
 
 .av-grid-wrap {
-  overflow: hidden;
-  transition: max-height 0.35s ease;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--surface-soft);
@@ -1372,12 +1350,9 @@ function onSubjectHover(e, enter) {
   grid-template-columns: 44px repeat(7, 1fr);
   grid-auto-rows: 22px;
   gap: 2px;
-  overflow: auto;
-  max-height: inherit;
   padding: 4px;
   background: var(--surface-soft);
   user-select: none;
-  overflow: hidden;
 }
 
 .av-header-cell {
