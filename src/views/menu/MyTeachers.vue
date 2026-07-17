@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed, inject } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, inject, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase.js'
 import LoadingBox from '@/components/LoadingBox.vue'
 import { useAuth } from '@/composables/useAuth.js'
@@ -18,9 +18,10 @@ const props = defineProps({
 })
 
 const router = useRouter()
+const route = useRoute()
 const loading = ref(false)
 const selectedTeacher = ref(null)
-const { isAuthenticated, openAuthModal } = useAuth()
+const { isAuthenticated, openAuthModal, user } = useAuth()
 const { openChatWithUser } = inject('globalChat')
 
 const showTimetable = ref(false)
@@ -28,6 +29,9 @@ const timetableData = ref(null)
 const timetableLoading = ref(false)
 const timetableError = ref('')
 const selectedSlots = ref(new Set())
+const requestedSlots = ref(new Set())
+const submitting = ref(false)
+const feedbackMessage = ref('')
 const dayKeys = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
 const dayAbbr = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd']
 const gridHours = Array.from({ length: 24 }, (_, i) => i)
@@ -48,8 +52,12 @@ function isSelected(day, hour) {
   return selectedSlots.value.has(slotKey(day, hour))
 }
 
+function isRequested(day, hour) {
+  return requestedSlots.value.has(slotKey(day, hour))
+}
+
 function toggleSlot(day, hour) {
-  if (!hasSlot(day, hour)) return
+  if (!hasSlot(day, hour) || isRequested(day, hour)) return
   const key = slotKey(day, hour)
   const next = new Set(selectedSlots.value)
   if (next.has(key)) {
@@ -60,27 +68,62 @@ function toggleSlot(day, hour) {
   selectedSlots.value = next
 }
 
+function getTeacherIdentifier(teacher) {
+  return teacher.nickname || teacher.auth_id || teacher.id
+}
+
 async function openTimetable(teacher) {
   selectedTeacher.value = teacher
   showTimetable.value = true
   timetableLoading.value = true
+  router.replace({ query: { panel: 'teachers', plan: getTeacherIdentifier(teacher) } })
   timetableError.value = ''
   timetableData.value = null
   selectedSlots.value = new Set()
+  requestedSlots.value = new Set()
 
-  const { data, error } = await supabase
-    .from('users')
-    .select('tutor_post')
-    .eq('id', teacher.id)
-    .maybeSingle()
+  const tutorId = teacher.auth_id || teacher.id
 
-  if (error) {
+  const [tutorResult, requestsResult] = await Promise.all([
+    supabase.from('users').select('tutor_post').eq('id', teacher.id).maybeSingle(),
+    user.value
+      ? supabase
+          .from('lesson_requests')
+          .select('requested_slots')
+          .eq('student_id', user.value.id)
+          .eq('tutor_id', tutorId)
+          .eq('status', 'pending')
+      : Promise.resolve({ data: [] }),
+  ])
+
+  if (tutorResult.error) {
     timetableError.value = 'Nie udało się załadować planu zajęć.'
-  } else if (data?.tutor_post?.weeklyAvailability) {
-    timetableData.value = data.tutor_post.weeklyAvailability
+  } else if (tutorResult.data?.tutor_post?.weeklyAvailability) {
+    timetableData.value = tutorResult.data.tutor_post.weeklyAvailability
   } else {
     timetableData.value = null
   }
+
+  if (requestsResult.data) {
+    const requested = new Set()
+    for (const req of requestsResult.data) {
+      const masks = req.requested_slots
+      if (Array.isArray(masks)) {
+        for (let dayIdx = 0; dayIdx < masks.length; dayIdx++) {
+          const mask = masks[dayIdx]
+          if (typeof mask === 'number' && mask > 0) {
+            for (let h = 0; h < 24; h++) {
+              if (mask & (1 << h)) {
+                requested.add(slotKey(dayKeys[dayIdx], h))
+              }
+            }
+          }
+        }
+      }
+    }
+    requestedSlots.value = requested
+  }
+
   timetableLoading.value = false
 }
 
@@ -91,7 +134,65 @@ function closeTimetable() {
   timetableLoading.value = false
   timetableError.value = ''
   selectedSlots.value = new Set()
+  requestedSlots.value = new Set()
+  feedbackMessage.value = ''
+  router.replace({ query: { panel: 'teachers' } })
 }
+
+async function submitLessonRequest() {
+  if (!user.value) {
+    feedbackMessage.value = 'Musisz być zalogowany, aby umówić lekcję.'
+    return
+  }
+  if (selectedSlots.value.size === 0) {
+    feedbackMessage.value = 'Wybierz przynajmniej jeden termin z planu zajęć.'
+    return
+  }
+  submitting.value = true
+  feedbackMessage.value = ''
+
+  const masks = dayKeys.map(() => 0)
+  for (const key of selectedSlots.value) {
+    const dashIdx = key.lastIndexOf('-')
+    const day = key.slice(0, dashIdx)
+    const hour = parseInt(key.slice(dashIdx + 1), 10)
+    const dayIdx = dayKeys.indexOf(day)
+    if (dayIdx !== -1) {
+      masks[dayIdx] |= 1 << hour
+    }
+  }
+
+  const { error } = await supabase.from('lesson_requests').insert({
+    student_id: user.value.id,
+    tutor_id: selectedTeacher.value.auth_id || selectedTeacher.value.id,
+    requested_slots: masks,
+    status: 'pending',
+  })
+
+  submitting.value = false
+  if (error) {
+    feedbackMessage.value = 'Nie udało się wysłać prośby. Spróbuj ponownie.'
+  } else {
+    feedbackMessage.value = 'Prośba o lekcje została wysłana!'
+    for (const key of selectedSlots.value) {
+      requestedSlots.value.add(key)
+    }
+    selectedSlots.value = new Set()
+  }
+}
+
+watch(
+  () => [props.teachers, route.query.plan],
+  ([teachers, planId]) => {
+    if (planId && teachers?.length) {
+      const teacher = teachers.find((t) => getTeacherIdentifier(t) === planId)
+      if (teacher && !showTimetable.value) {
+        openTimetable(teacher)
+      }
+    }
+  },
+  { immediate: true },
+)
 
 function getDisplayName(teacher) {
   const fullName = [teacher.name, teacher.surname].filter(Boolean).join(' ')
@@ -295,7 +396,21 @@ function openChat(teacher) {
             >
           </p>
 
-          <button class="plan-action-button">Umów lekcję</button>
+          <button class="plan-action-button" :disabled="submitting" @click="submitLessonRequest">
+            {{ submitting ? 'Wysyłanie...' : 'Umów lekcję' }}
+          </button>
+          <p
+            v-if="feedbackMessage"
+            class="plan-feedback"
+            :class="{
+              success:
+                !feedbackMessage.includes('Nie udało') &&
+                !feedbackMessage.includes('Musisz') &&
+                !feedbackMessage.includes('Wybierz'),
+            }"
+          >
+            {{ feedbackMessage }}
+          </p>
         </div>
 
         <div class="plan-main">
@@ -304,6 +419,9 @@ function openChat(teacher) {
           <div class="plan-legend">
             <span class="legend-item"><span class="legend-dot available-dot"></span> Dostępne</span>
             <span class="legend-item"><span class="legend-dot selected-dot"></span> Wybrane</span>
+            <span class="legend-item"
+              ><span class="legend-dot requested-dot"></span> Zarezerwowane</span
+            >
           </div>
 
           <LoadingBox v-if="timetableLoading" />
@@ -319,8 +437,9 @@ function openChat(teacher) {
                   :key="`${d}-${hour}`"
                   class="tt-cell"
                   :class="{
-                    available: hasSlot(d, hour),
+                    available: hasSlot(d, hour) && !isRequested(d, hour),
                     selected: isSelected(d, hour),
+                    requested: isRequested(d, hour),
                   }"
                   @click="toggleSlot(d, hour)"
                 ></div>
@@ -770,6 +889,28 @@ function openChat(teacher) {
   width: 100%;
 }
 
+.plan-action-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.plan-feedback {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #fef2f2;
+  color: #b91c1c;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.plan-feedback.success {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
 .plan-main {
   display: flex;
   flex-direction: column;
@@ -785,7 +926,7 @@ function openChat(teacher) {
 
 .plan-legend {
   display: flex;
-  gap: 18px;
+  gap: 8px;
   font-size: 13px;
   color: var(--muted);
 }
@@ -809,6 +950,10 @@ function openChat(teacher) {
 
 .legend-dot.selected-dot {
   background: #22c55e;
+}
+
+.legend-dot.requested-dot {
+  background: #f59e0b;
 }
 
 .tt-grid-wrap {
@@ -875,6 +1020,13 @@ function openChat(teacher) {
   background: #22c55e;
   border-color: #22c55e;
   cursor: pointer;
+}
+
+.tt-cell.requested {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .timetable-error {

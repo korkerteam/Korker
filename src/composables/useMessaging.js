@@ -318,19 +318,21 @@ export function useMessaging() {
     if (!user.value || !newContent.trim()) return false
     if (newContent.length > MAX_MESSAGE_LENGTH) return false
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('messages')
-      .update({ content: newContent.trim() })
+      .update({ content: newContent.trim(), edited_at: new Date().toISOString() })
       .eq('id', messageId)
       .eq('sender_id', user.value.id)
+      .select()
+      .single()
 
-    if (error) {
-      console.error('editMessage error:', error)
+    if (error || !data) {
+      console.error('editMessage error:', error || 'No rows updated (RLS?)')
       return false
     }
 
     messages.value = messages.value.map((m) =>
-      m.id === messageId ? { ...m, content: newContent.trim() } : m,
+      m.id === messageId ? { ...m, content: newContent.trim(), edited_at: data.edited_at } : m,
     )
 
     const msg = messages.value.find((m) => m.id === messageId)
@@ -350,14 +352,16 @@ export function useMessaging() {
   async function deleteMessage(messageId) {
     if (!user.value) return false
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('messages')
       .update({ content: DELETED_CONTENT, attachments: null })
       .eq('id', messageId)
       .eq('sender_id', user.value.id)
+      .select()
+      .single()
 
-    if (error) {
-      console.error('deleteMessage error:', error)
+    if (error || !data) {
+      console.error('deleteMessage error:', error || 'No rows updated (RLS?)')
       return false
     }
 
@@ -599,7 +603,9 @@ export function useMessaging() {
       const isDeleted = isMessageDeleted(msg)
 
       messages.value = messages.value.map((m) =>
-        m.id === msg.id ? { ...m, content: msg.content, attachments: msg.attachments } : m,
+        m.id === msg.id
+          ? { ...m, content: msg.content, attachments: msg.attachments, edited_at: msg.edited_at }
+          : m,
       )
 
       if (isDeleted) {

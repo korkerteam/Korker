@@ -17,6 +17,7 @@ const isMine = computed(() => props.message?.sender_id === user.value?.id)
 const isDeleted = computed(
   () => props.message?.content === DELETED_CONTENT && !props.message?.attachments?.length,
 )
+const isEdited = computed(() => !!props.message?.edited_at && !isDeleted.value)
 const attachments = computed(() => (isDeleted.value ? [] : props.message?.attachments || []))
 
 const MAX_EDIT_LENGTH = 500
@@ -181,6 +182,7 @@ function formatSize(bytes) {
       </div>
       <span class="msg-time" :class="{ 'msg-time-right': isMine }">
         {{ formatTime(message?.created_at) }}
+        <span v-if="isEdited" class="msg-edited">(edytowano)</span>
       </span>
     </div>
   </div>
@@ -268,6 +270,12 @@ function formatSize(bytes) {
 }
 .msg-time-right {
   align-self: flex-end;
+}
+.msg-edited {
+  font-style: italic;
+  font-size: 11px;
+  opacity: 0.55;
+  margin-left: 4px;
 }
 .msg-actions {
   display: flex;
