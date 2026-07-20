@@ -174,7 +174,10 @@ function getOtherName(entry) {
 
 function getOtherSubject(entry) {
   const p = getOtherProfile(entry)
-  return p?.tutor_post?.subject || ''
+  const tp = p?.tutor_post
+  if (!tp) return ''
+  const offer = Array.isArray(tp) ? tp[0] || {} : tp
+  return offer?.subject || ''
 }
 
 async function fetchLessonRequests() {

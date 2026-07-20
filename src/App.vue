@@ -104,22 +104,29 @@ provide('globalChat', {
 
 function normalizeTeacher(teacher, teacherId) {
   const base = teacherId ? { ...teacher, id: teacherId } : { ...teacher }
-  if (base.tutor_post && typeof base.tutor_post === 'object') {
-    return base
+  if (base.tutor_post) {
+    if (Array.isArray(base.tutor_post)) {
+      return base
+    }
+    if (typeof base.tutor_post === 'object') {
+      return base
+    }
   }
   return {
     ...base,
     profile_picture: base.profile_picture || base.image || null,
-    tutor_post: {
-      subject: base.subject || '',
-      level: base.level || '',
-      tags: base.tags || [],
-      description: base.bio || '',
-      price: base.price || 50,
-      city: base.city || '',
-      lessonPlace: base.lessonPlace || '',
-      weeklyAvailability: base.weeklyAvailability || {},
-    },
+    tutor_post: [
+      {
+        subject: base.subject || '',
+        level: base.level || '',
+        tags: base.tags || [],
+        description: base.bio || '',
+        price: base.price || 50,
+        city: base.city || '',
+        lessonPlace: base.lessonPlace || '',
+        weeklyAvailability: base.weeklyAvailability || {},
+      },
+    ],
   }
 }
 

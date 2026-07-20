@@ -130,11 +130,12 @@ async function loadTutors() {
   if (!error && rows) {
     tutors.value = rows
       .filter((r) => r.tutor_post && !blockedIds.value.has(r.auth_id))
-      .map((r, index) => {
-        const tp = r.tutor_post || {}
+      .flatMap((r) => {
+        const raw = r.tutor_post || {}
+        const offers = Array.isArray(raw) ? raw : [raw]
         const renderedName = [r.name, r.surname].filter(Boolean).join(' ') || 'Korepetytor'
-        return {
-          id: r.id || `${renderedName}-${tp.subject || 'unknown'}-${index}`,
+        return offers.map((tp, oi) => ({
+          id: `${r.id}-offer-${oi}`,
           auth_id: r.auth_id,
           name: renderedName,
           subject: tp.subject || '',
@@ -151,7 +152,7 @@ async function loadTutors() {
               ? [tp.teachingFormat]
               : [],
           weeklyAvailability: tp.weeklyAvailability || {},
-        }
+        }))
       })
   }
 
