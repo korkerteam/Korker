@@ -32,7 +32,7 @@ defineEmits(['openChat', 'close'])
         <router-link
           :to="'/user/' + (c.nickname || c.userId)"
           class="contact-item-avatar-link"
-          @click.stop
+          @click.prevent.stop="$emit('openChat', c.userId)"
         >
           <div class="contact-item-avatar" :style="{ background: c.avatarColor }">
             <img v-if="c.profilePicture" :src="c.profilePicture" :alt="c.name" class="avatar-img" />
@@ -43,7 +43,7 @@ defineEmits(['openChat', 'close'])
           <router-link
             :to="'/user/' + (c.nickname || c.userId)"
             class="contact-item-name-link"
-            @click.stop
+            @click.prevent.stop="$emit('openChat', c.userId)"
           >
             <span class="contact-item-name">{{ c.name }}</span>
           </router-link>
