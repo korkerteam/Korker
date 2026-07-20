@@ -32,7 +32,14 @@ function goToOwnProfile() {
     <button v-else class="user-avatar click" type="button" @click="goToOwnProfile">
       {{ profileInitial }}
     </button>
-    <span @click="handleProfileClick" class="user-email click">{{ profileName }}</span>
+    <button
+      @click="handleProfileClick"
+      class="user-email"
+      type="button"
+      :aria-label="`Profil: ${profileName}`"
+    >
+      {{ profileName }}
+    </button>
     <button class="logout-btn" type="button" @click="signOut" title="Wyloguj się">
       <svg
         viewBox="0 0 24 24"
@@ -132,7 +139,22 @@ function goToOwnProfile() {
   max-width: 140px;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-overflow: ellipsis;
+  border: none;
+  background: transparent;
+  padding: 8px 12px 8px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background 0.18s,
+    color 0.18s;
+}
+
+.user-email:hover {
+  background: rgba(79, 117, 199, 0.08);
+}
+
+.user-email:active {
+  background: rgba(79, 117, 199, 0.12);
 }
 
 .logout-btn {
