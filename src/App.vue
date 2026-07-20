@@ -735,10 +735,11 @@ onUnmounted(() => {
   }
 
   .settings-fab {
-    width: 50px;
-    height: 50px;
-    bottom: 16px;
-    left: 16px;
+    width: 56px;
+    height: 56px;
+    bottom: 84px;
+    left: auto;
+    right: 16px;
   }
 
   .settings-menu-backdrop {
