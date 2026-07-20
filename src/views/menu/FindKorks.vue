@@ -809,7 +809,7 @@ function closePage() {
   margin: 0 auto;
   grid-column: 1 / -1;
   justify-self: center;
-  margin-right: 320px;
+  margin-right: 340px;
 }
 
 .empty-state-card h3 {
