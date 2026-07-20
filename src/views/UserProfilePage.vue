@@ -5,7 +5,6 @@ import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { useMessaging } from '@/composables/useMessaging.js'
 import { blockUser, unblockUser, isBlockedByMe, isBlockingMe } from '@/services/blockService.js'
-import { getAverageRating, getMyRatingForTutor, submitRating } from '@/services/ratingService.js'
 import LoadingBox from '@/components/LoadingBox.vue'
 import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
 
@@ -31,11 +30,6 @@ const blockedByMe = ref(false)
 const blockingMe = ref(false)
 const showBlockConfirm = ref(false)
 const blockLoading = ref(false)
-const showRatingEditor = ref(false)
-const ratingDraft = ref(0)
-const ratingSaving = ref(false)
-const teacherRating = ref({ average: 0, count: 0 })
-const myTeacherRating = ref(null)
 
 const globalChat = inject('globalChat')
 
@@ -96,8 +90,6 @@ async function fetchProfile(identifier) {
         : [tutorPost.value]
       : []
     await checkBlockStatus(dataById.auth_id)
-    await loadTeacherRating(dataById.auth_id)
-    ratingDraft.value = myTeacherRating.value ?? 0
     loading.value = false
     return
   }
@@ -110,8 +102,6 @@ async function fetchProfile(identifier) {
       : [tutorPost.value]
     : []
   await checkBlockStatus(data.auth_id)
-  await loadTeacherRating(data.auth_id)
-  ratingDraft.value = myTeacherRating.value ?? 0
   loading.value = false
 }
 
@@ -126,26 +116,6 @@ async function checkBlockStatus(targetAuthId) {
     blockingMe.value = toMe
   } catch {
     // ignore — profile still loads
-  }
-}
-
-async function loadTeacherRating(tutorAuthId) {
-  if (!tutorAuthId) {
-    teacherRating.value = { average: 0, count: 0 }
-    myTeacherRating.value = null
-    return
-  }
-
-  try {
-    const [summary, myRating] = await Promise.all([
-      getAverageRating(tutorAuthId),
-      getMyRatingForTutor(tutorAuthId),
-    ])
-    teacherRating.value = summary || { average: 0, count: 0 }
-    myTeacherRating.value = myRating
-  } catch {
-    teacherRating.value = { average: 0, count: 0 }
-    myTeacherRating.value = null
   }
 }
 
@@ -579,7 +549,7 @@ function getStarFill(rating, index) {
 
 .profile-card {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: 260px minmax(0, 1fr);
   gap: 24px;
   align-items: start;
 }

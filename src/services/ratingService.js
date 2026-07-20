@@ -8,29 +8,6 @@ function normalizeToFive(value) {
   if (!Number.isFinite(n)) return 0
   return Math.max(0, Math.min(5, n))
 }
-
-function readLocal() {
-  if (typeof window === 'undefined') return new Map()
-  try {
-    const raw = window.localStorage.getItem(LOCAL_RATING_STORAGE_KEY)
-    if (!raw) return new Map()
-    const parsed = JSON.parse(raw)
-    return new Map(Object.entries(parsed))
-  } catch {
-    return new Map()
-  }
-}
-
-function writeLocal(map) {
-  if (typeof window === 'undefined') return
-  try {
-    const obj = Object.fromEntries(map)
-    window.localStorage.setItem(LOCAL_RATING_STORAGE_KEY, JSON.stringify(obj))
-  } catch {
-    // ignore storage errors
-  }
-}
-
 async function getCurrentUserId() {
   try {
     const {
@@ -118,12 +95,10 @@ export async function getAverageRating(tutorAuthId) {
     const sum = deduped.reduce((acc, e) => acc + normalizeToFive(e.rating), 0)
     return { average: sum / deduped.length, count: deduped.length }
   }
-
-  return { average: 0, count: 0 }
 }
 
 export async function getMyRatingForTutor(tutorAuthId) {
-  const userId = (await getCurrentUserId()) || getOrCreateLocalClientId()
+  const userId = await getCurrentUserId()
   if (!userId) return null
 
   const map = readLocal()
@@ -173,11 +148,29 @@ export async function submitRating(tutorAuthId, rating) {
   }
 
   try {
-    if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('korker-rating-changed', { detail: { tutorAuthId } }))
+    const payload = { tutor_auth_id: tutorAuthId, rater_auth_id: userId, rating: normalized }
+    const { data, error } = await supabase.from('ratings').upsert(payload, {
+      onConflict: ['tutor_auth_id', 'rater_auth_id'],
+      returning: 'representation',
+    })
+
+    if (error) {
+      console.error('submitRating supabase error', error)
+      throw error
     }
-  } catch {
-    // ignore
+
+    try {
+      if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('korker-rating-changed', { detail: { tutorAuthId } }))
+      }
+    } catch {
+      // ignore
+    }
+
+    return normalized
+  } catch (err) {
+    console.error('submitRating unexpected error', err)
+    throw err
   }
 
   return normalized
