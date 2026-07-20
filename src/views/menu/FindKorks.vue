@@ -455,7 +455,10 @@ function closePage() {
       class="find-korks-panel"
       :class="{ 'guest-state': !isAuthenticated }"
     >
-      <div class="tutors-content">
+      <div
+        class="tutors-content"
+        :class="{ 'empty-results-layout': isAuthenticated && !filteredTutors.length }"
+      >
         <!-- Plan lekcji (left) -->
         <div v-if="filteredTutors.length && currentTutor" class="tt-section">
           <div class="tt-section-header">Plan lekcji</div>
@@ -753,6 +756,22 @@ function closePage() {
   align-items: center;
   min-height: 0;
   margin: 0;
+}
+
+.tutors-content.empty-results-layout {
+  grid-template-columns: minmax(0, 1fr) auto minmax(260px, 360px);
+}
+
+.tutors-content.empty-results-layout .tutor-section {
+  grid-column: 2;
+}
+
+.tutors-content.empty-results-layout .tags-filter-section {
+  grid-column: 3;
+  width: 100%;
+  max-width: 360px;
+  margin: 0;
+  padding: 18px 14px 24px;
 }
 
 .find-korks-panel.guest-state .tutors-content {
