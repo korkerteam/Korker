@@ -760,7 +760,7 @@ function closePage() {
 }
 
 .tutors-content.empty-results-layout {
-  grid-template-columns: minmax(0, 1fr) auto minmax(260px, 360px);
+  grid-template-columns: 1fr auto minmax(260px, 360px);
 }
 
 .tutors-content.empty-results-layout .tutor-section {
@@ -768,11 +768,8 @@ function closePage() {
 }
 
 .tutors-content.empty-results-layout .tags-filter-section {
+  /* Only ensure it stays in its column; rely on the base .tags-filter-section styles for sizing */
   grid-column: 3;
-  width: 100%;
-  max-width: 360px;
-  margin: 0;
-  padding: 18px 14px 24px;
 }
 
 .find-korks-panel.guest-state .tutors-content {
@@ -808,10 +805,11 @@ function closePage() {
 
 .inline-empty-state {
   width: 100%;
-  max-width: 100%;
+  max-width: 50%;
   margin: 0 auto;
   grid-column: 1 / -1;
   justify-self: center;
+  margin-right: 320px;
 }
 
 .empty-state-card h3 {
