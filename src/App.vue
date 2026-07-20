@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router'
 import HeaderKorker from './components/HeaderKorker.vue'
 import SearchBar from './components/header/SearchBar.vue'
 import CzatCzatSahur from './components/CzatCzatSahur.vue'
-import MapPage from './components/Map.vue'
 import MissingFilterNotice from './components/MissingFilterNotice.vue'
 import TeacherOverlay from './components/TeacherOverlay.vue'
 import MainContent from './views/footer/MenuPage.vue'
@@ -218,10 +217,6 @@ onMounted(() => {
     </div>
 
     <CzatCzatSahur />
-
-    <div class="Mapa">
-      <MapPage />
-    </div>
 
     <button
       class="settings-fab"

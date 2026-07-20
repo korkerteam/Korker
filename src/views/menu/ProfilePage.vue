@@ -84,6 +84,7 @@ const draft = reactive({
   lessonPrice: '',
   lessonSubject: '',
   lessonLevel: 'Liceum',
+  lessonPlace: '',
   lessonDescription: '',
   weeklyAvailability: {},
 })
@@ -220,6 +221,7 @@ function applySavedTutorPost(data) {
     draft.lessonPrice = String(tp.price ?? '')
     draft.lessonSubject = tp.subject || ''
     draft.lessonLevel = tp.level || 'Liceum'
+    draft.lessonPlace = tp.lessonPlace || ''
     draft.lessonDescription = tp.description || ''
     draft.teachingFormats = Array.isArray(tp.teachingFormats)
       ? tp.teachingFormats
@@ -381,6 +383,7 @@ async function saveProfile() {
       tutorPost = {
         subject: draft.lessonSubject || '',
         level: draft.lessonLevel || 'Liceum',
+        lessonPlace: draft.lessonPlace || '',
         price: Number(draft.lessonPrice) || null,
         description: draft.lessonDescription || '',
         photo: draft.lessonPhoto || null,
@@ -709,6 +712,15 @@ function onSubjectHover(e, enter) {
                   {{ subject }}
                 </button>
               </div>
+            </label>
+            <label class="field-row">
+              <span class="field-label">Miejsce lekcji</span>
+              <select v-model="draft.lessonPlace">
+                <option value="" disabled>Wybierz miejsce lekcji</option>
+                <option value="Online">Online</option>
+                <option value="Stacjonarnie">Stacjonarnie</option>
+                <option value="Z dojazdem">Z dojazdem</option>
+              </select>
             </label>
             <label class="field-row">
               <span class="field-label">Poziom</span>
