@@ -726,7 +726,6 @@ function toggleSelection(category, value) {
 }
 
 .tutors-content.empty-results-layout .tags-filter-section {
-  /* Only ensure it stays in its column; rely on the base .tags-filter-section styles for sizing */
   grid-column: 3;
 }
 
@@ -1076,6 +1075,8 @@ function toggleSelection(category, value) {
   background: var(--surface-strong);
   border: 1px solid var(--border);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  max-height: 700px;
+  height: 100%;
 }
 
 .tags-filter-header {
@@ -1095,8 +1096,8 @@ function toggleSelection(category, value) {
 
 .filter-group {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
   margin-bottom: 10px;
 }
@@ -1108,13 +1109,13 @@ function toggleSelection(category, value) {
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  min-width: 90px;
 }
 
 .filter-options {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  width: 100%;
 }
 
 .filter-options label {
@@ -1132,15 +1133,15 @@ function toggleSelection(category, value) {
 
 .city-select-group {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
-  align-items: center;
+  align-items: stretch;
   width: 100%;
 }
 
 .city-select-label {
   display: block;
-  flex: 1 1 220px;
+  width: 100%;
 }
 
 .city-select-label input {
