@@ -567,7 +567,12 @@ function closePage() {
               <h3>Brak nauczycieli</h3>
               <p>Nie ma wyników dla tych filtrów. Zmień kryteria albo wyczyść filtry.</p>
             </template>
-            <button class="btn-secondary clear-filters-btn" type="button" @click="clearFilters">
+            <button
+              v-if="!allDecided"
+              class="btn-secondary clear-filters-btn"
+              type="button"
+              @click="clearFilters"
+            >
               Wyczyść filtry
             </button>
           </div>
@@ -683,22 +688,6 @@ function closePage() {
         </div>
       </div>
     </div>
-
-    <div v-if="isAuthenticated && !filteredTutors.length" class="empty-state-fullscreen">
-      <div class="empty-state-card">
-        <template v-if="allDecided">
-          <h3>Dotarłeś do końca</h3>
-          <p>Przejrzałeś już wszystkich dostępnych korepetytorów.</p>
-        </template>
-        <template v-else>
-          <h3>Brak nauczycieli</h3>
-          <p>Nie ma wyników dla tych filtrów. Spróbuj zmienić tagi lub wybrać inne kryteria.</p>
-          <button class="empty-state-action" type="button" @click="clearFilters">
-            Wyczyść filtry
-          </button>
-        </template>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -750,7 +739,7 @@ function closePage() {
   grid-template-columns: 1fr auto 1fr;
   gap: 16px;
   overflow: hidden;
-  align-items: start;
+  align-items: center;
   min-height: 0;
   margin: 0;
 }
@@ -790,6 +779,8 @@ function closePage() {
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
+  grid-column: 1 / -1;
+  justify-self: center;
 }
 
 .empty-state-card h3 {
