@@ -20,7 +20,18 @@ const profile = reactive({
 })
 
 const teachingFormats = ['Stacjonarnie', 'Z dojazdem', 'Online']
-const subjectOptions = ['Matematyka', 'Język polski', 'Angielski', 'Fizyka']
+const subjectOptions = [
+  'Język polski',
+  'Język angielski',
+  'Język niemiecki',
+  'Matematyka',
+  'Fizyka',
+  'Chemia',
+  'Biologia',
+  'Historia',
+  'Geografia',
+  'Informatyka',
+]
 const weeklyDayLabels = [
   'Poniedziałek',
   'Wtorek',
@@ -1147,7 +1158,7 @@ function onSubjectHover(e, enter) {
 
 .subject-table {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 8px;
 }
 
