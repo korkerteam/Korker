@@ -18,18 +18,28 @@ const body = ref(null)
 const newMsg = ref('')
 
 function scrollDown() {
-  nextTick(() => {
-    if (body.value) {
-      body.value.scrollTop = body.value.scrollHeight
-    }
-  })
+  nextTick(() =>
+    requestAnimationFrame(() => {
+      if (body.value) {
+        body.value.scrollTop = body.value.scrollHeight
+      }
+    }),
+  )
 }
 
 onMounted(() => scrollDown())
 
 watch(
-  () => props.messages?.length,
+  () => props.messages,
   () => scrollDown(),
+  { deep: false },
+)
+
+watch(
+  () => props.loading,
+  (loading) => {
+    if (!loading) scrollDown()
+  },
 )
 
 function handleSend(text, files) {
