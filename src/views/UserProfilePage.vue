@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { useMessaging } from '@/composables/useMessaging.js'
 import { blockUser, unblockUser, isBlockedByMe, isBlockingMe } from '@/services/blockService.js'
+import { getAverageRating, getMyRatingForTutor, submitRating } from '@/services/ratingService.js'
 import LoadingBox from '@/components/LoadingBox.vue'
 
 const props = defineProps({
@@ -28,6 +29,11 @@ const blockedByMe = ref(false)
 const blockingMe = ref(false)
 const showBlockConfirm = ref(false)
 const blockLoading = ref(false)
+const showRatingEditor = ref(false)
+const ratingDraft = ref(0)
+const ratingSaving = ref(false)
+const teacherRating = ref({ average: 0, count: 0 })
+const myTeacherRating = ref(null)
 
 const weeklyDayLabels = [
   'Poniedziałek',
@@ -93,6 +99,8 @@ async function fetchProfile(identifier) {
     profile.value = dataById
     tutorPost.value = dataById.tutor_post || null
     await checkBlockStatus(dataById.auth_id)
+    await loadTeacherRating(dataById.auth_id)
+    ratingDraft.value = myTeacherRating.value ?? 0
     loading.value = false
     return
   }
@@ -100,6 +108,8 @@ async function fetchProfile(identifier) {
   profile.value = data
   tutorPost.value = data.tutor_post || null
   await checkBlockStatus(data.auth_id)
+  await loadTeacherRating(data.auth_id)
+  ratingDraft.value = myTeacherRating.value ?? 0
   loading.value = false
 }
 
@@ -114,6 +124,26 @@ async function checkBlockStatus(targetAuthId) {
     blockingMe.value = toMe
   } catch {
     // ignore — profile still loads
+  }
+}
+
+async function loadTeacherRating(tutorAuthId) {
+  if (!tutorAuthId) {
+    teacherRating.value = { average: 0, count: 0 }
+    myTeacherRating.value = null
+    return
+  }
+
+  try {
+    const [summary, myRating] = await Promise.all([
+      getAverageRating(tutorAuthId),
+      getMyRatingForTutor(tutorAuthId),
+    ])
+    teacherRating.value = summary || { average: 0, count: 0 }
+    myTeacherRating.value = myRating
+  } catch {
+    teacherRating.value = { average: 0, count: 0 }
+    myTeacherRating.value = null
   }
 }
 
@@ -224,6 +254,31 @@ function handleSendMessage() {
   if (user.value?.id === profile.value.auth_id) return
   globalChat.openChatWithUser(profile.value.auth_id)
 }
+
+function setDraftRating(value) {
+  ratingDraft.value = Number(value)
+}
+
+async function submitTeacherRating() {
+  if (!profile.value?.auth_id) return
+  ratingSaving.value = true
+  try {
+    await submitRating(profile.value.auth_id, Number(ratingDraft.value))
+    await loadTeacherRating(profile.value.auth_id)
+    showRatingEditor.value = false
+  } catch (e) {
+    console.error('submitTeacherRating error:', e)
+  } finally {
+    ratingSaving.value = false
+  }
+}
+
+function getStarFill(rating, index) {
+  const diff = Number(rating || 0) - index
+  if (diff >= 1) return 'filled'
+  if (diff >= 0.5) return 'half'
+  return 'empty'
+}
 </script>
 
 <template>
@@ -295,6 +350,80 @@ function handleSendMessage() {
                     ? 'Kobieta'
                     : ''
               }}</span>
+            </div>
+          </div>
+
+          <div v-if="profile?.account_type === 'tutor'" class="rating-box">
+            <div class="rating-label">Ocena korepetytora</div>
+            <div class="rating-row">
+              <div
+                class="rating-stars"
+                :aria-label="`Ocena ${teacherRating.average.toFixed(1)} z 5`"
+              >
+                <span v-for="index in 5" :key="index" class="star-item">
+                  <span :class="['star', getStarFill(teacherRating.average, index - 1)]">★</span>
+                </span>
+              </div>
+              <span class="rating-value">{{ teacherRating.average.toFixed(1) }} / 5</span>
+            </div>
+            <div class="rating-meta">{{ teacherRating.count }} ocen</div>
+            <button
+              class="btn btn-primary rate-btn"
+              type="button"
+              @click="showRatingEditor = !showRatingEditor"
+            >
+              {{ showRatingEditor ? 'Zamknij' : 'Oceń' }}
+            </button>
+
+            <div v-if="showRatingEditor" class="rating-editor-inline">
+              <div class="rating-editor-header">
+                <span class="rating-editor-title">Oceń {{ getDisplayName() }}</span>
+                <button
+                  class="btn btn-secondary rating-close-btn"
+                  type="button"
+                  @click="showRatingEditor = false"
+                >
+                  Zamknij
+                </button>
+              </div>
+              <p class="rating-editor-text">
+                {{ myTeacherRating != null ? 'Zaktualizuj swoją ocenę.' : 'Wybierz ocenę.' }}
+              </p>
+              <div class="rating-row rating-row-inline">
+                <div
+                  class="rating-half-selector"
+                  :aria-label="`Twoja ocena ${ratingDraft.toFixed(1)} z 5`"
+                >
+                  <div v-for="i in 5" :key="i" class="star-select">
+                    <button
+                      type="button"
+                      class="half half-left"
+                      :class="{ selected: ratingDraft >= i - 0.5 && ratingDraft < i }"
+                      :title="i - 0.5 + ' / 5'"
+                      @click="setDraftRating(i - 0.5)"
+                    ></button>
+                    <button
+                      type="button"
+                      class="half half-right"
+                      :class="{ selected: ratingDraft >= i }"
+                      :title="i + ' / 5'"
+                      @click="setDraftRating(i)"
+                    ></button>
+                    <span :class="['star', getStarFill(ratingDraft, i - 1)]" class="display"
+                      >★</span
+                    >
+                  </div>
+                </div>
+                <span class="rating-value">{{ ratingDraft.toFixed(1) }} / 5</span>
+              </div>
+              <button
+                class="btn btn-primary rate-submit-btn"
+                type="button"
+                :disabled="ratingSaving"
+                @click="submitTeacherRating"
+              >
+                {{ ratingSaving ? 'Zapisywanie...' : 'Wyślij ocenę' }}
+              </button>
             </div>
           </div>
 
@@ -473,7 +602,7 @@ function handleSendMessage() {
 
 .profile-card {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
+  grid-template-columns: 300px minmax(0, 1fr);
   gap: 24px;
   align-items: start;
 }
@@ -864,5 +993,134 @@ function handleSendMessage() {
 .btn-secondary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.rating-box {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.rating-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.rating-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 4px;
+}
+
+.star {
+  font-size: 20px;
+  color: #e5e7eb;
+  display: inline-block;
+  line-height: 1;
+  position: relative;
+}
+
+/* overlay colored star to allow clean half fills */
+.star::before {
+  content: '★';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  overflow: hidden;
+  color: #f59e0b;
+}
+
+.star.filled::before {
+  width: 100%;
+}
+
+.star.half::before {
+  width: 50%;
+}
+
+.rating-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.rating-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.rating-editor-inline {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(79, 117, 199, 0.04);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.rating-half-selector {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.star-select {
+  position: relative;
+  width: 24px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.star-select .display {
+  font-size: 20px;
+  pointer-events: none;
+}
+
+.star-select .half {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.star-select .half-left {
+  left: 0;
+}
+
+.star-select .half-right {
+  right: 0;
+}
+
+.star-select .half.selected {
+  background: rgba(245, 158, 11, 0.18);
+}
+
+.rate-submit-btn {
+  width: 100%;
+  padding: 10px 12px;
 }
 </style>

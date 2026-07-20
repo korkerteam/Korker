@@ -3,6 +3,8 @@ import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { getBlockedIds, getBlockingMeIds } from '@/services/blockService.js'
+import { getAverageRating } from '@/services/ratingService.js'
+import { onUnmounted } from 'vue'
 
 const props = defineProps({
   filters: {
@@ -38,6 +40,7 @@ const swipeRotation = ref(0)
 const cardRef = ref(null)
 const showSwipeOverlay = ref(false)
 const swipeHintState = ref('neutral')
+const teacherRatings = ref({})
 
 const weekdayLabels = [
   'Poniedziałek',
@@ -156,7 +159,21 @@ async function loadTutors() {
 
 onMounted(() => {
   loadTutors()
+  if (typeof window !== 'undefined') {
+    window.addEventListener('korker-rating-changed', onRatingChanged)
+  }
 })
+
+function onRatingChanged(e) {
+  const tutorId = e?.detail?.tutorAuthId
+  if (!tutorId) return
+  // refresh only that tutor
+  getAverageRating(tutorId)
+    .then((summary) => {
+      teacherRatings.value = { ...teacherRatings.value, [tutorId]: summary }
+    })
+    .catch(() => {})
+}
 
 watch(isAuthenticated, (authenticated) => {
   if (authenticated) {
@@ -167,6 +184,11 @@ watch(isAuthenticated, (authenticated) => {
   }
 })
 
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('korker-rating-changed', onRatingChanged)
+  }
+})
 const filteredTutors = computed(() => {
   return tutors.value.filter((tutor) => {
     const tutorKey = getTutorKey(tutor)
@@ -446,6 +468,39 @@ function toggleSelection(category, value) {
 function closePage() {
   emit('close')
 }
+
+async function refreshTeacherRatings(teachersList = []) {
+  const ids = [...new Set(teachersList.map((teacher) => teacher?.auth_id).filter(Boolean))]
+  for (const id of ids) {
+    try {
+      const summary = await getAverageRating(id)
+      teacherRatings.value[id] = summary
+    } catch {
+      // ignore
+    }
+  }
+}
+
+watch(
+  () => tutors.value,
+  (teachers = []) => {
+    refreshTeacherRatings(teachers)
+  },
+  { deep: true, immediate: true },
+)
+
+function getTeacherRatingValue(teacher) {
+  const summary = teacherRatings.value?.[teacher?.auth_id]
+  if (!summary || summary.average == null) return 0
+  return Number(summary.average || 0)
+}
+
+function getStarFill(rating, index) {
+  const diff = Number(rating || 0) - index
+  if (diff >= 1) return 'filled'
+  if (diff >= 0.5) return 'half'
+  return 'empty'
+}
 </script>
 
 <template>
@@ -546,6 +601,23 @@ function closePage() {
               </div>
             </div>
 
+            <div class="card-rating-pill">
+              <div
+                class="rating-stars compact"
+                :aria-label="`Ocena ${getTeacherRatingValue(currentTutor).toFixed(1)} z 5`"
+              >
+                <span v-for="index in 5" :key="index" class="star-button">
+                  <span
+                    :class="['star', getStarFill(getTeacherRatingValue(currentTutor), index - 1)]"
+                    >★</span
+                  >
+                </span>
+              </div>
+              <span class="rating-value"
+                >{{ getTeacherRatingValue(currentTutor).toFixed(1) }} / 5</span
+              >
+            </div>
+
             <div class="card-info">
               <div class="tutor-main-info">
                 <div class="browse-note"></div>
@@ -557,6 +629,25 @@ function closePage() {
                       {{ currentTutor.level || currentTutor.lessonLevel || 'Liceum' }}
                       <span v-if="currentTutor.city"> • {{ currentTutor.city }}</span>
                     </p>
+                    <div class="tutor-rating">
+                      <div
+                        class="rating-stars compact"
+                        :aria-label="`Ocena ${getTeacherRatingValue(currentTutor).toFixed(1)} z 5`"
+                      >
+                        <span v-for="index in 5" :key="index" class="star-button">
+                          <span
+                            :class="[
+                              'star',
+                              getStarFill(getTeacherRatingValue(currentTutor), index - 1),
+                            ]"
+                            >★</span
+                          >
+                        </span>
+                      </div>
+                      <span class="rating-value-small"
+                        >{{ getTeacherRatingValue(currentTutor).toFixed(1) }} / 5</span
+                      >
+                    </div>
                   </div>
                   <div class="tutor-summary-card tutor-summary-price">
                     <p class="tutor-price">{{ currentTutor.price }} zł/h</p>
@@ -723,6 +814,19 @@ function closePage() {
   border: 1px solid var(--border);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
   box-sizing: border-box;
+}
+
+.tutor-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.rating-value-small {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .find-korks-header {
@@ -1296,6 +1400,78 @@ function closePage() {
   font-size: 10px;
   font-weight: 600;
   border: 1px solid var(--border);
+}
+
+.card-rating-pill {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(25, 45, 75, 0.88);
+  color: #fff;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 3;
+}
+
+.card-rating-pill .rating-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.card-rating-pill .star {
+  font-size: 14px;
+}
+
+/* half/full star overlay for pill */
+.card-rating-pill .star {
+  position: relative;
+  color: rgba(255, 255, 255, 0.35);
+}
+.card-rating-pill .star::before {
+  content: '★';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  overflow: hidden;
+  color: #f59e0b;
+}
+.card-rating-pill .star.filled::before {
+  width: 100%;
+}
+.card-rating-pill .star.half::before {
+  width: 50%;
+}
+
+/* inline tutor-rating stars */
+.tutor-rating .star {
+  position: relative;
+  color: #e5e7eb;
+}
+.tutor-rating .star::before {
+  content: '★';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  overflow: hidden;
+  color: #f59e0b;
+}
+.tutor-rating .star.filled::before {
+  width: 100%;
+}
+.tutor-rating .star.half::before {
+  width: 50%;
+}
+
+.card-rating-pill .rating-value {
+  color: #fff;
+  font-size: 13px;
 }
 
 .actions {
