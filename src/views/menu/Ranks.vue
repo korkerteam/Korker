@@ -20,7 +20,8 @@ onMounted(async () => {
       rankingData.value = rows
         .filter((row) => row.tutor_post)
         .map((row, index) => {
-          const tutorPost = row.tutor_post || {}
+          const raw = row.tutor_post || {}
+          const tutorPost = Array.isArray(raw) ? raw[0] || {} : raw
           const renderedName = [row.name, row.surname].filter(Boolean).join(' ') || 'Korepetytor'
 
           return {

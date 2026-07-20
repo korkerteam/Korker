@@ -22,6 +22,28 @@ const profile = reactive({
   profile_picture: '',
 })
 
+const tutorOffers = ref([])
+const showOfferEditor = ref(false)
+const editingOfferIndex = ref(-1)
+const confirmingDeleteOfferIndex = ref(null)
+const pendingOfferPhotoFile = ref(null)
+const offerDraft = reactive({
+  teachingFormats: [],
+  city: '',
+  street: '',
+  homeNumber: '',
+  flatNumber: '',
+  lessonPhoto: '',
+  lessonPrice: '',
+  lessonSubject: '',
+  lessonLevel: 'Liceum',
+  lessonPlace: '',
+  lessonDescription: '',
+  weeklyAvailability: {},
+})
+const offerSaving = ref(false)
+const offerSaveError = ref('')
+
 const teachingFormats = ['Stacjonarnie', 'Z dojazdem', 'Online']
 const subjectOptions = [
   'Język polski',
@@ -49,9 +71,7 @@ const saving = ref(false)
 const loading = ref(true)
 const saveError = ref('')
 const pendingAvatarFile = ref(null)
-const pendingLessonPhotoFile = ref(null)
 let originalProfilePicture = ''
-let originalLessonPhoto = ''
 const draft = reactive({
   nickname: profile.nickname,
   name: profile.name,
@@ -71,14 +91,6 @@ const draft = reactive({
   lessonPlace: '',
   lessonDescription: '',
   weeklyAvailability: {},
-})
-
-const strictestFormat = computed(() => {
-  const sf = draft.teachingFormats
-  if (sf.includes('Stacjonarnie')) return 'Stacjonarnie'
-  if (sf.includes('Z dojazdem')) return 'Z dojazdem'
-  if (sf.includes('Online')) return 'Online'
-  return ''
 })
 
 function toDb() {
@@ -104,37 +116,34 @@ function fromDb(data) {
   profile.city = data.city ?? ''
   profile.gender = data.gender ?? ''
   profile.profile_picture = data.profile_picture ?? ''
-  profile.teachingFormats = []
-  profile.street = ''
-  profile.homeNumber = ''
-  profile.flatNumber = ''
 }
 
 function applySavedTutorPost(data) {
-  if (data?.tutor_post) {
-    const tp = data.tutor_post
-    draft.lessonPhoto = tp.photo || ''
-    draft.lessonPrice = String(tp.price ?? '')
-    draft.lessonSubject = tp.subject || ''
-    draft.lessonLevel = tp.level || 'Liceum'
-    draft.lessonPlace = tp.lessonPlace || ''
-    draft.lessonDescription = tp.description || ''
-    draft.teachingFormats = Array.isArray(tp.teachingFormats)
-      ? tp.teachingFormats
-      : tp.teachingFormat
-        ? [tp.teachingFormat]
-        : draft.teachingFormats
-    draft.city = tp.city || draft.city || ''
-    draft.street = tp.street || draft.street || ''
-    draft.homeNumber = tp.homeNumber || draft.homeNumber || ''
-    draft.flatNumber = tp.flatNumber || draft.flatNumber || ''
-    draft.weeklyAvailability = Object.fromEntries(
+  const tp = data?.tutor_post
+  if (!tp) {
+    tutorOffers.value = []
+    return
+  }
+  const raw = Array.isArray(tp) ? tp : [tp]
+  tutorOffers.value = raw.map((o) => ({
+    subject: o.subject || '',
+    level: o.level || 'Liceum',
+    lessonPlace: o.lessonPlace || '',
+    price: String(o.price ?? ''),
+    description: o.description || '',
+    photo: o.photo || '',
+    teachingFormats: Array.isArray(o.teachingFormats) ? [...o.teachingFormats] : [],
+    city: o.city || '',
+    street: o.street || '',
+    homeNumber: o.homeNumber || '',
+    flatNumber: o.flatNumber || '',
+    weeklyAvailability: Object.fromEntries(
       weeklyDayLabels.map((d) => [
         d,
-        Array.isArray(tp.weeklyAvailability?.[d]) ? [...tp.weeklyAvailability[d]] : [],
+        Array.isArray(o.weeklyAvailability?.[d]) ? [...o.weeklyAvailability[d]] : [],
       ]),
-    )
-  }
+    ),
+  }))
 }
 
 watch(
@@ -169,7 +178,6 @@ watch(
 
 function startEdit() {
   originalProfilePicture = profile.profile_picture
-  originalLessonPhoto = draft.lessonPhoto || ''
   Object.assign(draft, profile)
   applySavedTutorPost(profileData.value)
   isEditing.value = true
@@ -178,27 +186,13 @@ function startEdit() {
 async function saveProfile() {
   saveError.value = ''
 
-  const sf = draft.accountType === 'tutor' ? strictestFormat.value : 't'
-  if (draft.accountType === 'tutor') {
-    if (!draft.lessonSubject) {
-      saveError.value = 'Wybierz przedmiot'
-      return
-    }
-    if (!draft.lessonPrice) {
-      saveError.value = 'Podaj stawkę za lekcję'
-      return
-    }
-    if (!draft.teachingFormats.length) {
-      saveError.value = 'Wybierz formę nauczania'
-      return
-    }
-  }
-  if ((sf === 'Stacjonarnie' || draft.accountType !== 'tutor') && !draft.city) {
-    saveError.value = 'Podaj miasto'
+  if (!draft.accountType) {
+    saveError.value = 'Wybierz typ konta'
     return
   }
-  if (sf === 'Stacjonarnie' && !draft.street) {
-    saveError.value = 'Podaj ulicę'
+
+  if (draft.accountType === 'tutor' && tutorOffers.value.length === 0) {
+    saveError.value = 'Dodaj przynajmniej jedną ofertę korepetytorską'
     return
   }
 
@@ -212,22 +206,6 @@ async function saveProfile() {
   }
   if (draft.city.length > LIMITS.city) {
     saveError.value = `Miasto może mieć maksymalnie ${LIMITS.city} znaków`
-    return
-  }
-  if (draft.street.length > LIMITS.street) {
-    saveError.value = `Ulica może mieć maksymalnie ${LIMITS.street} znaków`
-    return
-  }
-  if (draft.homeNumber.length > LIMITS.homeNumber) {
-    saveError.value = `Numer domu może mieć maksymalnie ${LIMITS.homeNumber} znaków`
-    return
-  }
-  if (draft.flatNumber.length > LIMITS.flatNumber) {
-    saveError.value = `Numer mieszkania może mieć maksymalnie ${LIMITS.flatNumber} znaków`
-    return
-  }
-  if (draft.lessonDescription.length > LIMITS.description) {
-    saveError.value = `Opis oferty może mieć maksymalnie ${LIMITS.description} znaków`
     return
   }
 
@@ -264,55 +242,32 @@ async function saveProfile() {
       pendingAvatarFile.value = null
     }
 
-    if (pendingLessonPhotoFile.value) {
-      const file = pendingLessonPhotoFile.value
-      if (file.size > 5 * 1024 * 1024) {
-        saveError.value = 'Zdjęcie oferty może mieć maksymalnie 5 MB'
-        saving.value = false
-        return
-      }
-      const path = `lesson-${Date.now()}-${file.name}`
-      const { error: uploadError } = await supabase.storage
-        .from('profile_pictures')
-        .upload(path, file)
-
-      if (uploadError) {
-        console.error('Failed to upload lesson photo:', uploadError)
-        saving.value = false
-        return
-      }
-
-      const { data: urlData } = supabase.storage.from('profile_pictures').getPublicUrl(path)
-      draft.lessonPhoto = urlData.publicUrl
-      pendingLessonPhotoFile.value = null
-    }
-
     Object.assign(profile, draft)
 
     let tutorPost = null
     if (draft.accountType === 'tutor') {
-      tutorPost = {
-        subject: draft.lessonSubject || '',
-        level: draft.lessonLevel || 'Liceum',
-        lessonPlace: draft.lessonPlace || '',
-        price: Number(draft.lessonPrice) || null,
-        description: draft.lessonDescription || '',
-        photo: draft.lessonPhoto || null,
-        teachingFormats: [...draft.teachingFormats],
-        city: draft.city || '',
-        street: draft.street || '',
-        homeNumber: draft.homeNumber || '',
-        flatNumber: draft.flatNumber || '',
+      tutorPost = tutorOffers.value.map((o) => ({
+        subject: o.subject || '',
+        level: o.level || 'Liceum',
+        lessonPlace: o.lessonPlace || '',
+        price: Number(o.price) || null,
+        description: o.description || '',
+        photo: o.photo || null,
+        teachingFormats: [...o.teachingFormats],
+        city: o.city || '',
+        street: o.street || '',
+        homeNumber: o.homeNumber || '',
+        flatNumber: o.flatNumber || '',
         weeklyAvailability: Object.fromEntries(
-          weeklyDayLabels.map((d) => [d, [...(draft.weeklyAvailability?.[d] || [])]]),
+          weeklyDayLabels.map((d) => [d, [...(o.weeklyAvailability?.[d] || [])]]),
         ),
         avail_hours: weeklyDayLabels.map((d) =>
-          (draft.weeklyAvailability?.[d] || []).reduce((mask, slot) => {
+          (o.weeklyAvailability?.[d] || []).reduce((mask, slot) => {
             const h = parseInt(slot.split(':')[0], 10)
             return mask | (1 << h)
           }, 0),
         ),
-      }
+      }))
     }
 
     const result = await upsertProfile(toDb(), user.value?.id, tutorPost)
@@ -338,6 +293,9 @@ function cancelEdit() {
   }
   profile.profile_picture = originalProfilePicture
   Object.assign(draft, profile)
+  applySavedTutorPost(profileData.value)
+  showOfferEditor.value = false
+  confirmingDeleteOfferIndex.value = null
   isEditing.value = false
 }
 
@@ -377,10 +335,6 @@ function triggerAvatarUpload() {
   document.getElementById('avatar-input')?.click()
 }
 
-function triggerLessonPhotoUpload() {
-  document.getElementById('lesson-photo-input')?.click()
-}
-
 async function pickAndCompressAvatar(file) {
   if (!file) return
   if (file.type.startsWith('image/')) {
@@ -396,82 +350,210 @@ function onAvatarChange(event) {
   pickAndCompressAvatar(event.target.files?.[0])
 }
 
-async function pickAndCompressLessonPhoto(file) {
+function formattedLocation() {
+  return profile.city || ''
+}
+
+const offerStrictestFormat = computed(() => {
+  const sf = offerDraft.teachingFormats
+  if (sf.includes('Stacjonarnie')) return 'Stacjonarnie'
+  if (sf.includes('Z dojazdem')) return 'Z dojazdem'
+  if (sf.includes('Online')) return 'Online'
+  return ''
+})
+
+function toggleOfferFormat(format) {
+  const idx = offerDraft.teachingFormats.indexOf(format)
+  if (idx > -1) {
+    offerDraft.teachingFormats.splice(idx, 1)
+  } else {
+    offerDraft.teachingFormats.push(format)
+  }
+}
+
+function resetOfferDraft() {
+  offerDraft.lessonSubject = ''
+  offerDraft.lessonLevel = 'Liceum'
+  offerDraft.lessonPlace = ''
+  offerDraft.lessonPrice = ''
+  offerDraft.lessonDescription = ''
+  offerDraft.lessonPhoto = ''
+  offerDraft.teachingFormats = []
+  offerDraft.city = ''
+  offerDraft.street = ''
+  offerDraft.homeNumber = ''
+  offerDraft.flatNumber = ''
+  offerDraft.weeklyAvailability = {}
+  pendingOfferPhotoFile.value = null
+}
+
+function openNewOffer() {
+  resetOfferDraft()
+  editingOfferIndex.value = -1
+  offerSaveError.value = ''
+  showOfferEditor.value = true
+}
+
+function openEditOffer(index) {
+  editingOfferIndex.value = index
+  const offer = tutorOffers.value[index]
+  offerDraft.lessonSubject = offer.subject
+  offerDraft.lessonLevel = offer.level
+  offerDraft.lessonPlace = offer.lessonPlace
+  offerDraft.lessonPrice = offer.price
+  offerDraft.lessonDescription = offer.description
+  offerDraft.lessonPhoto = offer.photo
+  offerDraft.teachingFormats = [...offer.teachingFormats]
+  offerDraft.city = offer.city
+  offerDraft.street = offer.street
+  offerDraft.homeNumber = offer.homeNumber
+  offerDraft.flatNumber = offer.flatNumber
+  offerDraft.weeklyAvailability = Object.fromEntries(
+    weeklyDayLabels.map((d) => [d, [...(offer.weeklyAvailability?.[d] || [])]]),
+  )
+  pendingOfferPhotoFile.value = null
+  offerSaveError.value = ''
+  showOfferEditor.value = true
+}
+
+function closeOfferEditor() {
+  showOfferEditor.value = false
+  if (pendingOfferPhotoFile.value) {
+    URL.revokeObjectURL(offerDraft.lessonPhoto)
+    pendingOfferPhotoFile.value = null
+  }
+}
+
+async function saveOffer() {
+  offerSaveError.value = ''
+
+  if (!offerDraft.lessonSubject) {
+    offerSaveError.value = 'Wybierz przedmiot'
+    return
+  }
+  if (!offerDraft.lessonPrice) {
+    offerSaveError.value = 'Podaj stawkę za lekcję'
+    return
+  }
+  if (!offerDraft.teachingFormats.length) {
+    offerSaveError.value = 'Wybierz formę nauczania'
+    return
+  }
+  if (offerStrictestFormat.value === 'Stacjonarnie' && !offerDraft.city) {
+    offerSaveError.value = 'Podaj miasto'
+    return
+  }
+  if (offerStrictestFormat.value === 'Stacjonarnie' && !offerDraft.street) {
+    offerSaveError.value = 'Podaj ulicę'
+    return
+  }
+  if (offerDraft.city.length > LIMITS.city) {
+    offerSaveError.value = `Miasto może mieć maksymalnie ${LIMITS.city} znaków`
+    return
+  }
+  if (offerDraft.street.length > LIMITS.street) {
+    offerSaveError.value = `Ulica może mieć maksymalnie ${LIMITS.street} znaków`
+    return
+  }
+  if (offerDraft.homeNumber.length > LIMITS.homeNumber) {
+    offerSaveError.value = `Numer domu może mieć maksymalnie ${LIMITS.homeNumber} znaków`
+    return
+  }
+  if (offerDraft.flatNumber.length > LIMITS.flatNumber) {
+    offerSaveError.value = `Numer mieszkania może mieć maksymalnie ${LIMITS.flatNumber} znaków`
+    return
+  }
+  if (offerDraft.lessonDescription.length > LIMITS.description) {
+    offerSaveError.value = `Opis oferty może mieć maksymalnie ${LIMITS.description} znaków`
+    return
+  }
+
+  offerSaving.value = true
+  try {
+    if (pendingOfferPhotoFile.value) {
+      const file = pendingOfferPhotoFile.value
+      if (file.size > 5 * 1024 * 1024) {
+        offerSaveError.value = 'Zdjęcie oferty może mieć maksymalnie 5 MB'
+        offerSaving.value = false
+        return
+      }
+      const path = `lesson-${Date.now()}-${file.name}`
+      const { error: uploadError } = await supabase.storage
+        .from('profile_pictures')
+        .upload(path, file)
+
+      if (uploadError) {
+        console.error('Failed to upload lesson photo:', uploadError)
+        offerSaving.value = false
+        return
+      }
+
+      const { data: urlData } = supabase.storage.from('profile_pictures').getPublicUrl(path)
+      offerDraft.lessonPhoto = urlData.publicUrl
+      pendingOfferPhotoFile.value = null
+    }
+
+    const offer = {
+      subject: offerDraft.lessonSubject,
+      level: offerDraft.lessonLevel,
+      lessonPlace: offerDraft.lessonPlace,
+      price: String(offerDraft.lessonPrice),
+      description: offerDraft.lessonDescription,
+      photo: offerDraft.lessonPhoto || null,
+      teachingFormats: [...offerDraft.teachingFormats],
+      city: offerDraft.city,
+      street: offerDraft.street,
+      homeNumber: offerDraft.homeNumber,
+      flatNumber: offerDraft.flatNumber,
+      weeklyAvailability: Object.fromEntries(
+        weeklyDayLabels.map((d) => [d, [...(offerDraft.weeklyAvailability?.[d] || [])]]),
+      ),
+    }
+
+    if (editingOfferIndex.value === -1) {
+      tutorOffers.value.push(offer)
+    } else {
+      tutorOffers.value[editingOfferIndex.value] = offer
+    }
+    showOfferEditor.value = false
+  } catch (err) {
+    offerSaveError.value = translateAuthError(err)
+  } finally {
+    offerSaving.value = false
+  }
+}
+
+function confirmDeleteOffer(index) {
+  confirmingDeleteOfferIndex.value = index
+}
+
+function executeDeleteOffer() {
+  if (confirmingDeleteOfferIndex.value !== null) {
+    tutorOffers.value.splice(confirmingDeleteOfferIndex.value, 1)
+    confirmingDeleteOfferIndex.value = null
+  }
+}
+
+function cancelDeleteOffer() {
+  confirmingDeleteOfferIndex.value = null
+}
+
+function triggerOfferPhotoUpload() {
+  document.getElementById('offer-photo-input')?.click()
+}
+
+function onOfferPhotoChange(event) {
+  pickAndCompressOfferPhoto(event.target.files?.[0])
+}
+
+async function pickAndCompressOfferPhoto(file) {
   if (!file) return
   if (file.type.startsWith('image/')) {
     file = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, maxSizeMB: 5 })
   }
   if (file.size > 5 * 1024 * 1024) return
-  pendingLessonPhotoFile.value = file
-  draft.lessonPhoto = URL.createObjectURL(file)
-}
-
-function onLessonPhotoChange(event) {
-  pickAndCompressLessonPhoto(event.target.files?.[0])
-}
-
-function formattedLocation() {
-  return profile.city || ''
-}
-
-function toggleTeachingFormat(format) {
-  const idx = draft.teachingFormats.indexOf(format)
-  if (idx > -1) {
-    draft.teachingFormats.splice(idx, 1)
-  } else {
-    draft.teachingFormats.push(format)
-  }
-}
-
-function onFormatOptionsClick(e) {
-  // ignore clicks on blank area inside the container
-  const btn = e.target.closest && e.target.closest('.format-option')
-  if (!btn) {
-    e.preventDefault()
-    e.stopPropagation()
-    try {
-      const active = document.activeElement
-      if (active && active.classList && active.classList.contains('format-option')) {
-        active.blur()
-      }
-    } catch (err) {
-      // ignore in non-browser test envs
-    }
-  }
-}
-
-function onFormatHover(e, enter) {
-  const btn = e.currentTarget || e.target
-  if (!btn || !btn.classList) return
-  if (enter) btn.classList.add('hover')
-  else btn.classList.remove('hover')
-}
-
-function onSubjectTableClick(e) {
-  const btn = e.target.closest && e.target.closest('.subject-option')
-  if (!btn) {
-    e.preventDefault()
-    e.stopPropagation()
-    try {
-      const active = document.activeElement
-      if (active && active.classList && active.classList.contains('subject-option')) {
-        active.blur()
-      }
-      // remove hover classes from subject options
-      document
-        .querySelectorAll?.('.subject-option.hover')
-        ?.forEach((el) => el.classList.remove('hover'))
-    } catch (err) {
-      // ignore
-    }
-  }
-}
-
-function onSubjectHover(e, enter) {
-  const btn = e.currentTarget || e.target
-  if (!btn || !btn.classList) return
-  if (enter) btn.classList.add('hover')
-  else btn.classList.remove('hover')
+  pendingOfferPhotoFile.value = file
+  offerDraft.lessonPhoto = URL.createObjectURL(file)
 }
 </script>
 
@@ -550,59 +632,69 @@ function onSubjectHover(e, enter) {
             <input v-model="draft.age" type="number" placeholder="25" />
           </label>
           <template v-if="draft.accountType === 'tutor'">
-            <label class="field-row">
-              <span class="field-label">Forma nauczania<span class="req">*</span></span>
-              <div class="format-options-row" @click.stop="onFormatOptionsClick">
-                <button
-                  v-for="fmt in teachingFormats"
-                  :key="fmt"
-                  type="button"
-                  class="format-option"
-                  :class="{ selected: draft.teachingFormats.includes(fmt) }"
-                  @click="toggleTeachingFormat(fmt)"
-                  @mouseenter="onFormatHover($event, true)"
-                  @mouseleave="onFormatHover($event, false)"
-                >
-                  {{ fmt }}
-                </button>
-              </div>
-            </label>
-            <template v-if="strictestFormat">
-              <label class="field-row">
-                <span class="field-label"
-                  >Miasto<span v-if="strictestFormat !== 'Online'" class="req">*</span></span
-                >
-                <input v-model="draft.city" placeholder="Warszawa" :maxlength="LIMITS.city" />
-              </label>
-              <template v-if="strictestFormat === 'Stacjonarnie'">
-                <label class="field-row">
-                  <span class="field-label">Ulica<span class="req">*</span></span>
-                  <input
-                    v-model="draft.street"
-                    placeholder="Marszałkowska"
-                    :maxlength="LIMITS.street"
-                  />
-                </label>
-                <div class="address-row">
-                  <label class="field-row address-field">
-                    <span class="field-label">Nr domu</span>
-                    <input
-                      v-model="draft.homeNumber"
-                      placeholder="12"
-                      :maxlength="LIMITS.homeNumber"
-                    />
-                  </label>
-                  <label class="field-row address-field">
-                    <span class="field-label">Nr mieszkania</span>
-                    <input
-                      v-model="draft.flatNumber"
-                      placeholder="3"
-                      :maxlength="LIMITS.flatNumber"
-                    />
-                  </label>
+            <div class="tutor-offers-section">
+              <div class="tutor-offers-header">Twoje oferty korepetytorskie</div>
+
+              <div v-for="(offer, index) in tutorOffers" :key="index" class="tutor-offer-card">
+                <div class="offer-preview">
+                  <div class="offer-preview-row">
+                    <span class="offer-preview-label">Przedmiot</span>
+                    <span class="offer-preview-value">{{ offer.subject || 'Korepetycje' }}</span>
+                  </div>
+                  <div class="offer-preview-row">
+                    <span class="offer-preview-label">Stawka</span>
+                    <span class="offer-preview-value">{{
+                      offer.price ? offer.price + ' zł/h' : 'Brak'
+                    }}</span>
+                  </div>
+                  <div class="offer-preview-row">
+                    <span class="offer-preview-label">Poziom</span>
+                    <span class="offer-preview-value">{{ offer.level || 'Liceum' }}</span>
+                  </div>
+                  <div class="offer-preview-row" v-if="offer.teachingFormats.length">
+                    <span class="offer-preview-label">Forma</span>
+                    <span class="offer-preview-value">{{ offer.teachingFormats.join(', ') }}</span>
+                  </div>
                 </div>
-              </template>
-            </template>
+                <div class="offer-card-actions">
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    @click="openEditOffer(index)"
+                  >
+                    Edytuj
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-danger btn-sm"
+                    @click="confirmDeleteOffer(index)"
+                  >
+                    Usuń
+                  </button>
+                </div>
+              </div>
+
+              <button
+                v-if="tutorOffers.length < 5"
+                type="button"
+                class="btn btn-secondary add-offer-btn"
+                @click="openNewOffer"
+              >
+                + Dodaj ofertę ({{ tutorOffers.length }}/5)
+              </button>
+
+              <div v-if="confirmingDeleteOfferIndex !== null" class="delete-offer-confirm">
+                <span class="delete-confirm-text">Czy na pewno chcesz usunąć tę ofertę?</span>
+                <div class="delete-confirm-actions">
+                  <button class="btn btn-danger btn-sm" @click="executeDeleteOffer">
+                    Tak, usuń
+                  </button>
+                  <button class="btn btn-secondary btn-sm" @click="cancelDeleteOffer">
+                    Anuluj
+                  </button>
+                </div>
+              </div>
+            </div>
           </template>
           <label class="field-row" v-if="draft.accountType !== 'tutor'">
             <span class="field-label">Miasto<span class="req">*</span></span>
@@ -616,97 +708,6 @@ function onSubjectHover(e, enter) {
               <option value="female">Kobieta</option>
             </select>
           </label>
-
-          <template v-if="draft.accountType === 'tutor'">
-            <div class="tutor-offer-header">Twój post korepetytora</div>
-            <label class="field-row">
-              <span class="field-label">Przedmiot<span class="req">*</span></span>
-              <div class="subject-table" @click.stop="onSubjectTableClick">
-                <button
-                  v-for="subject in subjectOptions"
-                  :key="subject"
-                  type="button"
-                  class="subject-option"
-                  :class="{ selected: draft.lessonSubject === subject }"
-                  @click="draft.lessonSubject = subject"
-                  @mouseenter="onSubjectHover($event, true)"
-                  @mouseleave="onSubjectHover($event, false)"
-                >
-                  {{ subject }}
-                </button>
-              </div>
-            </label>
-            <label class="field-row">
-              <span class="field-label">Miejsce lekcji</span>
-              <select v-model="draft.lessonPlace">
-                <option value="" disabled>Wybierz miejsce lekcji</option>
-                <option value="Online">Online</option>
-                <option value="Stacjonarnie">Stacjonarnie</option>
-                <option value="Z dojazdem">Z dojazdem</option>
-              </select>
-            </label>
-            <label class="field-row">
-              <span class="field-label">Poziom</span>
-              <select v-model="draft.lessonLevel">
-                <option value="Szkoła podstawowa">Szkoła podstawowa</option>
-                <option value="Liceum">Liceum</option>
-                <option value="Studia">Studia</option>
-              </select>
-            </label>
-            <label class="field-row">
-              <span class="field-label">Stawka za lekcję (zł/h)<span class="req">*</span></span>
-              <input v-model="draft.lessonPrice" type="number" min="10" placeholder="50" />
-            </label>
-            <div id="availability-section">
-              <AvailabilityGrid
-                :availability="draft.weeklyAvailability"
-                @update:availability="draft.weeklyAvailability = $event"
-              />
-            </div>
-            <label class="field-row">
-              <span class="field-label">Opis oferty</span>
-              <div class="description-wrap">
-                <textarea
-                  v-model="draft.lessonDescription"
-                  placeholder="Napisz krótki opis lekcji..."
-                  :maxlength="LIMITS.description"
-                ></textarea>
-                <span
-                  v-if="draft.lessonDescription.length"
-                  class="desc-char-count"
-                  :class="{
-                    'char-count-over': draft.lessonDescription.length > LIMITS.description,
-                  }"
-                >
-                  {{ LIMITS.description - draft.lessonDescription.length }}
-                </span>
-              </div>
-              <span
-                v-if="draft.lessonDescription.length > LIMITS.description"
-                class="field-warning"
-              >
-                Opis może mieć maksymalnie {{ LIMITS.description }} znaków
-              </span>
-            </label>
-            <label class="field-row lesson-photo-row">
-              <span class="field-label">Zdjęcie oferty</span>
-              <div class="lesson-photo-input">
-                <button class="btn btn-secondary" type="button" @click="triggerLessonPhotoUpload">
-                  Wybierz zdjęcie
-                </button>
-                <input
-                  id="lesson-photo-input"
-                  type="file"
-                  accept="image/*"
-                  class="avatar-input"
-                  @change="onLessonPhotoChange"
-                />
-              </div>
-              <div v-if="draft.lessonPhoto" class="lesson-photo-preview">
-                <img :src="draft.lessonPhoto" alt="Zdjęcie lekcji" />
-              </div>
-            </label>
-          </template>
 
           <div v-if="saveError" class="error-box">{{ saveError }}</div>
 
@@ -746,36 +747,196 @@ function onSubjectHover(e, enter) {
           </div>
 
           <template v-if="profile.accountType === 'tutor'">
-            <div class="tutor-offer-view">
-              <h4>Twoja oferta korepetytora</h4>
+            <div v-for="(offer, index) in tutorOffers" :key="index" class="tutor-offer-view">
+              <h4>Oferta {{ index + 1 }}</h4>
               <div class="offer-row">
                 <span class="offer-label">Przedmiot</span>
-                <span class="offer-value">{{ draft.lessonSubject || 'Korepetycje' }}</span>
+                <span class="offer-value">{{ offer.subject || 'Korepetycje' }}</span>
               </div>
               <div class="offer-row">
                 <span class="offer-label">Poziom</span>
-                <span class="offer-value">{{ draft.lessonLevel || 'Liceum' }}</span>
+                <span class="offer-value">{{ offer.level || 'Liceum' }}</span>
               </div>
               <div class="offer-row">
                 <span class="offer-label">Stawka</span>
-                <span class="offer-value">{{
-                  draft.lessonPrice ? draft.lessonPrice + ' zł/h' : 'Brak'
-                }}</span>
+                <span class="offer-value">{{ offer.price ? offer.price + ' zł/h' : 'Brak' }}</span>
               </div>
-              <div class="offer-row" v-if="draft.teachingFormats.length">
+              <div class="offer-row" v-if="offer.teachingFormats.length">
                 <span class="offer-label">Forma</span>
-                <span class="offer-value">{{ draft.teachingFormats.join(', ') }}</span>
+                <span class="offer-value">{{ offer.teachingFormats.join(', ') }}</span>
               </div>
-              <div class="offer-row" v-if="draft.lessonDescription">
+              <div class="offer-row" v-if="offer.city">
+                <span class="offer-label">Miasto</span>
+                <span class="offer-value">{{ offer.city }}</span>
+              </div>
+              <div class="offer-row" v-if="offer.description">
                 <span class="offer-label">Opis</span>
-                <span class="offer-value">{{ draft.lessonDescription }}</span>
+                <span class="offer-value">{{ offer.description }}</span>
               </div>
-              <div v-if="draft.lessonPhoto" class="offer-photo-preview">
-                <img :src="draft.lessonPhoto" alt="Oferta korepetytora" />
+              <div v-if="offer.photo" class="offer-photo-preview">
+                <img :src="offer.photo" alt="Oferta korepetytora" />
               </div>
             </div>
           </template>
         </template>
+      </div>
+
+      <!-- Offer Editor Overlay -->
+      <div v-if="showOfferEditor" class="offer-editor-overlay" @click.self="closeOfferEditor">
+        <div class="offer-editor-modal">
+          <div class="offer-editor-header">
+            <h3>{{ editingOfferIndex === -1 ? 'Nowa oferta' : 'Edytuj ofertę' }}</h3>
+            <button type="button" class="detail-close" @click="closeOfferEditor">×</button>
+          </div>
+          <div class="offer-editor-body">
+            <label class="field-row">
+              <span class="field-label">Przedmiot<span class="req">*</span></span>
+              <div class="subject-table">
+                <button
+                  v-for="subject in subjectOptions"
+                  :key="subject"
+                  type="button"
+                  class="subject-option"
+                  :class="{ selected: offerDraft.lessonSubject === subject }"
+                  @click="offerDraft.lessonSubject = subject"
+                >
+                  {{ subject }}
+                </button>
+              </div>
+            </label>
+            <label class="field-row">
+              <span class="field-label">Miejsce lekcji</span>
+              <select v-model="offerDraft.lessonPlace">
+                <option value="" disabled>Wybierz miejsce lekcji</option>
+                <option value="Online">Online</option>
+                <option value="Stacjonarnie">Stacjonarnie</option>
+                <option value="Z dojazdem">Z dojazdem</option>
+              </select>
+            </label>
+            <label class="field-row">
+              <span class="field-label">Poziom</span>
+              <select v-model="offerDraft.lessonLevel">
+                <option value="Szkoła podstawowa">Szkoła podstawowa</option>
+                <option value="Liceum">Liceum</option>
+                <option value="Studia">Studia</option>
+              </select>
+            </label>
+            <label class="field-row">
+              <span class="field-label">Stawka za lekcję (zł/h)<span class="req">*</span></span>
+              <input v-model="offerDraft.lessonPrice" type="number" min="10" placeholder="50" />
+            </label>
+            <label class="field-row">
+              <span class="field-label">Forma nauczania<span class="req">*</span></span>
+              <div class="format-options-row">
+                <button
+                  v-for="fmt in teachingFormats"
+                  :key="fmt"
+                  type="button"
+                  class="format-option"
+                  :class="{ selected: offerDraft.teachingFormats.includes(fmt) }"
+                  @click="toggleOfferFormat(fmt)"
+                >
+                  {{ fmt }}
+                </button>
+              </div>
+            </label>
+            <template v-if="offerStrictestFormat">
+              <label class="field-row">
+                <span class="field-label"
+                  >Miasto<span v-if="offerStrictestFormat !== 'Online'" class="req">*</span></span
+                >
+                <input v-model="offerDraft.city" placeholder="Warszawa" :maxlength="LIMITS.city" />
+              </label>
+              <template v-if="offerStrictestFormat === 'Stacjonarnie'">
+                <label class="field-row">
+                  <span class="field-label">Ulica<span class="req">*</span></span>
+                  <input
+                    v-model="offerDraft.street"
+                    placeholder="Marszałkowska"
+                    :maxlength="LIMITS.street"
+                  />
+                </label>
+                <div class="address-row">
+                  <label class="field-row address-field">
+                    <span class="field-label">Nr domu</span>
+                    <input
+                      v-model="offerDraft.homeNumber"
+                      placeholder="12"
+                      :maxlength="LIMITS.homeNumber"
+                    />
+                  </label>
+                  <label class="field-row address-field">
+                    <span class="field-label">Nr mieszkania</span>
+                    <input
+                      v-model="offerDraft.flatNumber"
+                      placeholder="3"
+                      :maxlength="LIMITS.flatNumber"
+                    />
+                  </label>
+                </div>
+              </template>
+            </template>
+            <div>
+              <AvailabilityGrid
+                :availability="offerDraft.weeklyAvailability"
+                @update:availability="offerDraft.weeklyAvailability = $event"
+              />
+            </div>
+            <label class="field-row">
+              <span class="field-label">Opis oferty</span>
+              <div class="description-wrap">
+                <textarea
+                  v-model="offerDraft.lessonDescription"
+                  placeholder="Napisz krótki opis lekcji..."
+                  :maxlength="LIMITS.description"
+                ></textarea>
+                <span
+                  v-if="offerDraft.lessonDescription.length"
+                  class="desc-char-count"
+                  :class="{
+                    'char-count-over': offerDraft.lessonDescription.length > LIMITS.description,
+                  }"
+                >
+                  {{ LIMITS.description - offerDraft.lessonDescription.length }}
+                </span>
+              </div>
+              <span
+                v-if="offerDraft.lessonDescription.length > LIMITS.description"
+                class="field-warning"
+              >
+                Opis może mieć maksymalnie {{ LIMITS.description }} znaków
+              </span>
+            </label>
+            <label class="field-row lesson-photo-row">
+              <span class="field-label">Zdjęcie oferty</span>
+              <div class="lesson-photo-input">
+                <button class="btn btn-secondary" type="button" @click="triggerOfferPhotoUpload">
+                  Wybierz zdjęcie
+                </button>
+                <input
+                  id="offer-photo-input"
+                  type="file"
+                  accept="image/*"
+                  class="avatar-input"
+                  @change="onOfferPhotoChange"
+                />
+              </div>
+              <div v-if="offerDraft.lessonPhoto" class="lesson-photo-preview">
+                <img :src="offerDraft.lessonPhoto" alt="Zdjęcie lekcji" />
+              </div>
+            </label>
+            <div v-if="offerSaveError" class="error-box">{{ offerSaveError }}</div>
+          </div>
+          <div class="offer-editor-footer">
+            <button class="btn btn-primary" :disabled="offerSaving" @click="saveOffer">
+              <span v-if="offerSaving" class="btn-spinner"></span>
+              {{ offerSaving ? 'Zapisywanie...' : 'Zapisz ofertę' }}
+            </button>
+            <button class="btn btn-secondary" :disabled="offerSaving" @click="closeOfferEditor">
+              Anuluj
+            </button>
+          </div>
+        </div>
       </div>
 
       <button v-if="!isEditing" class="btn btn-primary edit-btn" @click="startEdit">
@@ -1356,5 +1517,143 @@ function onSubjectHover(e, enter) {
   font-weight: 500;
   color: #991b1b;
   text-align: center;
+}
+
+.tutor-offers-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tutor-offers-header {
+  font-weight: 700;
+  color: var(--text);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tutor-offer-card {
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.offer-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.offer-preview-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.offer-preview-label {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.offer-preview-value {
+  text-align: right;
+  color: var(--text);
+}
+
+.offer-card-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.add-offer-btn {
+  align-self: flex-start;
+}
+
+.delete-offer-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid #fca5a5;
+  border-radius: 12px;
+  background: #fef2f2;
+}
+
+.offer-editor-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 20px;
+}
+
+.offer-editor-modal {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: min(92vw, 720px);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.offer-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.offer-editor-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.detail-close {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.detail-close:hover {
+  background: var(--surface-hover);
+}
+
+.offer-editor-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+
+.offer-editor-footer {
+  display: flex;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }
 </style>

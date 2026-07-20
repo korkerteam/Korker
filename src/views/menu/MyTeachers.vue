@@ -98,8 +98,10 @@ async function openTimetable(teacher) {
 
   if (tutorResult.error) {
     timetableError.value = 'Nie udało się załadować planu zajęć.'
-  } else if (tutorResult.data?.tutor_post?.weeklyAvailability) {
-    timetableData.value = tutorResult.data.tutor_post.weeklyAvailability
+  } else if (tutorResult.data?.tutor_post) {
+    const raw = tutorResult.data.tutor_post
+    const first = Array.isArray(raw) ? raw[0] || {} : raw
+    timetableData.value = first.weeklyAvailability || null
   } else {
     timetableData.value = null
   }
@@ -230,12 +232,20 @@ function getTeacherImage(teacher) {
   return teacher?.profile_picture || teacherImageMap[teacher?.name] || ''
 }
 
+function getFirstOffer(teacher) {
+  const tp = teacher?.tutor_post
+  if (!tp) return null
+  return Array.isArray(tp) ? tp[0] || null : tp
+}
+
 function getTeacherSubject(teacher) {
-  return teacher?.tutor_post?.subject || ''
+  const offer = getFirstOffer(teacher)
+  return offer?.subject || ''
 }
 
 function getTeacherLevel(teacher) {
-  return teacher?.tutor_post?.level || ''
+  const offer = getFirstOffer(teacher)
+  return offer?.level || ''
 }
 
 function onShow(teacher) {
