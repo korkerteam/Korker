@@ -21,21 +21,44 @@
           <div v-else-if="upcomingLessons.length === 0" class="notifications-empty">
             Brak nadchodzących lekcji 🗓️
           </div>
-          <div v-else class="upcoming-list">
-            <div v-for="lesson in upcomingLessons" :key="lesson.id" class="upcoming-item">
-              <div class="upcoming-top">
-                <strong class="upcoming-name">{{ getOtherName(lesson) }}</strong>
-                <span v-if="getOtherSubject(lesson)" class="upcoming-subject">{{
+          <div v-else class="home-lessons-list">
+            <div class="home-lesson-featured">
+              <div class="hl-top">
+                <strong class="hl-name-featured">{{ getOtherName(upcomingLessons[0]) }}</strong>
+                <span v-if="getOtherSubject(upcomingLessons[0])" class="hl-subject-featured">{{
+                  getOtherSubject(upcomingLessons[0])
+                }}</span>
+              </div>
+              <div class="hl-slots">
+                <span
+                  v-for="slot in slotLabelsFromMasks(upcomingLessons[0].requested_slots)"
+                  :key="slot.day + slot.time"
+                  class="hl-chip-featured"
+                >
+                  <span class="hl-chip-day">{{ slot.day }}</span>
+                  <span class="hl-chip-time">{{ slot.time }}</span>
+                </span>
+              </div>
+            </div>
+            <div
+              v-for="lesson in upcomingLessons.slice(1, 3)"
+              :key="lesson.id"
+              class="home-lesson-compact"
+            >
+              <div class="hl-top">
+                <strong class="hl-name-compact">{{ getOtherName(lesson) }}</strong>
+                <span v-if="getOtherSubject(lesson)" class="hl-subject-compact">{{
                   getOtherSubject(lesson)
                 }}</span>
               </div>
-              <div class="upcoming-slots">
+              <div class="hl-slots">
                 <span
                   v-for="slot in slotLabelsFromMasks(lesson.requested_slots)"
-                  :key="slot"
-                  class="upcoming-slot-chip"
-                  >{{ slot }}</span
+                  :key="slot.day + slot.time"
+                  class="hl-chip-compact"
                 >
+                  {{ slot.day }} {{ slot.time }}
+                </span>
               </div>
             </div>
           </div>
@@ -154,7 +177,7 @@ const upcomingLoading = ref(false)
 const otherUsers = ref({})
 
 function slotLabelsFromMasks(masks) {
-  const dayKeys = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
+  const dayKeys = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd']
   const labels = []
   if (!Array.isArray(masks)) return labels
   for (let di = 0; di < masks.length; di++) {
@@ -162,7 +185,7 @@ function slotLabelsFromMasks(masks) {
     if (typeof mask === 'number' && mask > 0) {
       for (let h = 0; h < 24; h++) {
         if (mask & (1 << h)) {
-          labels.push(`${dayKeys[di]} ${String(h).padStart(2, '0')}:00`)
+          labels.push({ day: dayKeys[di], time: `${String(h).padStart(2, '0')}:00` })
         }
       }
     }
@@ -310,7 +333,6 @@ const handleNotificationClick = (notificationId, senderId) => {
   color: var(--text);
   text-align: left;
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
-  cursor: pointer;
   min-height: 260px;
   height: 100%;
   transition:
@@ -347,6 +369,21 @@ const handleNotificationClick = (notificationId, senderId) => {
 .lessons-panel {
   justify-content: flex-start;
   background: var(--surface-muted);
+  gap: 14px;
+}
+
+.lessons-panel .panel-label {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.lessons-panel .panel-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .notifications-panel {
@@ -528,55 +565,100 @@ const handleNotificationClick = (notificationId, senderId) => {
   max-width: 240px;
 }
 
-.upcoming-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.upcoming-item {
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--border-soft);
+.home-lessons-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 8px 10px 10px;
 }
 
-.upcoming-item:last-child {
-  border-bottom: none;
-}
-
-.upcoming-top {
+.home-lesson-featured {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  margin-bottom: 2px;
+}
+
+.home-lesson-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+}
+
+.hl-top {
+  display: flex;
+  align-items: baseline;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.upcoming-name {
-  font-size: 0.95rem;
-  color: var(--text-strong);
+.hl-name-featured {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text);
 }
 
-.upcoming-subject {
-  font-size: 0.82rem;
+.hl-subject-featured {
+  font-size: 0.9rem;
   color: var(--accent-strong);
   font-weight: 600;
 }
 
-.upcoming-slots {
+.hl-name-compact {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.hl-subject-compact {
+  font-size: 0.8rem;
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.hl-slots {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
 
-.upcoming-slot-chip {
-  background: rgba(79, 117, 199, 0.1);
-  color: var(--accent-strong);
+.hl-chip-featured {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--primary-color);
+  color: white;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.hl-chip-compact {
+  background: var(--surface-soft);
+  color: var(--muted);
   padding: 2px 8px;
   border-radius: 6px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
+  border: 1px solid var(--border);
+}
+
+.hl-chip-day {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.hl-chip-time {
+  font-weight: 700;
 }
 
 .notifications-empty {
