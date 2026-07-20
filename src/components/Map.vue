@@ -69,20 +69,6 @@ const toggleMap = () => {
         <div v-if="isMapVisible" ref="mapContainer" class="ramka"></div>
       </Transition>
     </div>
-
-    <button
-      class="map-fab"
-      @click="toggleMap"
-      :title="isMapVisible ? 'Hide map' : 'Show map'"
-      :aria-label="isMapVisible ? 'Hide map' : 'Show map'"
-    >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path
-          d="M12 2 4 5v15l8 3 8-3V5l-8-3Zm0 2.18 6 2.25v11.14l-6 2.25-6-2.25V6.43l6-2.25Zm0 3.12a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"
-          fill="currentColor"
-        />
-      </svg>
-    </button>
   </div>
 </template>
 
