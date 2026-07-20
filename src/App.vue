@@ -82,6 +82,27 @@ provide('globalChat', {
   },
 })
 
+function normalizeTeacher(teacher, teacherId) {
+  const base = teacherId ? { ...teacher, id: teacherId } : { ...teacher }
+  if (base.tutor_post && typeof base.tutor_post === 'object') {
+    return base
+  }
+  return {
+    ...base,
+    profile_picture: base.profile_picture || base.image || null,
+    tutor_post: {
+      subject: base.subject || '',
+      level: base.level || '',
+      tags: base.tags || [],
+      description: base.bio || '',
+      price: base.price || 50,
+      city: base.city || '',
+      lessonPlace: base.lessonPlace || '',
+      weeklyAvailability: base.weeklyAvailability || {},
+    },
+  }
+}
+
 function handleTeacherLike(teacher) {
   if (!teacher) return
 
@@ -92,14 +113,12 @@ function handleTeacherLike(teacher) {
   })
 
   if (!exists) {
-    likedTeachers.value = [
-      ...likedTeachers.value,
-      teacherId ? { ...teacher, id: teacherId } : { ...teacher },
-    ]
+    likedTeachers.value = [...likedTeachers.value, normalizeTeacher(teacher, teacherId)]
 
     const authId = teacher.auth_id
     if (authId) {
       addSavedTutor(authId).catch(console.error)
+      loadSavedTutors()
     }
   }
 }
