@@ -264,12 +264,10 @@ function handleSendMessage() {
             />
             <span v-else class="avatar avatar-letter">{{ getInitial() }}</span>
           </div>
-          <h2 class="profile-name">{{ getDisplayName() }}</h2>
-          <span
-            v-if="getFullName() && getDisplayName() !== getFullName()"
-            class="profile-real-name"
-            >{{ getFullName() }}</span
-          >
+          <h2 class="profile-name">{{ getFullName() || profile?.nickname || 'Nieznany' }}</h2>
+          <span v-if="profile?.nickname && getFullName()" class="profile-nickname">{{
+            profile.nickname
+          }}</span>
 
           <div class="info-list">
             <div v-if="profile?.account_type" class="info-item">
@@ -528,7 +526,8 @@ function handleSendMessage() {
   word-break: break-word;
 }
 
-.profile-real-name {
+.profile-real-name,
+.profile-nickname {
   font-size: 14px;
   color: var(--muted);
   text-align: center;

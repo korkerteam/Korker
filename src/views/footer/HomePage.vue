@@ -21,22 +21,32 @@
           <div v-else-if="upcomingLessons.length === 0" class="notifications-empty">
             Brak nadchodzących lekcji 🗓️
           </div>
-          <div v-else class="upcoming-list">
-            <div v-for="lesson in upcomingLessons" :key="lesson.id" class="upcoming-item">
-              <div class="upcoming-top">
-                <strong class="upcoming-name">{{ getOtherName(lesson) }}</strong>
-                <span v-if="getOtherSubject(lesson)" class="upcoming-subject">{{
-                  getOtherSubject(lesson)
+          <div v-else class="home-lessons-list">
+            <div class="home-lesson-featured">
+              <div class="hl-top">
+                <strong class="hl-name-featured">{{ getOtherName(upcomingLessons[0]) }}</strong>
+                <span v-if="getOtherSubject(upcomingLessons[0])" class="hl-subject-featured">{{
+                  getOtherSubject(upcomingLessons[0])
                 }}</span>
               </div>
-              <div class="upcoming-slots">
+              <div class="hl-slots">
                 <span
-                  v-for="slot in slotLabelsFromMasks(lesson.requested_slots)"
-                  :key="slot"
-                  class="upcoming-slot-chip"
-                  >{{ slot }}</span
+                  v-for="slot in slotLabelsFromMasks(upcomingLessons[0].requested_slots)"
+                  :key="slot.day + slot.time"
+                  class="hl-chip-featured"
                 >
+                  {{ slot.day }}, {{ slot.time }}
+                </span>
               </div>
+              <span class="hl-date-featured">{{
+                new Date(upcomingLessons[0].created_at).toLocaleDateString('pl-PL', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              }}</span>
             </div>
           </div>
         </div>
@@ -80,9 +90,12 @@
 
 <script setup>
 import { computed, ref, inject, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { useMessaging } from '@/composables/useMessaging.js'
+
+const router = useRouter()
 
 const { isAuthenticated, profileData, user } = useAuth()
 const { conversations, notifications, markNotificationRead } = useMessaging()
@@ -137,6 +150,16 @@ const notificationsToShow = computed(() => {
       isRead: notif.isRead,
     })
   })
+  lessonNotifs.value.forEach((notif) => {
+    upsert({
+      id: notif.id,
+      senderId: notif.senderId,
+      sender: notif.sender,
+      message: notif.message,
+      time: notif.time,
+      isRead: notif.isRead,
+    })
+  })
 
   return Array.from(merged.values())
 })
@@ -152,6 +175,8 @@ const isTutorAccount = computed(() => {
 const upcomingLessons = ref([])
 const upcomingLoading = ref(false)
 const otherUsers = ref({})
+const lessonNotifs = ref([])
+const seenLessonNotifIds = ref(new Set())
 
 function slotLabelsFromMasks(masks) {
   const dayKeys = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
@@ -162,7 +187,7 @@ function slotLabelsFromMasks(masks) {
     if (typeof mask === 'number' && mask > 0) {
       for (let h = 0; h < 24; h++) {
         if (mask & (1 << h)) {
-          labels.push(`${dayKeys[di]} ${String(h).padStart(2, '0')}:00`)
+          labels.push({ day: dayKeys[di], time: `${String(h).padStart(2, '0')}:00` })
         }
       }
     }
@@ -189,20 +214,20 @@ async function fetchUpcomingLessons() {
     return
   }
 
-  upcomingLessons.value = data || []
+  upcomingLessons.value = (data || []).filter((r) => r.student_id !== r.tutor_id)
 
   const otherIds = new Set()
-  for (const r of data || []) {
+  for (const r of upcomingLessons.value) {
     otherIds.add(isTutorAccount.value ? r.student_id : r.tutor_id)
   }
 
   if (otherIds.size > 0) {
     const { data: profiles } = await supabase
       .from('users')
-      .select('*')
+      .select('id, auth_id, nickname, name, surname, profile_picture, tutor_post')
       .in('auth_id', [...otherIds])
 
-    const map = {}
+    const map = { ...otherUsers.value }
     for (const p of profiles || []) {
       map[p.auth_id] = p
     }
@@ -210,6 +235,93 @@ async function fetchUpcomingLessons() {
   }
 
   upcomingLoading.value = false
+}
+
+async function fetchLessonNotifications() {
+  if (!user.value) return
+  const column = isTutorAccount.value ? 'tutor_id' : 'student_id'
+  const { data, error } = await supabase
+    .from('lesson_requests')
+    .select('*')
+    .eq(column, user.value.id)
+    .in('status', isTutorAccount.value ? ['pending'] : ['approved', 'rejected'])
+    .order('created_at', { ascending: false })
+
+  if (error || !data) {
+    lessonNotifs.value = []
+    return
+  }
+
+  const filtered = data.filter((r) => {
+    const isSelf = r.student_id === r.tutor_id
+    if (isSelf)
+      console.warn(
+        'filtered self-request (student_id === tutor_id):',
+        r.id,
+        r.student_id,
+        r.tutor_id,
+      )
+    return !isSelf
+  })
+
+  console.log(
+    'fetchLessonNotifications raw:',
+    data.length,
+    'filtered:',
+    filtered.length,
+    'user:',
+    user.value?.id,
+  )
+
+  const otherIds = new Set()
+  for (const r of filtered) {
+    otherIds.add(isTutorAccount.value ? r.student_id : r.tutor_id)
+  }
+  if (otherIds.size > 0) {
+    const { data: profiles } = await supabase
+      .from('users')
+      .select('id, auth_id, nickname, name, surname, profile_picture, tutor_post')
+      .in('auth_id', [...otherIds])
+    for (const p of profiles || []) {
+      otherUsers.value[p.auth_id] = p
+    }
+  }
+
+  lessonNotifs.value = filtered
+    .filter((r) => {
+      const otherId = isTutorAccount.value ? r.student_id : r.tutor_id
+      const keep = otherId !== user.value?.id
+      if (!keep) console.warn('filtered self-request:', r.id, otherId, user.value?.id)
+      return keep
+    })
+    .map((r) => {
+      const otherId = isTutorAccount.value ? r.student_id : r.tutor_id
+      const p = otherUsers.value[otherId]
+      const name = p?.nickname || [p?.name, p?.surname].filter(Boolean).join(' ') || 'Nieznany'
+      const slotStr = slotLabelsFromMasks(r.requested_slots)
+        .slice(0, 2)
+        .map((s) => `${s.day} ${s.time}`)
+        .join(', ')
+      const extra = slotLabelsFromMasks(r.requested_slots).length > 2 ? '...' : ''
+
+      let message = ''
+      if (isTutorAccount.value) {
+        message = `Nowa prośba o lekcję od ${name}${slotStr ? ` (${slotStr}${extra})` : ''}`
+      } else if (r.status === 'approved') {
+        message = `${name} zaakceptował Twoją prośbę o lekcję${slotStr ? ` (${slotStr}${extra})` : ''}`
+      } else if (r.status === 'rejected') {
+        message = `${name} odrzucił Twoją prośbę o lekcję`
+      }
+
+      return {
+        id: `lesson-${r.id}`,
+        senderId: otherId,
+        sender: name,
+        message,
+        time: r.created_at ? new Date(r.created_at).toLocaleDateString('pl-PL') : '',
+        isRead: seenLessonNotifIds.value.has(r.id),
+      }
+    })
 }
 
 function getOtherName(entry) {
@@ -228,7 +340,10 @@ function getOtherSubject(entry) {
 watch(
   () => user.value,
   (u) => {
-    if (u) fetchUpcomingLessons()
+    if (u) {
+      fetchUpcomingLessons()
+      fetchLessonNotifications()
+    }
   },
   { immediate: true },
 )
@@ -236,11 +351,22 @@ watch(
 watch(
   () => profileData.value,
   () => {
-    if (user.value) fetchUpcomingLessons()
+    if (user.value) {
+      fetchUpcomingLessons()
+      fetchLessonNotifications()
+    }
   },
 )
 
 const handleNotificationClick = (notificationId, senderId) => {
+  if (notificationId && notificationId.startsWith('lesson-')) {
+    seenLessonNotifIds.value.add(notificationId.replace('lesson-', ''))
+    lessonNotifs.value = lessonNotifs.value.map((n) =>
+      n.id === notificationId ? { ...n, isRead: true } : n,
+    )
+    router.push({ query: { panel: 'calendar' } })
+    return
+  }
   openChatWithUser(senderId)
   markNotificationRead(notificationId)
 }
@@ -353,7 +479,6 @@ const handleNotificationClick = (notificationId, senderId) => {
   color: var(--text);
   text-align: left;
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
-  cursor: pointer;
   min-height: 260px;
   height: 100%;
   transition:
@@ -390,6 +515,21 @@ const handleNotificationClick = (notificationId, senderId) => {
 .lessons-panel {
   justify-content: flex-start;
   background: var(--surface-muted);
+  gap: 14px;
+}
+
+.lessons-panel .panel-label {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.lessons-panel .panel-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .notifications-panel {
@@ -571,55 +711,65 @@ const handleNotificationClick = (notificationId, senderId) => {
   max-width: 240px;
 }
 
-.upcoming-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.upcoming-item {
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--border-soft);
+.home-lessons-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 8px 10px 10px;
 }
 
-.upcoming-item:last-child {
-  border-bottom: none;
-}
-
-.upcoming-top {
+.home-lesson-featured {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+}
+
+.hl-top {
+  display: flex;
+  align-items: baseline;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.upcoming-name {
-  font-size: 0.95rem;
-  color: var(--text-strong);
+.hl-name-featured {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text);
 }
 
-.upcoming-subject {
-  font-size: 0.82rem;
+.hl-subject-featured {
+  font-size: 0.9rem;
   color: var(--accent-strong);
   font-weight: 600;
 }
 
-.upcoming-slots {
+.hl-slots {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
 
-.upcoming-slot-chip {
-  background: rgba(79, 117, 199, 0.1);
-  color: var(--accent-strong);
-  padding: 2px 8px;
-  border-radius: 6px;
+.hl-chip-featured {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--primary-color);
+  color: white;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.hl-date-featured {
   font-size: 0.78rem;
-  font-weight: 600;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-top: -4px;
 }
 
 .notifications-empty {

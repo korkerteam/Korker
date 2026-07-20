@@ -17,6 +17,22 @@ export async function fetchProfile(userId) {
   return data
 }
 
+async function generateUniqueNickname() {
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const nickname = `user${Math.floor(Math.random() * 99999)}`
+
+    const { data: existing } = await supabase
+      .from(TABLE)
+      .select('auth_id')
+      .eq('nickname', nickname)
+      .maybeSingle()
+
+    if (!existing) return nickname
+  }
+
+  return `user${Date.now().toString(36).slice(0, 6)}`
+}
+
 const LIMITS = {
   nickname: 30,
   name: 30,
@@ -37,9 +53,10 @@ export async function upsertProfile(
   const uid = await resolveUserId(userId)
   if (!uid) throw new Error('Not authenticated')
 
-  if ((!nickname || !nickname.trim()) && (!name || !name.trim()))
-    throw new Error('Pseudonim lub imię i nazwisko jest wymagane')
-  if (nickname && nickname.length > LIMITS.nickname)
+  if (!nickname || !nickname.trim()) {
+    nickname = await generateUniqueNickname()
+  }
+  if (nickname.length > LIMITS.nickname)
     throw new Error(`Pseudonim może mieć maksymalnie ${LIMITS.nickname} znaków`)
   if (name && name.length > LIMITS.name)
     throw new Error(`Imię może mieć maksymalnie ${LIMITS.name} znaków`)

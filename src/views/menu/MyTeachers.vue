@@ -194,12 +194,13 @@ watch(
   { immediate: true },
 )
 
-function getDisplayName(teacher) {
-  const fullName = [teacher.name, teacher.surname].filter(Boolean).join(' ')
-  if (teacher.nickname) {
-    return `${teacher.nickname} (${fullName})`
+function getDisplayName(teacher, nameOrNickname = 'name') {
+  if (nameOrNickname === 'nickname' && teacher.nickname) {
+    return teacher.nickname
+  } else {
+    const fullName = [teacher.name, teacher.surname].filter(Boolean).join(' ')
+    return fullName || teacher.name
   }
-  return fullName || teacher.name
 }
 
 const teacherImageMap = {
@@ -305,7 +306,11 @@ function openChat(teacher) {
               <span v-else>{{ getDisplayName(teacher).charAt(0) }}</span>
             </div>
             <div class="meta">
-              <div class="name">{{ getDisplayName(teacher) }}</div>
+              <div v-if="teacher.nickname">
+                <div class="name">{{ getDisplayName(teacher, 'name') }}</div>
+                <div class="nickname-name">{{ getDisplayName(teacher, 'nickname') }}</div>
+              </div>
+              <div v-else class="name">{{ getDisplayName(teacher, 'name') }}</div>
               <div class="details">
                 {{ getTeacherSubject(teacher)
                 }}<span v-if="getTeacherLevel(teacher)"> • {{ getTeacherLevel(teacher) }}</span>
@@ -617,6 +622,14 @@ function openChat(teacher) {
 .meta .name {
   font-weight: 700;
   color: var(--text);
+  font-size: 1rem;
+  margin-bottom: 1px;
+}
+
+.meta .nickname-name {
+  font-weight: 400;
+  color: var(--text);
+  font-size: 0.8rem;
 }
 .meta .details {
   font-size: 13px;

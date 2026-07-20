@@ -49,7 +49,7 @@ const weekdayLabels = [
   'Niedziela',
 ]
 const dayAbbr = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd']
-const gridHours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+const gridHours = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
 
 const subjectOptions = [
   'Język polski',
@@ -72,6 +72,25 @@ function hasSlot(availability, day, hour) {
   return (availability?.[day] || []).includes(slot)
 }
 
+<<<<<<< HEAD
+=======
+const subjectOptions = [
+  'Język polski',
+  'Język angielski',
+  'Język niemiecki',
+  'Matematyka',
+  'Fizyka',
+  'Chemia',
+  'Biologia',
+  'Historia',
+  'Geografia',
+  'Informatyka',
+]
+const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
+const tagOptions = ['Matura', 'Egzamin', 'Olimpiada']
+const lessonPlaceOptions = ['Online', 'Stacjonarnie', 'Z dojazdem']
+
+>>>>>>> 6bca8c7c062a706551deb9d2b1dfe26f171f9ef0
 function normalizeChoice(value) {
   if (value == null) return ''
   const text = `${value}`.trim().toLowerCase().replace(/\s+/g, ' ')
@@ -438,6 +457,7 @@ function toggleSelection(category, value) {
 </script>
 
 <template>
+<<<<<<< HEAD
   <div class="find-korks-panel" :class="{ 'guest-state': !isAuthenticated }">
     <div class="tutors-content">
       <div v-if="filteredTutors.length && currentTutor" class="tt-section">
@@ -455,6 +475,35 @@ function toggleSelection(category, value) {
                 :class="{ on: hasSlot(currentTutor?.weeklyAvailability, day, hour) }"
               ></div>
             </template>
+=======
+  <div>
+    <div
+      v-if="!isAuthenticated || isAuthenticated"
+      class="find-korks-panel"
+      :class="{ 'guest-state': !isAuthenticated }"
+    >
+      <div
+        class="tutors-content"
+        :class="{ 'empty-results-layout': isAuthenticated && !filteredTutors.length }"
+      >
+        <!-- Plan lekcji (left) -->
+        <div v-if="filteredTutors.length && currentTutor" class="tt-section">
+          <div class="tt-section-header">Plan lekcji</div>
+          <div class="tt-grid-wrap">
+            <div class="tt-grid">
+              <div class="tt-corner"></div>
+              <div v-for="d in dayAbbr" :key="d" class="tt-day-h">{{ d }}</div>
+              <template v-for="hour in gridHours" :key="hour">
+                <div class="tt-time-l">{{ String(hour).padStart(2, '0') }}:00</div>
+                <div
+                  v-for="day in weekdayLabels"
+                  :key="`${day}-${hour}`"
+                  class="tt-c"
+                  :class="{ on: hasSlot(currentTutor?.weeklyAvailability, day, hour) }"
+                ></div>
+              </template>
+            </div>
+>>>>>>> 6bca8c7c062a706551deb9d2b1dfe26f171f9ef0
           </div>
         </div>
         <div v-if="currentTutor.bio || currentTutor.lessonDescription" class="bio-box">
@@ -525,6 +574,7 @@ function toggleSelection(category, value) {
             </div>
           </div>
 
+<<<<<<< HEAD
           <div class="card-info">
             <div class="tutor-main-info">
               <div class="tutor-summary-row">
@@ -538,10 +588,28 @@ function toggleSelection(category, value) {
                 </div>
                 <div class="tutor-summary-card tutor-summary-price">
                   <p class="tutor-price">{{ currentTutor.price }} zł/h</p>
+=======
+            <div class="card-info">
+              <div class="tutor-main-info">
+                <div class="browse-note"></div>
+                <div class="tutor-summary-row">
+                  <div class="tutor-summary-card">
+                    <h3 class="tutor-name">{{ currentTutor.name }}</h3>
+                    <p class="tutor-meta">
+                      {{ currentTutor.subject || currentTutor.lessonSubject || 'Korepetycje' }} •
+                      {{ currentTutor.level || currentTutor.lessonLevel || 'Liceum' }}
+                      <span v-if="currentTutor.city"> • {{ currentTutor.city }}</span>
+                    </p>
+                  </div>
+                  <div class="tutor-summary-card tutor-summary-price">
+                    <p class="tutor-price">{{ currentTutor.price }} zł/h</p>
+                  </div>
+>>>>>>> 6bca8c7c062a706551deb9d2b1dfe26f171f9ef0
                 </div>
               </div>
             </div>
 
+<<<<<<< HEAD
             <div class="tags-list">
               <span v-for="tag in currentTutor.tags" :key="tag" class="tag">{{ tag }}</span>
             </div>
@@ -678,6 +746,139 @@ function toggleSelection(category, value) {
             </label>
           </div>
         </div>
+=======
+          <div
+            v-else-if="isAuthenticated && !filteredTutors.length"
+            class="empty-state-card inline-empty-state"
+          >
+            <template v-if="allDecided">
+              <h3>Dotarłeś do końca</h3>
+              <p>Przejrzałeś już wszystkich dostępnych korepetytorów.</p>
+            </template>
+            <template v-else>
+              <h3>Brak nauczycieli</h3>
+              <p>Nie ma wyników dla tych filtrów. Zmień kryteria albo wyczyść filtry.</p>
+            </template>
+            <button
+              v-if="!allDecided"
+              class="btn-secondary clear-filters-btn"
+              type="button"
+              @click="clearFilters"
+            >
+              Wyczyść filtry
+            </button>
+          </div>
+
+          <div
+            v-if="filteredTutors.length && currentTutor && !props.isTutorAccount"
+            class="actions"
+            @pointerdown.stop
+            @pointermove.stop
+            @pointerup.stop
+            @pointercancel.stop
+          >
+            <button
+              id="dislike-button"
+              class="btn-dislike"
+              type="button"
+              aria-label="Nie pasuje"
+              @click.stop.prevent="handleDecision(false)"
+            >
+              <span aria-hidden="true">✕</span>
+              <span class="visually-hidden">Nie pasuje</span>
+            </button>
+            <button
+              id="like-button"
+              class="btn-like"
+              type="button"
+              aria-label="Lubię"
+              @click.stop.prevent="handleDecision(true)"
+            >
+              <span aria-hidden="true">✔</span>
+              <span class="visually-hidden">Lubię</span>
+            </button>
+          </div>
+        </div>
+
+        <div v-if="isAuthenticated" class="tags-filter-section">
+          <div class="tags-filter-header">
+            <h4>Filtry</h4>
+          </div>
+
+          <div class="filter-group">
+            <h5>Miasto</h5>
+            <div class="filter-options city-select-group">
+              <label class="city-select-label">
+                <input
+                  v-model="citySearchInput"
+                  type="text"
+                  placeholder="Wyszukaj miasto"
+                  autocomplete="off"
+                />
+              </label>
+              <button class="city-apply-button" type="button" @click="applyCityFilter">
+                Zastosuj
+              </button>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <h5>Przedmioty</h5>
+            <div class="filter-options">
+              <label v-for="option in subjectOptions" :key="option">
+                <input
+                  type="checkbox"
+                  :checked="selectedSubjects.includes(option)"
+                  @change="toggleSelection('subjects', option)"
+                />
+                {{ option }}
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <h5>Poziom</h5>
+            <div class="filter-options">
+              <label v-for="option in levelOptions" :key="option">
+                <input
+                  type="checkbox"
+                  :checked="selectedLevels.includes(option)"
+                  @change="toggleSelection('levels', option)"
+                />
+                {{ option }}
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <h5>Miejsce lekcji</h5>
+            <div class="filter-options">
+              <label v-for="option in lessonPlaceOptions" :key="option">
+                <input
+                  type="checkbox"
+                  :checked="selectedLessonPlaces.includes(option)"
+                  @change="toggleSelection('lessonPlace', option)"
+                />
+                {{ option }}
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <h5>Tagi</h5>
+            <div class="filter-options">
+              <label v-for="option in tagOptions" :key="option">
+                <input
+                  type="checkbox"
+                  :checked="selectedTags.includes(option)"
+                  @change="toggleSelection('tags', option)"
+                />
+                {{ option }}
+              </label>
+            </div>
+          </div>
+        </div>
+>>>>>>> 6bca8c7c062a706551deb9d2b1dfe26f171f9ef0
       </div>
     </div>
   </div>
@@ -708,16 +909,115 @@ function toggleSelection(category, value) {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   gap: 16px;
+<<<<<<< HEAD
   overflow: hidden;
+=======
+  overflow: visible;
+>>>>>>> 6bca8c7c062a706551deb9d2b1dfe26f171f9ef0
   align-items: center;
   min-height: 0;
   margin: 0;
+}
+
+.tutors-content.empty-results-layout {
+  grid-template-columns: 1fr auto minmax(260px, 360px);
+}
+
+.tutors-content.empty-results-layout .tutor-section {
+  grid-column: 2;
+}
+
+.tutors-content.empty-results-layout .tags-filter-section {
+  /* Only ensure it stays in its column; rely on the base .tags-filter-section styles for sizing */
+  grid-column: 3;
 }
 
 .find-korks-panel.guest-state .tutors-content {
   display: flex;
   justify-content: center;
   align-items: center;
+<<<<<<< HEAD
+=======
+  grid-template-columns: 1fr;
+}
+
+.find-korks-panel.guest-state .tutor-section {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 0 8px 0;
+}
+
+.empty-state-card {
+  width: min(100%, 480px);
+  max-width: 480px;
+  padding: 28px;
+  border-radius: 24px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.inline-empty-state {
+  width: 100%;
+  max-width: 50%;
+  margin: 0 auto;
+  grid-column: 1 / -1;
+  justify-self: center;
+  margin-right: 340px;
+}
+
+.empty-state-card h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 22px;
+}
+
+.empty-state-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.empty-state-action {
+  margin-top: 16px;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--accent-strong);
+  color: white;
+}
+
+.empty-state-action:hover {
+  opacity: 0.95;
+}
+
+.tags-filter-section {
+  width: 100%;
+  min-width: 0;
+  max-height: none;
+  padding: 22px 18px 110px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  margin: 0 0 24px;
+  align-self: stretch;
+  position: relative;
+  pointer-events: auto;
+  z-index: 1;
+>>>>>>> 6bca8c7c062a706551deb9d2b1dfe26f171f9ef0
 }
 
 .tt-section {
@@ -1261,6 +1561,7 @@ function toggleSelection(category, value) {
 <style>
 .tt-section .tt-grid-wrap {
   width: 100%;
+  min-height: 420px;
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;

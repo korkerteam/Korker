@@ -69,7 +69,8 @@ async function loadSavedTutors() {
       .filter((p) => {
         if (!p) return false
         const accountType = [p.account_type, p.accountType].find(Boolean)
-        return `${accountType || ''}`.toLowerCase().includes('tutor')
+        const isTutor = `${accountType || ''}`.toLowerCase().includes('tutor')
+        return isTutorAccount.value ? !isTutor : isTutor
       })
   } catch (e) {
     console.error('Failed to load saved tutors:', e)
@@ -85,6 +86,10 @@ watch(
   },
 )
 
+watch(isTutorAccount, () => {
+  if (profileData.value) loadSavedTutors()
+})
+
 // --- GLOBALNY STAN CZATU (DO PRZEKAZYWANIA MIĘDZY KOMPONENTAMI) ---
 const chatTargetUserId = ref(null)
 
@@ -97,6 +102,27 @@ provide('globalChat', {
   },
 })
 
+function normalizeTeacher(teacher, teacherId) {
+  const base = teacherId ? { ...teacher, id: teacherId } : { ...teacher }
+  if (base.tutor_post && typeof base.tutor_post === 'object') {
+    return base
+  }
+  return {
+    ...base,
+    profile_picture: base.profile_picture || base.image || null,
+    tutor_post: {
+      subject: base.subject || '',
+      level: base.level || '',
+      tags: base.tags || [],
+      description: base.bio || '',
+      price: base.price || 50,
+      city: base.city || '',
+      lessonPlace: base.lessonPlace || '',
+      weeklyAvailability: base.weeklyAvailability || {},
+    },
+  }
+}
+
 function handleTeacherLike(teacher) {
   if (!teacher) return
 
@@ -107,14 +133,12 @@ function handleTeacherLike(teacher) {
   })
 
   if (!exists) {
-    likedTeachers.value = [
-      ...likedTeachers.value,
-      teacherId ? { ...teacher, id: teacherId } : { ...teacher },
-    ]
+    likedTeachers.value = [...likedTeachers.value, normalizeTeacher(teacher, teacherId)]
 
     const authId = teacher.auth_id
     if (authId) {
       addSavedTutor(authId).catch(console.error)
+      loadSavedTutors()
     }
   }
 }

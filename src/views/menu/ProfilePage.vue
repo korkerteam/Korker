@@ -20,7 +20,18 @@ const profile = reactive({
 })
 
 const teachingFormats = ['Stacjonarnie', 'Z dojazdem', 'Online']
-const subjectOptions = ['Matematyka', 'Język polski', 'Angielski', 'Fizyka']
+const subjectOptions = [
+  'Język polski',
+  'Język angielski',
+  'Język niemiecki',
+  'Matematyka',
+  'Fizyka',
+  'Chemia',
+  'Biologia',
+  'Historia',
+  'Geografia',
+  'Informatyka',
+]
 const weeklyDayLabels = [
   'Poniedziałek',
   'Wtorek',
@@ -73,6 +84,7 @@ const draft = reactive({
   lessonPrice: '',
   lessonSubject: '',
   lessonLevel: 'Liceum',
+  lessonPlace: '',
   lessonDescription: '',
   weeklyAvailability: {},
 })
@@ -209,6 +221,7 @@ function applySavedTutorPost(data) {
     draft.lessonPrice = String(tp.price ?? '')
     draft.lessonSubject = tp.subject || ''
     draft.lessonLevel = tp.level || 'Liceum'
+    draft.lessonPlace = tp.lessonPlace || ''
     draft.lessonDescription = tp.description || ''
     draft.teachingFormats = Array.isArray(tp.teachingFormats)
       ? tp.teachingFormats
@@ -234,7 +247,7 @@ watch(
     if (busy) return
     if (data) {
       fromDb(data)
-      setProfileName(profile.nickname || profile.name)
+      setProfileName(profile.name || profile.nickname)
       applySavedTutorPost(data)
     } else {
       const meta = user.value?.user_metadata
@@ -258,11 +271,6 @@ function startEdit() {
 
 async function saveProfile() {
   saveError.value = ''
-
-  if (!draft.nickname.trim() && !draft.name.trim()) {
-    saveError.value = 'Pseudonim lub imię i nazwisko jest wymagane'
-    return
-  }
 
   const sf = draft.accountType === 'tutor' ? strictestFormat.value : 't'
   if (draft.accountType === 'tutor') {
@@ -370,6 +378,7 @@ async function saveProfile() {
       tutorPost = {
         subject: draft.lessonSubject || '',
         level: draft.lessonLevel || 'Liceum',
+        lessonPlace: draft.lessonPlace || '',
         price: Number(draft.lessonPrice) || null,
         description: draft.lessonDescription || '',
         photo: draft.lessonPhoto || null,
@@ -396,7 +405,7 @@ async function saveProfile() {
       profileData.value = { ...result }
     }
 
-    setProfileName(profile.nickname || profile.name)
+    setProfileName(profile.name || profile.nickname)
     clearNeedsProfile()
     isEditing.value = false
   } catch (err) {
@@ -571,7 +580,7 @@ function onSubjectHover(e, enter) {
             <input
               v-model="draft.nickname"
               class="name-input"
-              placeholder="janek123"
+              placeholder="Pozostaw puste aby wygenerować"
               :maxlength="LIMITS.nickname"
             />
           </label>
@@ -587,11 +596,11 @@ function onSubjectHover(e, enter) {
         </template>
         <template v-else>
           <div class="header-text">
-            <template v-if="profile.nickname">
-              <h2>{{ profile.nickname }}</h2>
-              <span v-if="profile.name" class="profile-real-name">{{ profile.name }}</span>
+            <template v-if="profile.name">
+              <h2>{{ profile.name }}</h2>
+              <span v-if="profile.nickname" class="profile-nickname">{{ profile.nickname }}</span>
             </template>
-            <h2 v-else>{{ profile.name }}</h2>
+            <h2 v-else-if="profile.nickname">{{ profile.nickname }}</h2>
           </div>
         </template>
       </div>
@@ -698,6 +707,15 @@ function onSubjectHover(e, enter) {
                   {{ subject }}
                 </button>
               </div>
+            </label>
+            <label class="field-row">
+              <span class="field-label">Miejsce lekcji</span>
+              <select v-model="draft.lessonPlace">
+                <option value="" disabled>Wybierz miejsce lekcji</option>
+                <option value="Online">Online</option>
+                <option value="Stacjonarnie">Stacjonarnie</option>
+                <option value="Z dojazdem">Z dojazdem</option>
+              </select>
             </label>
             <label class="field-row">
               <span class="field-label">Poziom</span>
@@ -1008,10 +1026,11 @@ function onSubjectHover(e, enter) {
   margin: 0;
   color: var(--text);
 }
-.profile-real-name {
+.profile-real-name,
+.profile-nickname {
   font-size: 14px;
   color: var(--muted);
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .name-input {
@@ -1148,7 +1167,7 @@ function onSubjectHover(e, enter) {
 
 .subject-table {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 8px;
 }
 
