@@ -386,8 +386,9 @@ const handleNotificationClick = (notificationId, senderId) => {
   justify-content: space-between;
   gap: 24px;
   align-items: center;
-  padding: 32px 36px;
-  background: var(--surface-strong);
+  min-height: 220px;
+  padding: 40px 36px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(227, 235, 255, 0.95) 100%);
   border-radius: 36px;
   border: 1px solid var(--border);
   box-shadow: 0 30px 80px rgba(15, 23, 42, 0.1);
@@ -405,10 +406,11 @@ const handleNotificationClick = (notificationId, senderId) => {
 .dashboard-welcome {
   margin: 0 0 10px;
   color: var(--accent-strong);
-  font-size: 0.85rem;
-  font-weight: 800;
+  font-size: 0.95rem;
+  font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.28em;
+  text-shadow: 0 1px 2px rgba(79, 117, 199, 0.12);
 }
 
 .dashboard-title {
@@ -416,12 +418,53 @@ const handleNotificationClick = (notificationId, senderId) => {
   font-size: clamp(2.4rem, 3vw, 3.5rem);
   line-height: 1.02;
   color: var(--text-strong);
+  letter-spacing: -0.02em;
 }
 
 .dashboard-panels {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .home-shell {
+    gap: 16px;
+    padding-bottom: 0;
+  }
+
+  .dashboard-top {
+    min-height: 170px;
+    padding: 24px 18px;
+    border-radius: 24px;
+  }
+
+  .dashboard-title {
+    font-size: clamp(1.5rem, 5vw, 2.1rem);
+  }
+
+  .dashboard-panels {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .dashboard-panel {
+    min-height: auto;
+    padding: 16px 16px 12px;
+    border-radius: 20px;
+  }
+
+  .panel-content-window {
+    border-radius: 16px;
+  }
+
+  .notifications-list li {
+    padding: 14px 16px;
+  }
+
+  .upcoming-item {
+    padding: 12px 16px;
+  }
 }
 
 .dashboard-panel {

@@ -777,4 +777,134 @@ function handleSendMessage() {
   opacity: 0.6;
   cursor: not-allowed;
 }
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 8px 0 16px;
+  }
+
+  .profile-container {
+    padding: 0 12px;
+  }
+
+  .profile-card {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .profile-left {
+    position: static;
+    padding: 18px 14px;
+    gap: 12px;
+  }
+
+  .avatar,
+  .avatar-letter {
+    width: 92px;
+    height: 92px;
+  }
+
+  .avatar-letter {
+    font-size: 34px;
+  }
+
+  .profile-name {
+    font-size: 20px;
+  }
+
+  .profile-real-name {
+    font-size: 13px;
+    margin-top: -4px;
+  }
+
+  .info-list {
+    gap: 8px;
+  }
+
+  .info-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .info-value {
+    text-align: left;
+  }
+
+  .message-btn,
+  .save-btn,
+  .block-btn {
+    padding: 11px 12px;
+  }
+
+  .tutor-offer-view {
+    padding: 18px 14px;
+    gap: 10px;
+  }
+
+  .tutor-offer-empty {
+    padding: 24px 14px;
+  }
+
+  .offer-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    font-size: 14px;
+  }
+
+  .offer-value {
+    text-align: left;
+  }
+
+  .offer-description {
+    margin-top: 2px;
+    padding-top: 10px;
+  }
+
+  .desc-text {
+    font-size: 14px;
+    max-height: 120px;
+  }
+
+  .offer-photo-preview {
+    max-width: 100%;
+  }
+
+  .availability-section {
+    gap: 6px;
+  }
+
+  .av-grid {
+    grid-template-columns: 36px repeat(7, minmax(22px, 1fr));
+    gap: 1px;
+    padding: 3px;
+  }
+
+  .av-header-cell {
+    font-size: 9px;
+    padding: 1px;
+  }
+
+  .av-day-header {
+    font-size: 7px;
+  }
+
+  .blocked-notice {
+    padding: 28px 16px;
+    margin: 0 8px;
+  }
+
+  .blocked-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .block-dialog {
+    padding: 20px 16px;
+  }
+
+  .block-dialog-actions {
+    flex-direction: column-reverse;
+  }
+}
 </style>

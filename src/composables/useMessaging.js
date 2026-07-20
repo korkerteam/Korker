@@ -41,7 +41,7 @@ function stringToColor(str) {
   const isHighContrast = document.documentElement.getAttribute('data-contrast') === 'high'
   const colors = isHighContrast
     ? ['#f2b500', '#ffcf33', '#ffd84d', '#ffde66', '#ffe27f', '#f9dc76', '#f7d96e', '#fce491']
-    : ['#4f75c7', '#5b8cff', '#3b82f6', '#2563eb', '#1d4ed8', '#60a5fa', '#8ab4ff', '#93c5fd']
+    : ['#4f75c7', '#4f75c7', '#4f75c7', '#4f75c7', '#4f75c7', '#4f75c7', '#4f75c7', '#4f75c7']
   return colors[Math.abs(hash) % colors.length]
 }
 

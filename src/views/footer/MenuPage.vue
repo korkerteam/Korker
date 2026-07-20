@@ -65,7 +65,6 @@ watch(
   (search) => {
     const shouldOpen = search !== undefined && search !== '0' && search !== 'false' && search !== ''
     if (shouldOpen) {
-      if (!requireAuth()) return
       router.replace({ path: '/', query: { panel: 'search' } })
     }
   },
@@ -102,7 +101,6 @@ function handleToggleTeachers() {
 }
 
 function handleToggleSearch() {
-  if (!requireAuth()) return
   navigateToPanel('search')
 }
 
@@ -200,5 +198,22 @@ function handleToggleCalendar() {
   width: 100%;
   overflow-y: visible;
   overflow-x: hidden;
+}
+
+@media (max-width: 900px) {
+  .content-row {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .left-side {
+    order: 2;
+  }
+
+  .right-side {
+    order: 1;
+    padding: 12px 0 18px;
+    gap: 12px;
+  }
 }
 </style>

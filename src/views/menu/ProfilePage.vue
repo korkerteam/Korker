@@ -817,15 +817,16 @@ function onSubjectHover(e, enter) {
   background: var(--surface-strong);
   border: 1px solid var(--border);
   border-radius: 16px;
-  width: fit-content;
-  min-width: 500px;
+  width: 100%;
   max-width: 1000px;
+  min-width: 0;
   padding: 32px;
   margin: 0 auto;
   box-shadow: var(--shadow-soft);
   font-family: Inter, system-ui, sans-serif;
   color: var(--text);
   min-height: 0;
+  box-sizing: border-box;
 }
 
 .header {
@@ -1102,7 +1103,7 @@ function onSubjectHover(e, enter) {
 
 .format-option.selected {
   background: #eef2ff;
-  border-color: #4f75c7;
+  border-color: var(--accent);
   color: #1f2937;
 }
 

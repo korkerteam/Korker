@@ -1,5 +1,5 @@
 <script setup>
-import { ref, provide, onMounted, watch, computed } from 'vue'
+import { ref, provide, onMounted, onUnmounted, watch, computed, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import HeaderKorker from './components/HeaderKorker.vue'
 import SearchBar from './components/header/SearchBar.vue'
@@ -11,32 +11,49 @@ import LoginButton from './components/header/LoginButton.vue'
 import AuthModal from './components/auth/AuthModal.vue'
 import FooterKorker from './components/FooterKorker.vue'
 import { useAuth } from '@/composables/useAuth.js'
+import { useMessaging } from '@/composables/useMessaging.js'
 import {
   fetchSavedTutorIds,
   addSavedTutor,
   removeSavedTutor,
   fetchTutorProfiles,
 } from '@/services/likeService.js'
+import { toggleProfile, toggleRank, toggleTeachers } from '@/composables/menuToggle.js'
 
 const route = useRoute()
 const router = useRouter()
-const { showAuthModal, openAuthModal, closeAuthModal, profileData, profileLoading } = useAuth()
+const { showAuthModal, openAuthModal, closeAuthModal, profileData, isAuthenticated } = useAuth()
+const { activeUserId } = useMessaging()
+const { showChatGlobal } = inject('globalChat', {
+  showChatGlobal: ref(false),
+  chatTargetUserId: ref(null),
+  openChatWithUser: () => {},
+})
 
 const selectedFilters = ref({ subjects: [], levels: [], tags: [] })
 const likedTeachers = ref([])
 const currentTeacher = ref(null)
-const showMissingFilterNotice = ref(false)
 const homeTrigger = ref(0)
 const isDarkMode = ref(false)
 const isHighContrast = ref(false)
 const showSettingsMenu = ref(false)
-const isTutorAccount = computed(() => {
-  const profile = profileData.value
-  const accountType = [profile?.account_type, profile?.accountType].find(Boolean)
-  return `${accountType || ''}`.toLowerCase().includes('tutor')
-})
-const shouldWaitForProfile = computed(() => false)
+const mobileMenuOpen = ref(false)
+const isMobileViewport = ref(false)
+const calendarResetKey = ref(0)
+const isTutorAccount = computed(() =>
+  `${[profileData.value?.account_type, profileData.value?.accountType].find(Boolean) || ''}`
+    .toLowerCase()
+    .includes('tutor'),
+)
 provide('homeTrigger', homeTrigger)
+
+function updateMobileViewport() {
+  isMobileViewport.value = window.innerWidth <= 768
+}
+
+const shouldHideSettingsFab = computed(() => {
+  return isMobileViewport.value && showChatGlobal.value && !!activeUserId.value
+})
 
 async function loadSavedTutors() {
   try {
@@ -74,7 +91,6 @@ watch(isTutorAccount, () => {
 })
 
 // --- GLOBALNY STAN CZATU (DO PRZEKAZYWANIA MIĘDZY KOMPONENTAMI) ---
-const showChatGlobal = ref(false)
 const chatTargetUserId = ref(null)
 
 provide('globalChat', {
@@ -191,12 +207,74 @@ function closeSettingsMenu() {
   showSettingsMenu.value = false
 }
 
+function toggleMobileMenu() {
+  mobileMenuOpen.value = !mobileMenuOpen.value
+}
+
+function closeMobileMenu() {
+  mobileMenuOpen.value = false
+}
+
+function requireAuth() {
+  if (!isAuthenticated.value) {
+    openAuthModal()
+    return false
+  }
+  return true
+}
+
+function navigateToPanel(panel) {
+  if (route.query.panel === panel) {
+    router.push('/')
+  } else {
+    router.push({ path: '/', query: { panel } })
+  }
+}
+
+function handleToggleProfile() {
+  toggleProfile(route, router)
+  closeMobileMenu()
+}
+
+function handleToggleRank() {
+  toggleRank(route, router)
+  closeMobileMenu()
+}
+
+function handleToggleTeachers() {
+  if (!requireAuth()) return
+  toggleTeachers(route, router)
+  closeMobileMenu()
+}
+
+function handleToggleSearch() {
+  navigateToPanel('search')
+  closeMobileMenu()
+}
+
+function handleToggleCalendar() {
+  if (!requireAuth()) return
+  if (route.query.panel === 'calendar') {
+    calendarResetKey.value++
+  } else {
+    navigateToPanel('calendar')
+  }
+  closeMobileMenu()
+}
+
 onMounted(() => {
+  updateMobileViewport()
+  window.addEventListener('resize', updateMobileViewport)
+
   const savedTheme = localStorage.getItem('korker-theme')
   const savedContrast = localStorage.getItem('korker-high-contrast')
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
   applyTheme(savedTheme ? savedTheme === 'dark' : prefersDark)
   applyAccessibility(savedContrast === 'true')
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateMobileViewport)
 })
 </script>
 
@@ -210,19 +288,106 @@ onMounted(() => {
       <div class="search-block">
         <SearchBar />
         <LoginButton @login="openAuthModal" />
+        <button
+          class="mobile-menu-trigger"
+          type="button"
+          :aria-label="'Otwórz menu'"
+          :aria-expanded="mobileMenuOpen"
+          @click="toggleMobileMenu"
+        >
+          <svg class="mobile-menu-trigger-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 7h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <path d="M4 12h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <path d="M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+        </button>
       </div>
     </div>
 
     <AuthModal v-if="showAuthModal" @close="closeAuthModal" />
 
-    <MissingFilterNotice :show="showMissingFilterNotice" @close="showMissingFilterNotice = false" />
-
     <TeacherOverlay :teacher="currentTeacher" @close="currentTeacher = null" />
+
+    <div v-if="mobileMenuOpen" class="mobile-menu-backdrop" @click="closeMobileMenu">
+      <div class="mobile-menu-panel" @click.stop>
+        <button class="mobile-menu-item" type="button" @click="handleToggleSearch">
+          <span class="mobile-menu-icon">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="11" cy="11" r="5.5" stroke="currentColor" stroke-width="1.8" />
+              <path
+                d="M15.5 15.5 20 20"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+          </span>
+          <span>{{ isTutorAccount ? 'Zobacz innych nauczycieli' : 'Szukaj korepetycji' }}</span>
+        </button>
+        <button class="mobile-menu-item" type="button" @click="handleToggleRank">
+          <span class="mobile-menu-icon">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M6 4h12v6a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4V4Z"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+              <path d="M8 20h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span>Ranking</span>
+        </button>
+        <button class="mobile-menu-item" type="button" @click="handleToggleTeachers">
+          <span class="mobile-menu-icon">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+              <path
+                d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+              <path
+                d="M4 19a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+          </span>
+          <span>{{ isTutorAccount ? 'Moi studenci' : 'Moi nauczyciele' }}</span>
+        </button>
+        <button class="mobile-menu-item" type="button" @click="handleToggleCalendar">
+          <span class="mobile-menu-icon">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect
+                x="4"
+                y="5"
+                width="16"
+                height="15"
+                rx="2"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+              <path
+                d="M8 3v4M16 3v4M4 10h16"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+          </span>
+          <span>Kalendarz</span>
+        </button>
+      </div>
+    </div>
 
     <div class="main-content-area">
       <template v-if="['home', 'user-profile'].includes(route.name)">
         <MainContent
-          v-if="!shouldWaitForProfile || !profileLoading"
           :selected-filters="selectedFilters"
           :liked-teachers="likedTeachers"
           :show-search="!isTutorAccount"
@@ -243,6 +408,7 @@ onMounted(() => {
     <CzatCzatSahur />
 
     <button
+      v-if="!shouldHideSettingsFab"
       class="settings-fab"
       type="button"
       :title="'Ustawienia motywu'"
@@ -293,35 +459,71 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow: auto;
-  padding-bottom: 20px;
+  padding: 0 0 20px;
 }
 
 .top-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 18px;
+  gap: 10px;
   position: relative;
-  z-index: 10;
+  z-index: 50;
+  padding: 16px 0 0;
 }
 
 .search-block {
   display: flex;
   align-items: center;
   margin-left: auto;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
+  flex: 0 1 auto;
+  justify-content: flex-end;
+  min-width: 0;
+  max-width: min(100%, 280px);
+  position: relative;
+  z-index: 60;
+  overflow: visible;
+}
+
+.mobile-menu-trigger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--surface-strong) 0%, var(--surface-soft) 100%);
+  color: var(--text-strong);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.mobile-menu-trigger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.14);
+  border-color: var(--primary-color);
+}
+
+.mobile-menu-trigger-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.mobile-menu-backdrop {
+  display: none;
 }
 
 .Korker {
   display: inline-flex;
-}
-
-.Mapa {
-  position: fixed;
-  right: 16px;
-  bottom: 10%;
-  z-index: 2000;
+  flex-shrink: 0;
 }
 
 .settings-fab {
@@ -432,5 +634,121 @@ onMounted(() => {
 .setting-label {
   color: var(--muted);
   flex: 1;
+}
+
+@media (max-width: 768px) {
+  .top-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    padding: 12px 0 0;
+  }
+
+  .Korker {
+    width: auto;
+    align-self: center;
+    flex-shrink: 0;
+    margin-right: auto;
+  }
+
+  .search-block {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-wrap: nowrap;
+    margin-left: auto;
+    margin-right: 0;
+    max-width: min(100%, 180px);
+    overflow: visible;
+  }
+
+  .mobile-menu-trigger {
+    display: inline-flex;
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    min-height: 52px;
+    aspect-ratio: 1 / 1;
+  }
+
+  .mobile-menu-backdrop {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.24);
+    z-index: 1400;
+    padding: 84px 14px 14px;
+    justify-content: flex-end;
+    align-items: flex-start;
+  }
+
+  .mobile-menu-panel {
+    display: grid;
+    gap: 10px;
+    width: min(86vw, 280px);
+    padding: 12px;
+    border-radius: 20px;
+    background: var(--surface-strong);
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+  }
+
+  .mobile-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    border: none;
+    border-radius: 14px;
+    background: var(--surface-muted);
+    color: var(--text-strong);
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .mobile-menu-item:active {
+    transform: translateY(1px);
+  }
+
+  .mobile-menu-icon {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: rgba(79, 117, 199, 0.14);
+    color: var(--primary-color);
+    flex-shrink: 0;
+  }
+
+  .mobile-menu-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .main-content-area {
+    padding: 0 0 16px;
+  }
+
+  .settings-fab {
+    width: 50px;
+    height: 50px;
+    bottom: 16px;
+    left: 16px;
+  }
+
+  .settings-menu-backdrop {
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding: 16px 16px 92px 16px;
+  }
+
+  .settings-menu {
+    width: min(100%, 320px);
+  }
 }
 </style>

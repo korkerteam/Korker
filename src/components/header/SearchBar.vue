@@ -7,8 +7,10 @@ const router = useRouter()
 
 const query = ref('')
 const isOpen = ref(false)
+const isSearchOpen = ref(false)
 const results = ref([])
 const loading = ref(false)
+const searchInput = ref(null)
 let searchTimeout = null
 
 function getDisplayName(record) {
@@ -61,6 +63,21 @@ function clearQuery() {
   isOpen.value = false
 }
 
+function toggleSearch() {
+  isSearchOpen.value = !isSearchOpen.value
+  if (isSearchOpen.value) {
+    window.setTimeout(() => {
+      searchInput.value?.focus()
+    }, 0)
+  }
+}
+
+function closeSearch() {
+  isSearchOpen.value = false
+  results.value = []
+  isOpen.value = false
+}
+
 function goToResult(user) {
   const identifier = user.nickname || user.auth_id
   router.push('/user/' + identifier)
@@ -77,6 +94,7 @@ function onSubmit() {
 
   const identifier = value
   router.push('/user/' + identifier)
+  closeSearch()
 }
 
 watch(query, (value) => {
@@ -99,12 +117,17 @@ onBeforeUnmount(() => {
 
 <template>
   <form class="searchbar" role="search" @submit.prevent="onSubmit">
-    <label class="search-input" aria-hidden>
+    <button
+      class="search-trigger"
+      type="button"
+      aria-label="Szukaj użytkowników"
+      @click="toggleSearch"
+    >
       <svg
         class="icon"
         viewBox="0 0 24 24"
-        width="18"
-        height="18"
+        width="14"
+        height="14"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
@@ -123,62 +146,92 @@ onBeforeUnmount(() => {
           stroke-linejoin="round"
         />
       </svg>
-      <input
-        v-model="query"
-        type="search"
-        name="q"
-        placeholder="Szukaj użytkowników..."
-        aria-label="Szukaj użytkowników"
-        maxlength="100"
-        @input="openResults"
-        @focus="openResults"
-        @blur="closeResults"
-      />
-      <button v-if="query" class="clear-btn" type="button" @mousedown.prevent="clearQuery">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    </button>
+
+    <div v-if="isSearchOpen" class="search-popup" @click.stop>
+      <label class="search-input" aria-label="Szukaj użytkowników">
+        <svg
+          class="icon"
+          viewBox="0 0 24 24"
+          width="14"
+          height="14"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
           <path
-            d="M18 6L6 18M6 6l12 12"
+            d="M11 19a8 8 0 1 1 5.293-14.293A8 8 0 0 1 11 19z"
             stroke="currentColor"
-            stroke-width="2"
+            stroke-width="1.6"
             stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M21 21l-4.35-4.35"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
           />
         </svg>
-      </button>
-    </label>
-    <button class="submit-btn" type="submit">Szukaj</button>
-
-    <div v-if="isOpen && (query.trim() || loading)" class="results-list" role="listbox">
-      <div v-if="loading" class="result-loading">Szukanie...</div>
-      <div v-else-if="results.length === 0" class="result-empty">Brak wyników</div>
-      <template v-else>
-        <button
-          v-for="user in results"
-          :key="user.auth_id"
-          class="result-item"
-          type="button"
-          @mousedown.prevent="goToResult(user)"
-        >
-          <div class="result-avatar">
-            <img
-              v-if="user.profile_picture"
-              :src="user.profile_picture"
-              :alt="getDisplayName(user)"
-              class="result-avatar-img"
+        <input
+          ref="searchInput"
+          v-model="query"
+          type="search"
+          name="q"
+          placeholder="Szukaj"
+          aria-label="Szukaj"
+          maxlength="100"
+          @input="openResults"
+          @focus="openResults"
+          @blur="closeResults"
+        />
+        <button v-if="query" class="clear-btn" type="button" @mousedown.prevent="clearQuery">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M18 6L6 18M6 6l12 12"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
             />
-            <span v-else class="result-avatar-letter">{{
-              (user.nickname || user.name || '?').charAt(0).toUpperCase()
-            }}</span>
-          </div>
-          <div class="result-text">
-            <span class="result-title">{{
-              user.nickname || [user.name, user.surname].filter(Boolean).join(' ')
-            }}</span>
-            <span v-if="user.nickname && (user.name || user.surname)" class="result-description">{{
-              [user.name, user.surname].filter(Boolean).join(' ')
-            }}</span>
-          </div>
+          </svg>
         </button>
-      </template>
+      </label>
+
+      <div v-if="isOpen && (query.trim() || loading)" class="results-list" role="listbox">
+        <div v-if="loading" class="result-loading">Szukanie...</div>
+        <div v-else-if="results.length === 0" class="result-empty">Brak wyników</div>
+        <template v-else>
+          <button
+            v-for="user in results"
+            :key="user.auth_id"
+            class="result-item"
+            type="button"
+            @mousedown.prevent="goToResult(user)"
+          >
+            <div class="result-avatar">
+              <img
+                v-if="user.profile_picture"
+                :src="user.profile_picture"
+                :alt="getDisplayName(user)"
+                class="result-avatar-img"
+              />
+              <span v-else class="result-avatar-letter">{{
+                (user.nickname || user.name || '?').charAt(0).toUpperCase()
+              }}</span>
+            </div>
+            <div class="result-text">
+              <span class="result-title">{{
+                user.nickname || [user.name, user.surname].filter(Boolean).join(' ')
+              }}</span>
+              <span
+                v-if="user.nickname && (user.name || user.surname)"
+                class="result-description"
+                >{{ [user.name, user.surname].filter(Boolean).join(' ') }}</span
+              >
+            </div>
+          </button>
+        </template>
+      </div>
     </div>
   </form>
 </template>
@@ -188,51 +241,96 @@ onBeforeUnmount(() => {
   position: relative;
   display: flex;
   align-items: center;
-  padding: 3px 9px;
-  background: var(--surface-strong);
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-soft);
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  z-index: 70;
+  margin-left: 0;
+}
+
+.search-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-color-hover));
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(79, 117, 199, 0.18);
+  cursor: pointer;
+}
+
+.search-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(320px, 86vw);
+  padding: 8px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(79, 117, 199, 0.16);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
 }
 
 .search-input {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  background: var(--surface-soft);
+  gap: 8px;
+  padding: 0 10px;
+  height: 36px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
   border-radius: 999px;
-  flex: 1 1 auto;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: var(--shadow-soft);
+  cursor: text;
 }
 
 .search-input .icon {
   color: var(--accent-strong);
+  flex-shrink: 0;
 }
 
 .search-input input {
   border: none;
   outline: none;
   font-size: 0.8rem;
-  padding: 6px 0;
+  padding: 0;
   width: 100%;
+  height: 100%;
   background: transparent;
   color: var(--text);
 }
+
 .search-input input::-webkit-search-cancel-button,
 .search-input input::-webkit-search-decoration {
   -webkit-appearance: none;
   appearance: none;
   display: none;
 }
+
 .search-input input::-ms-clear,
 .search-input input::-ms-reveal {
   display: none;
   width: 0;
   height: 0;
 }
+
 .search-input input[type='search']::-moz-search-clear-button {
   display: none;
 }
+
 .clear-btn {
   display: flex;
   align-items: center;
@@ -249,40 +347,20 @@ onBeforeUnmount(() => {
     background 0.15s,
     color 0.15s;
 }
+
 .clear-btn:hover {
   background: rgba(138, 180, 255, 0.16);
   color: var(--text);
 }
 
-.submit-btn {
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-color-hover));
-  color: #ffffff;
-  border: none;
-  padding: 9px 14px;
-  border-radius: 999px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 12px 28px rgba(79, 117, 199, 0.18);
-}
-
-.submit-btn:hover {
-  box-shadow: 0 16px 36px rgba(79, 117, 199, 0.22);
-  transform: translateY(-1px);
-}
-
 .results-list {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  right: 0;
-  z-index: 50;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 320px;
+  max-height: 280px;
   overflow-y: auto;
-  padding: 8px;
-  border-radius: 18px;
+  padding: 6px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.98);
   border: 1px solid rgba(79, 117, 199, 0.16);
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
@@ -307,6 +385,7 @@ onBeforeUnmount(() => {
   font-size: 0.9rem;
   justify-content: center;
 }
+
 .result-empty {
   color: #64748b;
   font-size: 0.9rem;
@@ -373,13 +452,29 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
+@media (max-width: 768px) {
+  .searchbar {
+    width: auto;
+    min-width: auto;
+    margin: 0;
+    margin-right: 2px;
+  }
+
+  .search-trigger {
+    width: 30px;
+    height: 30px;
+  }
+
+  .search-popup {
+    width: min(300px, calc(100vw - 24px));
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
 @media (max-width: 900px) {
   .searchbar {
     padding: 8px 10px;
-  }
-
-  .submit-btn {
-    padding: 10px 14px;
   }
 }
 </style>

@@ -1025,7 +1025,7 @@ function openChat(teacher) {
 
 .tt-cell.available {
   background: #4f75c7;
-  border-color: #4f75c7;
+  border-color: var(--accent);
   cursor: pointer;
 }
 
