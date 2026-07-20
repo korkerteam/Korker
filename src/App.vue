@@ -1,10 +1,9 @@
 <script setup>
 import { ref, provide, onMounted, watch, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import HeaderKorker from './components/HeaderKorker.vue'
 import SearchBar from './components/header/SearchBar.vue'
 import CzatCzatSahur from './components/CzatCzatSahur.vue'
-import MapPage from './components/Map.vue'
 import MissingFilterNotice from './components/MissingFilterNotice.vue'
 import TeacherOverlay from './components/TeacherOverlay.vue'
 import MainContent from './views/footer/MenuPage.vue'
@@ -20,23 +19,20 @@ import {
 } from '@/services/likeService.js'
 
 const route = useRoute()
-const router = useRouter()
 const { showAuthModal, openAuthModal, closeAuthModal, profileData, profileLoading } = useAuth()
 
 const selectedFilters = ref({ subjects: [], levels: [], tags: [] })
 const likedTeachers = ref([])
 const currentTeacher = ref(null)
-const showMissingFilterNotice = ref(false)
 const homeTrigger = ref(0)
 const isDarkMode = ref(false)
 const isHighContrast = ref(false)
 const showSettingsMenu = ref(false)
-const isTutorAccount = computed(() => {
-  const profile = profileData.value
-  const accountType = [profile?.account_type, profile?.accountType].find(Boolean)
-  return `${accountType || ''}`.toLowerCase().includes('tutor')
-})
-const shouldWaitForProfile = computed(() => false)
+const isTutorAccount = computed(() =>
+  `${[profileData.value?.account_type, profileData.value?.accountType].find(Boolean) || ''}`
+    .toLowerCase()
+    .includes('tutor'),
+)
 provide('homeTrigger', homeTrigger)
 
 async function loadSavedTutors() {
@@ -192,14 +188,12 @@ onMounted(() => {
 
     <AuthModal v-if="showAuthModal" @close="closeAuthModal" />
 
-    <MissingFilterNotice :show="showMissingFilterNotice" @close="showMissingFilterNotice = false" />
-
     <TeacherOverlay :teacher="currentTeacher" @close="currentTeacher = null" />
 
     <div class="main-content-area">
       <template v-if="['home', 'user-profile'].includes(route.name)">
         <MainContent
-          v-if="!shouldWaitForProfile || !profileLoading"
+          v-if="!profileLoading"
           :selected-filters="selectedFilters"
           :liked-teachers="likedTeachers"
           :show-search="!isTutorAccount"
@@ -218,10 +212,6 @@ onMounted(() => {
     </div>
 
     <CzatCzatSahur />
-
-    <div class="Mapa">
-      <MapPage />
-    </div>
 
     <button
       class="settings-fab"
@@ -296,13 +286,6 @@ onMounted(() => {
 
 .Korker {
   display: inline-flex;
-}
-
-.Mapa {
-  position: fixed;
-  right: 16px;
-  bottom: 10%;
-  z-index: 2000;
 }
 
 .settings-fab {
