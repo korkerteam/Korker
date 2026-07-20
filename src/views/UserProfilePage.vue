@@ -7,6 +7,7 @@ import { useMessaging } from '@/composables/useMessaging.js'
 import { blockUser, unblockUser, isBlockedByMe, isBlockingMe } from '@/services/blockService.js'
 import { getAverageRating, getMyRatingForTutor, submitRating } from '@/services/ratingService.js'
 import LoadingBox from '@/components/LoadingBox.vue'
+import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
 
 const props = defineProps({
   likedTeachers: {
@@ -23,6 +24,7 @@ const { refreshBlockedIds } = useMessaging()
 
 const profile = ref(null)
 const tutorPost = ref(null)
+const tutorOffers = ref([])
 const loading = ref(true)
 const error = ref('')
 const blockedByMe = ref(false)
@@ -34,16 +36,6 @@ const ratingDraft = ref(0)
 const ratingSaving = ref(false)
 const teacherRating = ref({ average: 0, count: 0 })
 const myTeacherRating = ref(null)
-
-const weeklyDayLabels = [
-  'Poniedziałek',
-  'Wtorek',
-  'Środa',
-  'Czwartek',
-  'Piątek',
-  'Sobota',
-  'Niedziela',
-]
 
 const globalChat = inject('globalChat')
 
@@ -98,6 +90,11 @@ async function fetchProfile(identifier) {
 
     profile.value = dataById
     tutorPost.value = dataById.tutor_post || null
+    tutorOffers.value = tutorPost.value
+      ? Array.isArray(tutorPost.value)
+        ? tutorPost.value
+        : [tutorPost.value]
+      : []
     await checkBlockStatus(dataById.auth_id)
     await loadTeacherRating(dataById.auth_id)
     ratingDraft.value = myTeacherRating.value ?? 0
@@ -107,6 +104,11 @@ async function fetchProfile(identifier) {
 
   profile.value = data
   tutorPost.value = data.tutor_post || null
+  tutorOffers.value = tutorPost.value
+    ? Array.isArray(tutorPost.value)
+      ? tutorPost.value
+      : [tutorPost.value]
+    : []
   await checkBlockStatus(data.auth_id)
   await loadTeacherRating(data.auth_id)
   ratingDraft.value = myTeacherRating.value ?? 0
@@ -229,20 +231,12 @@ function formattedLocation() {
   return tutorPost.value?.city || profile.value?.city || ''
 }
 
-function getTeachingFormats() {
-  if (!tutorPost.value) return []
-  if (Array.isArray(tutorPost.value.teachingFormats)) return tutorPost.value.teachingFormats
-  if (tutorPost.value.teachingFormat) return [tutorPost.value.teachingFormat]
+function getTeachingFormats(offer) {
+  const tp = offer || tutorPost.value
+  if (!tp) return []
+  if (Array.isArray(tp.teachingFormats)) return tp.teachingFormats
+  if (tp.teachingFormat) return [tp.teachingFormat]
   return []
-}
-
-function isCellSelected(day, hour) {
-  const slot = `${String(hour).padStart(2, '0')}:00-${String((hour + 1) % 24).padStart(2, '0')}:00`
-  return (tutorPost.value?.weeklyAvailability?.[day] || []).includes(slot)
-}
-
-function visibleHours() {
-  return Array.from({ length: 24 }, (_, h) => h)
 }
 
 function handleSendMessage() {
@@ -319,12 +313,10 @@ function getStarFill(rating, index) {
             />
             <span v-else class="avatar avatar-letter">{{ getInitial() }}</span>
           </div>
-          <h2 class="profile-name">{{ getDisplayName() }}</h2>
-          <span
-            v-if="getFullName() && getDisplayName() !== getFullName()"
-            class="profile-real-name"
-            >{{ getFullName() }}</span
-          >
+          <h2 class="profile-name">{{ getFullName() || profile?.nickname || 'Nieznany' }}</h2>
+          <span v-if="profile?.nickname && getFullName()" class="profile-nickname">{{
+            profile.nickname
+          }}</span>
 
           <div class="info-list">
             <div v-if="profile?.account_type" class="info-item">
@@ -353,187 +345,107 @@ function getStarFill(rating, index) {
             </div>
           </div>
 
-          <div v-if="profile?.account_type === 'tutor'" class="rating-box">
-            <div class="rating-label">Ocena korepetytora</div>
-            <div class="rating-row">
-              <div
-                class="rating-stars"
-                :aria-label="`Ocena ${teacherRating.average.toFixed(1)} z 5`"
-              >
-                <span v-for="index in 5" :key="index" class="star-item">
-                  <span :class="['star', getStarFill(teacherRating.average, index - 1)]">★</span>
-                </span>
-              </div>
-              <span class="rating-value">{{ teacherRating.average.toFixed(1) }} / 5</span>
-            </div>
-            <div class="rating-meta">{{ teacherRating.count }} ocen</div>
+          <div style="gap: 8px; display: flex; flex-direction: column; width: 100%">
             <button
-              class="btn btn-primary rate-btn"
-              type="button"
-              @click="showRatingEditor = !showRatingEditor"
+              v-if="profile && user?.id !== profile.auth_id && canAddTeacher"
+              class="btn save-btn"
+              :class="{ saved: isLiked }"
+              @click="toggleLike"
             >
-              {{ showRatingEditor ? 'Zamknij' : 'Oceń' }}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path
+                  v-if="!isLiked"
+                  d="M12 5v14m-7-7h14"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <path
+                  v-else
+                  d="M20 6L9 17l-5-5"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              {{ isLiked ? 'Dodano' : 'Dodaj' }}
             </button>
-
-            <div v-if="showRatingEditor" class="rating-editor-inline">
-              <div class="rating-editor-header">
-                <span class="rating-editor-title">Oceń {{ getDisplayName() }}</span>
-                <button
-                  class="btn btn-secondary rating-close-btn"
-                  type="button"
-                  @click="showRatingEditor = false"
-                >
-                  Zamknij
-                </button>
-              </div>
-              <p class="rating-editor-text">
-                {{ myTeacherRating != null ? 'Zaktualizuj swoją ocenę.' : 'Wybierz ocenę.' }}
-              </p>
-              <div class="rating-row rating-row-inline">
-                <div
-                  class="rating-half-selector"
-                  :aria-label="`Twoja ocena ${ratingDraft.toFixed(1)} z 5`"
-                >
-                  <div v-for="i in 5" :key="i" class="star-select">
-                    <button
-                      type="button"
-                      class="half half-left"
-                      :class="{ selected: ratingDraft >= i - 0.5 && ratingDraft < i }"
-                      :title="i - 0.5 + ' / 5'"
-                      @click="setDraftRating(i - 0.5)"
-                    ></button>
-                    <button
-                      type="button"
-                      class="half half-right"
-                      :class="{ selected: ratingDraft >= i }"
-                      :title="i + ' / 5'"
-                      @click="setDraftRating(i)"
-                    ></button>
-                    <span :class="['star', getStarFill(ratingDraft, i - 1)]" class="display"
-                      >★</span
-                    >
-                  </div>
-                </div>
-                <span class="rating-value">{{ ratingDraft.toFixed(1) }} / 5</span>
-              </div>
-              <button
-                class="btn btn-primary rate-submit-btn"
-                type="button"
-                :disabled="ratingSaving"
-                @click="submitTeacherRating"
-              >
-                {{ ratingSaving ? 'Zapisywanie...' : 'Wyślij ocenę' }}
-              </button>
-            </div>
+            <button
+              v-if="profile && user?.id !== profile.auth_id && !blockedByMe && !blockingMe"
+              class="btn btn-primary message-btn"
+              @click.stop="handleSendMessage"
+            >
+              Wyślij wiadomość
+            </button>
+            <button
+              v-if="profile && user?.id !== profile.auth_id && !blockedByMe"
+              class="btn block-btn"
+              @click="showBlockConfirm = true"
+            >
+              Zablokuj użytkownika
+            </button>
+            <button
+              v-if="profile && user?.id === profile.auth_id"
+              class="btn btn-primary message-btn"
+              @click="router.push({ path: '/', query: { panel: 'profile' } })"
+            >
+              Edytuj profil
+            </button>
+            <button
+              v-if="
+                profile &&
+                user?.id === profile.auth_id &&
+                profile?.account_type === 'tutor' &&
+                tutorOffers.length > 0 &&
+                tutorOffers[0]?.weeklyAvailability &&
+                Object.keys(tutorOffers[0].weeklyAvailability).length
+              "
+              class="btn btn-secondary message-btn"
+              @click="router.push({ path: '/', query: { panel: 'profile', edit: '1' } })"
+            >
+              Edytuj dostępność
+            </button>
           </div>
-
-          <button
-            v-if="profile && user?.id !== profile.auth_id && canAddTeacher"
-            class="btn save-btn"
-            :class="{ saved: isLiked }"
-            @click="toggleLike"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path
-                v-if="!isLiked"
-                d="M12 5v14m-7-7h14"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-              <path
-                v-else
-                d="M20 6L9 17l-5-5"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            {{ isLiked ? 'Dodano' : 'Dodaj' }}
-          </button>
-          <button
-            v-if="profile && user?.id !== profile.auth_id && !blockedByMe && !blockingMe"
-            class="btn btn-primary message-btn"
-            @click.stop="handleSendMessage"
-          >
-            Wyślij wiadomość
-          </button>
-          <button
-            v-if="profile && user?.id !== profile.auth_id && !blockedByMe"
-            class="btn block-btn"
-            @click="showBlockConfirm = true"
-          >
-            Zablokuj użytkownika
-          </button>
-          <button
-            v-if="profile && user?.id === profile.auth_id"
-            class="btn btn-primary message-btn"
-            style="background: var(--muted); cursor: default; opacity: 0.5"
-          >
-            To Twój profil
-          </button>
         </div>
 
         <div class="profile-right">
           <template v-if="profile?.account_type === 'tutor'">
-            <div v-if="tutorPost" class="tutor-offer-view">
-              <h4>Oferta korepetytora</h4>
+            <template v-if="tutorOffers.length">
+              <div v-for="(offer, index) in tutorOffers" :key="index" class="tutor-offer-view">
+                <h4>Oferta korepetytora{{ tutorOffers.length > 1 ? ' ' + (index + 1) : '' }}</h4>
 
-              <div v-if="tutorPost.subject" class="offer-row">
-                <span class="offer-label">Przedmiot</span>
-                <span class="offer-value">{{ tutorPost.subject }}</span>
-              </div>
-              <div v-if="tutorPost.level" class="offer-row">
-                <span class="offer-label">Poziom</span>
-                <span class="offer-value">{{ tutorPost.level }}</span>
-              </div>
-              <div v-if="tutorPost.price" class="offer-row">
-                <span class="offer-label">Stawka</span>
-                <span class="offer-value">{{ tutorPost.price }} zł/h</span>
-              </div>
-              <div v-if="getTeachingFormats().length" class="offer-row">
-                <span class="offer-label">Forma</span>
-                <span class="offer-value">{{ getTeachingFormats().join(', ') }}</span>
-              </div>
-              <div v-if="tutorPost.description" class="offer-row offer-description">
-                <span class="offer-label">Opis</span>
-                <span class="offer-value desc-text">{{ tutorPost.description }}</span>
-              </div>
-              <div v-if="tutorPost.photo" class="offer-photo-preview">
-                <img :src="tutorPost.photo" alt="Zdjęcie oferty" />
-              </div>
+                <div v-if="offer.subject" class="offer-row">
+                  <span class="offer-label">Przedmiot</span>
+                  <span class="offer-value">{{ offer.subject }}</span>
+                </div>
+                <div v-if="offer.level" class="offer-row">
+                  <span class="offer-label">Poziom</span>
+                  <span class="offer-value">{{ offer.level }}</span>
+                </div>
+                <div v-if="offer.price" class="offer-row">
+                  <span class="offer-label">Stawka</span>
+                  <span class="offer-value">{{ offer.price }} zł/h</span>
+                </div>
+                <div v-if="getTeachingFormats(offer).length" class="offer-row">
+                  <span class="offer-label">Forma</span>
+                  <span class="offer-value">{{ getTeachingFormats(offer).join(', ') }}</span>
+                </div>
+                <div v-if="offer.description" class="offer-row offer-description">
+                  <span class="offer-label">Opis</span>
+                  <span class="offer-value desc-text">{{ offer.description }}</span>
+                </div>
+                <div v-if="offer.photo" class="offer-photo-preview">
+                  <img :src="offer.photo" alt="Zdjęcie oferty" />
+                </div>
 
-              <div
-                v-if="
-                  tutorPost.weeklyAvailability && Object.keys(tutorPost.weeklyAvailability).length
-                "
-                class="availability-section"
-              >
-                <span class="offer-label">Dostępność</span>
-                <div class="av-grid">
-                  <div class="av-header-cell av-corner"></div>
-                  <div
-                    v-for="day in weeklyDayLabels"
-                    :key="day"
-                    class="av-header-cell av-day-header"
-                  >
-                    {{ day }}
-                  </div>
-                  <template v-for="hour in visibleHours()" :key="hour">
-                    <div class="av-header-cell av-time-header">
-                      {{ String(hour).padStart(2, '0') }}:00
-                    </div>
-                    <div
-                      v-for="day in weeklyDayLabels"
-                      :key="`${day}-${hour}`"
-                      class="av-cell"
-                      :class="{ selected: isCellSelected(day, hour) }"
-                    ></div>
-                  </template>
+                <div
+                  v-if="offer.weeklyAvailability && Object.keys(offer.weeklyAvailability).length"
+                >
+                  <AvailabilityGrid :availability="offer.weeklyAvailability" readonly />
                 </div>
               </div>
-            </div>
+            </template>
             <div v-else class="tutor-offer-view tutor-offer-empty">
               <h4>Oferta korepetytora</h4>
               <p class="empty-offer-text">Ten korepetytor nie ma jeszcze opublikowanej oferty.</p>
@@ -657,7 +569,8 @@ function getStarFill(rating, index) {
   word-break: break-word;
 }
 
-.profile-real-name {
+.profile-real-name,
+.profile-nickname {
   font-size: 14px;
   color: var(--muted);
   text-align: center;
@@ -778,68 +691,6 @@ function getStarFill(rating, index) {
   width: 100%;
   height: auto;
   display: block;
-}
-
-.availability-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.av-grid {
-  display: grid;
-  grid-template-columns: 44px repeat(7, 1fr);
-  grid-auto-rows: 22px;
-  gap: 2px;
-  padding: 4px;
-  background: #f3f4f6;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-  overflow: auto;
-  user-select: none;
-}
-
-.av-header-cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  background: #fff;
-  border-radius: 3px;
-  padding: 2px;
-}
-
-.av-corner {
-  background: transparent;
-}
-
-.av-day-header {
-  background: #f9fafb;
-  font-size: 9px;
-  font-weight: 700;
-  color: #374151;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.av-time-header {
-  background: transparent;
-  color: #9ca3af;
-}
-
-.av-cell {
-  border-radius: 3px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  min-width: 0;
-}
-
-.av-cell.selected {
-  background: #4f75c7;
-  border-color: #4f75c7;
 }
 
 .btn {
@@ -994,133 +845,134 @@ function getStarFill(rating, index) {
   opacity: 0.6;
   cursor: not-allowed;
 }
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 8px 0 16px;
+  }
 
-.rating-box {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface-soft);
-}
+  .profile-container {
+    padding: 0 12px;
+  }
 
-.rating-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
-}
+  .profile-card {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
 
-.rating-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
+  .profile-left {
+    position: static;
+    padding: 18px 14px;
+    gap: 12px;
+  }
 
-.rating-stars {
-  display: flex;
-  gap: 4px;
-}
+  .avatar,
+  .avatar-letter {
+    width: 92px;
+    height: 92px;
+  }
 
-.star {
-  font-size: 20px;
-  color: #e5e7eb;
-  display: inline-block;
-  line-height: 1;
-  position: relative;
-}
+  .avatar-letter {
+    font-size: 34px;
+  }
 
-/* overlay colored star to allow clean half fills */
-.star::before {
-  content: '★';
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 0;
-  overflow: hidden;
-  color: #f59e0b;
-}
+  .profile-name {
+    font-size: 20px;
+  }
 
-.star.filled::before {
-  width: 100%;
-}
+  .profile-real-name {
+    font-size: 13px;
+    margin-top: -4px;
+  }
 
-.star.half::before {
-  width: 50%;
-}
+  .info-list {
+    gap: 8px;
+  }
 
-.rating-value {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
-}
+  .info-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
 
-.rating-meta {
-  font-size: 12px;
-  color: var(--muted);
-}
+  .info-value {
+    text-align: left;
+  }
 
-.rating-editor-inline {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px;
-  border: none;
-  border-radius: 12px;
-  background: rgba(79, 117, 199, 0.04);
-  box-sizing: border-box;
-  overflow: hidden;
-}
+  .message-btn,
+  .save-btn,
+  .block-btn {
+    padding: 11px 12px;
+  }
 
-.rating-half-selector {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  flex-wrap: nowrap;
-  overflow: hidden;
-}
+  .tutor-offer-view {
+    padding: 18px 14px;
+    gap: 10px;
+  }
 
-.star-select {
-  position: relative;
-  width: 24px;
-  height: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
+  .tutor-offer-empty {
+    padding: 24px 14px;
+  }
 
-.star-select .display {
-  font-size: 20px;
-  pointer-events: none;
-}
+  .offer-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    font-size: 14px;
+  }
 
-.star-select .half {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 50%;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-}
+  .offer-value {
+    text-align: left;
+  }
 
-.star-select .half-left {
-  left: 0;
-}
+  .offer-description {
+    margin-top: 2px;
+    padding-top: 10px;
+  }
 
-.star-select .half-right {
-  right: 0;
-}
+  .desc-text {
+    font-size: 14px;
+    max-height: 120px;
+  }
 
-.star-select .half.selected {
-  background: rgba(245, 158, 11, 0.18);
-}
+  .offer-photo-preview {
+    max-width: 100%;
+  }
 
-.rate-submit-btn {
-  width: 100%;
-  padding: 10px 12px;
+  .availability-section {
+    gap: 6px;
+  }
+
+  .av-grid {
+    grid-template-columns: 36px repeat(7, minmax(22px, 1fr));
+    gap: 1px;
+    padding: 3px;
+  }
+
+  .av-header-cell {
+    font-size: 9px;
+    padding: 1px;
+  }
+
+  .av-day-header {
+    font-size: 7px;
+  }
+
+  .blocked-notice {
+    padding: 28px 16px;
+    margin: 0 8px;
+  }
+
+  .blocked-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .block-dialog {
+    padding: 20px 16px;
+  }
+
+  .block-dialog-actions {
+    flex-direction: column-reverse;
+  }
 }
 </style>

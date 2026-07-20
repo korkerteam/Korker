@@ -238,22 +238,56 @@ function scrollToTop(event) {
 
 @media (max-width: 640px) {
   .footer__container {
-    padding: 28px 18px 20px;
+    padding: 22px 16px 16px;
   }
 
   .footer__grid {
+    gap: 14px;
     grid-template-columns: 1fr;
+  }
+
+  .footer__description {
+    margin-top: 8px;
+    line-height: 1.45;
+    font-size: 0.82rem;
+  }
+
+  .footer__column {
+    gap: 7px;
+  }
+
+  .footer__links {
+    gap: 6px;
+  }
+
+  .footer__links a {
+    font-size: 0.8rem;
+  }
+
+  .footer__bottom {
+    margin-top: 16px;
+    padding-top: 12px;
+    gap: 10px;
+  }
+
+  .footer__copyright {
+    font-size: 0.72rem;
   }
 }
 
 @media (max-width: 480px) {
   .footer__container {
-    padding: 22px 14px 16px;
+    padding: 18px 12px 12px;
   }
 
   .footer__social {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .footer__social svg {
+    width: 14px;
+    height: 14px;
   }
 }
 </style>

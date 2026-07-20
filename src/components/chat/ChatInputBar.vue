@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { compressImage } from '@/utils/imageCompress.js'
 
 const props = defineProps({
   modelValue: String,
@@ -7,7 +8,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'send'])
 
 const MAX_MESSAGE_LENGTH = 500
-const MAX_FILE_SIZE = 20 * 1024 * 1024
+const MAX_FILE_SIZE = 5 * 1024 * 1024
 const ACCEPT_TYPES = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip,.rar,.7z'
 
 const fileInput = ref(null)
@@ -29,17 +30,39 @@ function onkey(e) {
   }
 }
 
+function onPaste(e) {
+  const items = e.clipboardData?.items
+  if (!items) return
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile()
+      if (file) addFile(file)
+      e.preventDefault()
+    }
+  }
+}
+
 function triggerFilePicker() {
   fileInput.value?.click()
 }
 
+async function addFile(f) {
+  if (files.value.length >= 10) return
+  if (f.type.startsWith('image/')) {
+    const compressed = await compressImage(f, { maxWidth: 1920, maxHeight: 1920, maxSizeMB: 5 })
+    if (compressed.size <= MAX_FILE_SIZE) {
+      files.value.push(compressed)
+      return
+    }
+    return
+  }
+  if (f.size > MAX_FILE_SIZE) return
+  files.value.push(f)
+}
+
 function onFileChange(e) {
   const selected = Array.from(e.target.files || [])
-  for (const f of selected) {
-    if (f.size > MAX_FILE_SIZE) continue
-    if (files.value.length >= 10) break
-    files.value.push(f)
-  }
+  for (const f of selected) addFile(f)
   e.target.value = ''
 }
 
@@ -113,6 +136,7 @@ function getObjectUrl(file) {
           placeholder="Napisz wiadomość..."
           rows="1"
           @keydown="onkey"
+          @paste="onPaste"
         ></textarea>
         <span v-if="val.length" class="char-count" :class="{ 'char-count-over': overLimit }">{{
           charsLeft

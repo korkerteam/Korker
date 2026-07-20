@@ -129,6 +129,7 @@ async function handleSend(content, files) {
       />
       <ChatConversation
         v-else
+        :key="activeUserId"
         :messages="messages"
         :loading="loadingMessages"
         :contact="activeConversation"

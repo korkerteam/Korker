@@ -35,31 +35,18 @@
                   :key="slot.day + slot.time"
                   class="hl-chip-featured"
                 >
-                  <span class="hl-chip-day">{{ slot.day }}</span>
-                  <span class="hl-chip-time">{{ slot.time }}</span>
+                  {{ slot.day }}, {{ slot.time }}
                 </span>
               </div>
-            </div>
-            <div
-              v-for="lesson in upcomingLessons.slice(1, 3)"
-              :key="lesson.id"
-              class="home-lesson-compact"
-            >
-              <div class="hl-top">
-                <strong class="hl-name-compact">{{ getOtherName(lesson) }}</strong>
-                <span v-if="getOtherSubject(lesson)" class="hl-subject-compact">{{
-                  getOtherSubject(lesson)
-                }}</span>
-              </div>
-              <div class="hl-slots">
-                <span
-                  v-for="slot in slotLabelsFromMasks(lesson.requested_slots)"
-                  :key="slot.day + slot.time"
-                  class="hl-chip-compact"
-                >
-                  {{ slot.day }} {{ slot.time }}
-                </span>
-              </div>
+              <span class="hl-date-featured">{{
+                new Date(upcomingLessons[0].created_at).toLocaleDateString('pl-PL', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              }}</span>
             </div>
           </div>
         </div>
@@ -103,9 +90,12 @@
 
 <script setup>
 import { computed, ref, inject, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { useMessaging } from '@/composables/useMessaging.js'
+
+const router = useRouter()
 
 const { isAuthenticated, profileData, user } = useAuth()
 const { conversations, notifications, markNotificationRead } = useMessaging()
@@ -160,6 +150,16 @@ const notificationsToShow = computed(() => {
       isRead: notif.isRead,
     })
   })
+  lessonNotifs.value.forEach((notif) => {
+    upsert({
+      id: notif.id,
+      senderId: notif.senderId,
+      sender: notif.sender,
+      message: notif.message,
+      time: notif.time,
+      isRead: notif.isRead,
+    })
+  })
 
   return Array.from(merged.values())
 })
@@ -175,9 +175,11 @@ const isTutorAccount = computed(() => {
 const upcomingLessons = ref([])
 const upcomingLoading = ref(false)
 const otherUsers = ref({})
+const lessonNotifs = ref([])
+const seenLessonNotifIds = ref(new Set())
 
 function slotLabelsFromMasks(masks) {
-  const dayKeys = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd']
+  const dayKeys = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
   const labels = []
   if (!Array.isArray(masks)) return labels
   for (let di = 0; di < masks.length; di++) {
@@ -212,20 +214,20 @@ async function fetchUpcomingLessons() {
     return
   }
 
-  upcomingLessons.value = data || []
+  upcomingLessons.value = (data || []).filter((r) => r.student_id !== r.tutor_id)
 
   const otherIds = new Set()
-  for (const r of data || []) {
+  for (const r of upcomingLessons.value) {
     otherIds.add(isTutorAccount.value ? r.student_id : r.tutor_id)
   }
 
   if (otherIds.size > 0) {
     const { data: profiles } = await supabase
       .from('users')
-      .select('*')
+      .select('id, auth_id, nickname, name, surname, profile_picture, tutor_post')
       .in('auth_id', [...otherIds])
 
-    const map = {}
+    const map = { ...otherUsers.value }
     for (const p of profiles || []) {
       map[p.auth_id] = p
     }
@@ -233,6 +235,93 @@ async function fetchUpcomingLessons() {
   }
 
   upcomingLoading.value = false
+}
+
+async function fetchLessonNotifications() {
+  if (!user.value) return
+  const column = isTutorAccount.value ? 'tutor_id' : 'student_id'
+  const { data, error } = await supabase
+    .from('lesson_requests')
+    .select('*')
+    .eq(column, user.value.id)
+    .in('status', isTutorAccount.value ? ['pending'] : ['approved', 'rejected'])
+    .order('created_at', { ascending: false })
+
+  if (error || !data) {
+    lessonNotifs.value = []
+    return
+  }
+
+  const filtered = data.filter((r) => {
+    const isSelf = r.student_id === r.tutor_id
+    if (isSelf)
+      console.warn(
+        'filtered self-request (student_id === tutor_id):',
+        r.id,
+        r.student_id,
+        r.tutor_id,
+      )
+    return !isSelf
+  })
+
+  console.log(
+    'fetchLessonNotifications raw:',
+    data.length,
+    'filtered:',
+    filtered.length,
+    'user:',
+    user.value?.id,
+  )
+
+  const otherIds = new Set()
+  for (const r of filtered) {
+    otherIds.add(isTutorAccount.value ? r.student_id : r.tutor_id)
+  }
+  if (otherIds.size > 0) {
+    const { data: profiles } = await supabase
+      .from('users')
+      .select('id, auth_id, nickname, name, surname, profile_picture, tutor_post')
+      .in('auth_id', [...otherIds])
+    for (const p of profiles || []) {
+      otherUsers.value[p.auth_id] = p
+    }
+  }
+
+  lessonNotifs.value = filtered
+    .filter((r) => {
+      const otherId = isTutorAccount.value ? r.student_id : r.tutor_id
+      const keep = otherId !== user.value?.id
+      if (!keep) console.warn('filtered self-request:', r.id, otherId, user.value?.id)
+      return keep
+    })
+    .map((r) => {
+      const otherId = isTutorAccount.value ? r.student_id : r.tutor_id
+      const p = otherUsers.value[otherId]
+      const name = p?.nickname || [p?.name, p?.surname].filter(Boolean).join(' ') || 'Nieznany'
+      const slotStr = slotLabelsFromMasks(r.requested_slots)
+        .slice(0, 2)
+        .map((s) => `${s.day} ${s.time}`)
+        .join(', ')
+      const extra = slotLabelsFromMasks(r.requested_slots).length > 2 ? '...' : ''
+
+      let message = ''
+      if (isTutorAccount.value) {
+        message = `Nowa prośba o lekcję od ${name}${slotStr ? ` (${slotStr}${extra})` : ''}`
+      } else if (r.status === 'approved') {
+        message = `${name} zaakceptował Twoją prośbę o lekcję${slotStr ? ` (${slotStr}${extra})` : ''}`
+      } else if (r.status === 'rejected') {
+        message = `${name} odrzucił Twoją prośbę o lekcję`
+      }
+
+      return {
+        id: `lesson-${r.id}`,
+        senderId: otherId,
+        sender: name,
+        message,
+        time: r.created_at ? new Date(r.created_at).toLocaleDateString('pl-PL') : '',
+        isRead: seenLessonNotifIds.value.has(r.id),
+      }
+    })
 }
 
 function getOtherName(entry) {
@@ -245,13 +334,19 @@ function getOtherName(entry) {
 function getOtherSubject(entry) {
   const authId = isTutorAccount.value ? entry.student_id : entry.tutor_id
   const p = otherUsers.value[authId]
-  return p?.tutor_post?.subject || ''
+  const tp = p?.tutor_post
+  if (!tp) return ''
+  const offer = Array.isArray(tp) ? tp[0] || {} : tp
+  return offer?.subject || ''
 }
 
 watch(
   () => user.value,
   (u) => {
-    if (u) fetchUpcomingLessons()
+    if (u) {
+      fetchUpcomingLessons()
+      fetchLessonNotifications()
+    }
   },
   { immediate: true },
 )
@@ -259,11 +354,22 @@ watch(
 watch(
   () => profileData.value,
   () => {
-    if (user.value) fetchUpcomingLessons()
+    if (user.value) {
+      fetchUpcomingLessons()
+      fetchLessonNotifications()
+    }
   },
 )
 
 const handleNotificationClick = (notificationId, senderId) => {
+  if (notificationId && notificationId.startsWith('lesson-')) {
+    seenLessonNotifIds.value.add(notificationId.replace('lesson-', ''))
+    lessonNotifs.value = lessonNotifs.value.map((n) =>
+      n.id === notificationId ? { ...n, isRead: true } : n,
+    )
+    router.push({ query: { panel: 'calendar' } })
+    return
+  }
   openChatWithUser(senderId)
   markNotificationRead(notificationId)
 }
@@ -283,8 +389,9 @@ const handleNotificationClick = (notificationId, senderId) => {
   justify-content: space-between;
   gap: 24px;
   align-items: center;
-  padding: 32px 36px;
-  background: var(--surface-strong);
+  min-height: 220px;
+  padding: 40px 36px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(227, 235, 255, 0.95) 100%);
   border-radius: 36px;
   border: 1px solid var(--border);
   box-shadow: 0 30px 80px rgba(15, 23, 42, 0.1);
@@ -302,10 +409,11 @@ const handleNotificationClick = (notificationId, senderId) => {
 .dashboard-welcome {
   margin: 0 0 10px;
   color: var(--accent-strong);
-  font-size: 0.85rem;
-  font-weight: 800;
+  font-size: 0.95rem;
+  font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.28em;
+  text-shadow: 0 1px 2px rgba(79, 117, 199, 0.12);
 }
 
 .dashboard-title {
@@ -313,12 +421,53 @@ const handleNotificationClick = (notificationId, senderId) => {
   font-size: clamp(2.4rem, 3vw, 3.5rem);
   line-height: 1.02;
   color: var(--text-strong);
+  letter-spacing: -0.02em;
 }
 
 .dashboard-panels {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .home-shell {
+    gap: 16px;
+    padding-bottom: 0;
+  }
+
+  .dashboard-top {
+    min-height: 170px;
+    padding: 24px 18px;
+    border-radius: 24px;
+  }
+
+  .dashboard-title {
+    font-size: clamp(1.5rem, 5vw, 2.1rem);
+  }
+
+  .dashboard-panels {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .dashboard-panel {
+    min-height: auto;
+    padding: 16px 16px 12px;
+    border-radius: 20px;
+  }
+
+  .panel-content-window {
+    border-radius: 16px;
+  }
+
+  .notifications-list li {
+    padding: 14px 16px;
+  }
+
+  .upcoming-item {
+    padding: 12px 16px;
+  }
 }
 
 .dashboard-panel {
@@ -580,17 +729,6 @@ const handleNotificationClick = (notificationId, senderId) => {
   border-radius: 18px;
   background: var(--accent-soft);
   border: 1px solid var(--accent);
-  margin-bottom: 2px;
-}
-
-.home-lesson-compact {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
 }
 
 .hl-top {
@@ -608,18 +746,6 @@ const handleNotificationClick = (notificationId, senderId) => {
 
 .hl-subject-featured {
   font-size: 0.9rem;
-  color: var(--accent-strong);
-  font-weight: 600;
-}
-
-.hl-name-compact {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.hl-subject-compact {
-  font-size: 0.8rem;
   color: var(--accent-strong);
   font-weight: 600;
 }
@@ -642,23 +768,11 @@ const handleNotificationClick = (notificationId, senderId) => {
   font-weight: 700;
 }
 
-.hl-chip-compact {
-  background: var(--surface-soft);
-  color: var(--muted);
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border: 1px solid var(--border);
-}
-
-.hl-chip-day {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-}
-
-.hl-chip-time {
-  font-weight: 700;
+.hl-date-featured {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-top: -4px;
 }
 
 .notifications-empty {

@@ -98,8 +98,10 @@ async function openTimetable(teacher) {
 
   if (tutorResult.error) {
     timetableError.value = 'Nie udało się załadować planu zajęć.'
-  } else if (tutorResult.data?.tutor_post?.weeklyAvailability) {
-    timetableData.value = tutorResult.data.tutor_post.weeklyAvailability
+  } else if (tutorResult.data?.tutor_post) {
+    const raw = tutorResult.data.tutor_post
+    const first = Array.isArray(raw) ? raw[0] || {} : raw
+    timetableData.value = first.weeklyAvailability || null
   } else {
     timetableData.value = null
   }
@@ -194,12 +196,13 @@ watch(
   { immediate: true },
 )
 
-function getDisplayName(teacher) {
-  const fullName = [teacher.name, teacher.surname].filter(Boolean).join(' ')
-  if (teacher.nickname) {
-    return `${teacher.nickname} (${fullName})`
+function getDisplayName(teacher, nameOrNickname = 'name') {
+  if (nameOrNickname === 'nickname' && teacher.nickname) {
+    return teacher.nickname
+  } else {
+    const fullName = [teacher.name, teacher.surname].filter(Boolean).join(' ')
+    return fullName || teacher.name
   }
-  return fullName || teacher.name
 }
 
 const teacherImageMap = {
@@ -229,12 +232,20 @@ function getTeacherImage(teacher) {
   return teacher?.profile_picture || teacherImageMap[teacher?.name] || ''
 }
 
+function getFirstOffer(teacher) {
+  const tp = teacher?.tutor_post
+  if (!tp) return null
+  return Array.isArray(tp) ? tp[0] || null : tp
+}
+
 function getTeacherSubject(teacher) {
-  return teacher?.tutor_post?.subject || ''
+  const offer = getFirstOffer(teacher)
+  return offer?.subject || ''
 }
 
 function getTeacherLevel(teacher) {
-  return teacher?.tutor_post?.level || ''
+  const offer = getFirstOffer(teacher)
+  return offer?.level || ''
 }
 
 function onShow(teacher) {
@@ -305,7 +316,11 @@ function openChat(teacher) {
               <span v-else>{{ getDisplayName(teacher).charAt(0) }}</span>
             </div>
             <div class="meta">
-              <div class="name">{{ getDisplayName(teacher) }}</div>
+              <div v-if="teacher.nickname">
+                <div class="name">{{ getDisplayName(teacher, 'name') }}</div>
+                <div class="nickname-name">{{ getDisplayName(teacher, 'nickname') }}</div>
+              </div>
+              <div v-else class="name">{{ getDisplayName(teacher, 'name') }}</div>
               <div class="details">
                 {{ getTeacherSubject(teacher)
                 }}<span v-if="getTeacherLevel(teacher)"> • {{ getTeacherLevel(teacher) }}</span>
@@ -617,6 +632,14 @@ function openChat(teacher) {
 .meta .name {
   font-weight: 700;
   color: var(--text);
+  font-size: 1rem;
+  margin-bottom: 1px;
+}
+
+.meta .nickname-name {
+  font-weight: 400;
+  color: var(--text);
+  font-size: 0.8rem;
 }
 .meta .details {
   font-size: 13px;
@@ -1012,7 +1035,7 @@ function openChat(teacher) {
 
 .tt-cell.available {
   background: #4f75c7;
-  border-color: #4f75c7;
+  border-color: var(--accent);
   cursor: pointer;
 }
 

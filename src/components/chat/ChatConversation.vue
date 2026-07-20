@@ -17,19 +17,55 @@ const { editMessage, deleteMessage } = useMessaging()
 const body = ref(null)
 const newMsg = ref('')
 
+function getDateKey(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+}
+
+function isNewDay(messages, index) {
+  if (index === 0) return true
+  const prev = getDateKey(messages[index - 1]?.created_at)
+  const curr = getDateKey(messages[index]?.created_at)
+  return prev !== curr
+}
+
+function formatDateDivider(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  const diffDays = Math.round((today - target) / 86400000)
+
+  if (diffDays === 0) return 'Dzisiaj'
+  if (diffDays === 1) return 'Wczoraj'
+  return d.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
 function scrollDown() {
-  nextTick(() => {
-    if (body.value) {
-      body.value.scrollTop = body.value.scrollHeight
-    }
-  })
+  nextTick(() =>
+    requestAnimationFrame(() => {
+      if (body.value) {
+        body.value.scrollTop = body.value.scrollHeight
+      }
+    }),
+  )
 }
 
 onMounted(() => scrollDown())
 
 watch(
-  () => props.messages?.length,
+  () => props.messages,
   () => scrollDown(),
+  { deep: false },
+)
+
+watch(
+  () => props.loading,
+  (loading) => {
+    if (!loading) scrollDown()
+  },
 )
 
 function handleSend(text, files) {
@@ -89,14 +125,17 @@ function handleDelete(id) {
     <div v-else-if="!messages || messages.length === 0" class="empty-state">
       Brak wiadomości. Rozpocznij rozmowę!
     </div>
-    <ChatMessageBubble
-      v-for="m in messages"
-      :key="m.id"
-      :message="m"
-      :contact="contact"
-      @edit="handleEdit"
-      @delete="handleDelete"
-    />
+    <template v-for="(m, index) in messages" :key="m.id">
+      <div v-if="isNewDay(messages, index)" class="date-divider">
+        {{ formatDateDivider(m.created_at) }}
+      </div>
+      <ChatMessageBubble
+        :message="m"
+        :contact="contact"
+        @edit="handleEdit"
+        @delete="handleDelete"
+      />
+    </template>
   </div>
   <div v-if="blocked" class="blocked-bar">
     Zablokowałeś tego użytkownika. Nie możesz wysyłać wiadomości.
@@ -186,6 +225,29 @@ function handleDelete(id) {
   font-size: 16px;
   padding: 20px;
 }
+.date-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  user-select: none;
+  pointer-events: none;
+}
+
+.date-divider::before,
+.date-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  margin: 0 12px;
+}
+
 .message-scroll {
   flex: 1;
   overflow-y: auto;

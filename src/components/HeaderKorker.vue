@@ -24,7 +24,7 @@ function goHome() {
   font-family: Horizon, 'Inter', system-ui, sans-serif;
   font-size: 2.15rem;
   font-weight: 800;
-  color: var(--logo-color, #4f75c7);
+  color: var(--logo-color, var(--brand-blue, #4f75c7));
   background: var(--surface-strong);
   border: 1px solid var(--border);
   border-radius: 24px;
@@ -37,17 +37,17 @@ function goHome() {
 }
 
 :root[data-theme='dark'] .header-button {
-  background: linear-gradient(135deg, #4f75c7 0%, #3366ff 100%);
+  background: var(--accent);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 10px 28px rgba(51, 102, 255, 0.28);
+  box-shadow: 0 10px 28px rgba(79, 117, 199, 0.28);
 }
 
 :root[data-theme='dark'][data-contrast='high'] .header-button {
-  background: linear-gradient(135deg, #4f75c7 0%, #3366ff 100%);
+  background: var(--accent);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 10px 28px rgba(51, 102, 255, 0.28);
+  box-shadow: 0 10px 28px rgba(79, 117, 199, 0.28);
 }
 
 :root[data-contrast='high']:not([data-theme='dark']) .header-button {
@@ -64,7 +64,7 @@ function goHome() {
 
 :root[data-contrast='high']:not([data-theme='dark']) .logo-text,
 :root[data-contrast='high']:not([data-theme='dark']) .header-button {
-  color: #4f75c7;
+  color: var(--accent);
 }
 
 :root[data-theme='dark'] .logo-text,
@@ -94,6 +94,22 @@ function goHome() {
 .logo-text {
   display: inline-block;
   letter-spacing: -0.04em;
+}
+
+@media (max-width: 768px) {
+  .header-button {
+    width: auto;
+    justify-content: flex-start;
+    padding: 10px 12px;
+    font-size: 1.25rem;
+    gap: 8px;
+    border-radius: 16px;
+  }
+
+  .logo-image {
+    width: 38px;
+    height: 38px;
+  }
 }
 
 .header-button:hover {
