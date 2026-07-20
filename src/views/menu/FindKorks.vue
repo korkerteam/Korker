@@ -49,7 +49,7 @@ const weekdayLabels = [
   'Niedziela',
 ]
 const dayAbbr = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd']
-const gridHours = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+const gridHours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
 function hasSlot(availability, day, hour) {
   const slot = `${String(hour).padStart(2, '0')}:00-${String((hour + 1) % 24).padStart(2, '0')}:00`
@@ -753,7 +753,7 @@ function closePage() {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   gap: 16px;
-  overflow: visible;
+  overflow: hidden;
   align-items: center;
   min-height: 0;
   margin: 0;
@@ -1390,7 +1390,6 @@ function closePage() {
 <style>
 .tt-section .tt-grid-wrap {
   width: 100%;
-  min-height: 420px;
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
