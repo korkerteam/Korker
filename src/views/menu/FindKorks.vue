@@ -555,6 +555,7 @@ function closePage() {
                     <p class="tutor-meta">
                       {{ currentTutor.subject || currentTutor.lessonSubject || 'Korepetycje' }} •
                       {{ currentTutor.level || currentTutor.lessonLevel || 'Liceum' }}
+                      <span v-if="currentTutor.city"> • {{ currentTutor.city }}</span>
                     </p>
                   </div>
                   <div class="tutor-summary-card tutor-summary-price">
