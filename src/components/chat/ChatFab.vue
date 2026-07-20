@@ -71,4 +71,10 @@ defineEmits(['toggle'])
   justify-content: center;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
+@media (max-width: 768px) {
+  .fab {
+    right: 16px;
+    bottom: 16px;
+  }
+}
 </style>

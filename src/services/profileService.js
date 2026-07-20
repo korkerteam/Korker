@@ -17,6 +17,22 @@ export async function fetchProfile(userId) {
   return data
 }
 
+async function generateUniqueNickname() {
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const nickname = `user${Math.floor(Math.random() * 99999)}`
+
+    const { data: existing } = await supabase
+      .from(TABLE)
+      .select('auth_id')
+      .eq('nickname', nickname)
+      .maybeSingle()
+
+    if (!existing) return nickname
+  }
+
+  return `user${Date.now().toString(36).slice(0, 6)}`
+}
+
 const LIMITS = {
   nickname: 30,
   name: 30,
@@ -37,9 +53,10 @@ export async function upsertProfile(
   const uid = await resolveUserId(userId)
   if (!uid) throw new Error('Not authenticated')
 
-  if ((!nickname || !nickname.trim()) && (!name || !name.trim()))
-    throw new Error('Pseudonim lub imię i nazwisko jest wymagane')
-  if (nickname && nickname.length > LIMITS.nickname)
+  if (!nickname || !nickname.trim()) {
+    nickname = await generateUniqueNickname()
+  }
+  if (nickname.length > LIMITS.nickname)
     throw new Error(`Pseudonim może mieć maksymalnie ${LIMITS.nickname} znaków`)
   if (name && name.length > LIMITS.name)
     throw new Error(`Imię może mieć maksymalnie ${LIMITS.name} znaków`)
@@ -60,18 +77,20 @@ export async function upsertProfile(
     if (duplicate) throw new Error('Ten pseudonim jest już zajęty')
   }
 
-  if (tutor_post) {
-    if (tutor_post.street?.length > LIMITS.street)
+  const offers = Array.isArray(tutor_post) ? tutor_post : tutor_post ? [tutor_post] : []
+  for (const offer of offers) {
+    if (offer.street?.length > LIMITS.street)
       throw new Error(`Ulica może mieć maksymalnie ${LIMITS.street} znaków`)
-    if (tutor_post.homeNumber?.length > LIMITS.homeNumber)
+    if (offer.homeNumber?.length > LIMITS.homeNumber)
       throw new Error(`Numer domu może mieć maksymalnie ${LIMITS.homeNumber} znaków`)
-    if (tutor_post.flatNumber?.length > LIMITS.flatNumber)
+    if (offer.flatNumber?.length > LIMITS.flatNumber)
       throw new Error(`Numer mieszkania może mieć maksymalnie ${LIMITS.flatNumber} znaków`)
-    if (tutor_post.subject?.length > LIMITS.subject)
+    if (offer.subject?.length > LIMITS.subject)
       throw new Error(`Przedmiot może mieć maksymalnie ${LIMITS.subject} znaków`)
-    if (tutor_post.description?.length > LIMITS.description)
+    if (offer.description?.length > LIMITS.description)
       throw new Error(`Opis może mieć maksymalnie ${LIMITS.description} znaków`)
   }
+  if (offers.length > 5) throw new Error('Możesz dodać maksymalnie 5 ofert')
 
   const existing = await fetchProfile(uid)
 

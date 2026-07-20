@@ -64,11 +64,9 @@ const toggleMap = () => {
 
 <template>
   <div v-if="!isChatOpen" class="map-wrapper">
-    <div class="map-relative-box">
-      <Transition name="fade" @after-enter="initLeaflet" @after-leave="destroyLeaflet">
-        <div v-if="isMapVisible" ref="mapContainer" class="ramka"></div>
-      </Transition>
-    </div>
+    <Transition name="fade" @after-enter="initLeaflet" @after-leave="destroyLeaflet">
+      <div v-if="isMapVisible" ref="mapContainer" class="ramka"></div>
+    </Transition>
   </div>
 </template>
 
@@ -78,12 +76,6 @@ const toggleMap = () => {
   flex-direction: column;
   align-items: center;
   gap: 15px;
-}
-
-.map-relative-box {
-  position: relative;
-  width: 408px;
-  height: 208px;
 }
 
 .map-fab {

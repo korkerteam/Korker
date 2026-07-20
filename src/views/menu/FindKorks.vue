@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch, onMounted, nextTick } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { getBlockedIds, getBlockingMeIds } from '@/services/blockService.js'
@@ -52,12 +52,7 @@ const weekdayLabels = [
   'Niedziela',
 ]
 const dayAbbr = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd']
-const gridHours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-
-function hasSlot(availability, day, hour) {
-  const slot = `${String(hour).padStart(2, '0')}:00-${String((hour + 1) % 24).padStart(2, '0')}:00`
-  return (availability?.[day] || []).includes(slot)
-}
+const gridHours = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
 
 const subjectOptions = [
   'Język polski',
@@ -74,6 +69,11 @@ const subjectOptions = [
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
 const tagOptions = ['Matura', 'Egzamin', 'Olimpiada']
 const lessonPlaceOptions = ['Online', 'Stacjonarnie', 'Z dojazdem']
+
+function hasSlot(availability, day, hour) {
+  const slot = `${String(hour).padStart(2, '0')}:00-${String((hour + 1) % 24).padStart(2, '0')}:00`
+  return (availability?.[day] || []).includes(slot)
+}
 
 function normalizeChoice(value) {
   if (value == null) return ''
@@ -121,7 +121,6 @@ async function loadTutors() {
   }
 
   loading.value = true
-
   const [blocked, blocking] = await Promise.all([getBlockedIds(), getBlockingMeIds()])
   blockedIds.value = new Set([...blocked, ...blocking])
 
@@ -134,11 +133,12 @@ async function loadTutors() {
   if (!error && rows) {
     tutors.value = rows
       .filter((r) => r.tutor_post && !blockedIds.value.has(r.auth_id))
-      .map((r, index) => {
-        const tp = r.tutor_post || {}
+      .flatMap((r) => {
+        const raw = r.tutor_post || {}
+        const offers = Array.isArray(raw) ? raw : [raw]
         const renderedName = [r.name, r.surname].filter(Boolean).join(' ') || 'Korepetytor'
-        return {
-          id: r.id || `${renderedName}-${tp.subject || 'unknown'}-${index}`,
+        return offers.map((tp, oi) => ({
+          id: `${r.id}-offer-${oi}`,
           auth_id: r.auth_id,
           name: renderedName,
           subject: tp.subject || '',
@@ -148,9 +148,14 @@ async function loadTutors() {
           bio: tp.description || '',
           price: tp.price || 50,
           city: tp.city || '',
-          lessonPlace: tp.lessonPlace || '',
+          lessonPlace: tp.lessonPlace || tp.lesson_place || '',
+          teachingFormats: Array.isArray(tp.teachingFormats)
+            ? tp.teachingFormats
+            : tp.teachingFormat
+              ? [tp.teachingFormat]
+              : [],
           weeklyAvailability: tp.weeklyAvailability || {},
-        }
+        }))
       })
   }
 
@@ -229,11 +234,13 @@ const filteredTutors = computed(() => {
     const matchesTags =
       normalizedTags.length === 0 ||
       normalizedTags.some((tag) => normalizeChoiceList(tutor.tags).includes(tag))
+    const normalizedTutorLessonPlaces = normalizeChoiceList([
+      tutor.lessonPlace || tutor.lesson_place || '',
+      ...(Array.isArray(tutor.teachingFormats) ? tutor.teachingFormats : []),
+    ])
     const matchesLessonPlaces =
       normalizedLessonPlaces.length === 0 ||
-      normalizedLessonPlaces.some(
-        (place) => normalizeChoice(tutor.lessonPlace) === normalizeChoice(place),
-      )
+      normalizedLessonPlaces.some((place) => normalizedTutorLessonPlaces.includes(place))
     const cityQuery = `${selectedCity.value || props.filters?.city || ''}`.trim().toLowerCase()
     const matchesCity = !cityQuery || (tutor.city || '').toLowerCase().includes(cityQuery)
 
@@ -248,7 +255,6 @@ const allDecided = computed(
 const currentTutor = computed(() => {
   const list = filteredTutors.value
   if (!list.length) return null
-
   const safeIndex = Math.min(Math.max(currentIndex.value, 0), list.length - 1)
   return list[safeIndex] || null
 })
@@ -266,14 +272,10 @@ watch(
   () => props.likedTeachers,
   (teachers = []) => {
     const nextDecisions = { ...decisions.value }
-
     teachers.forEach((teacher) => {
       const tutorKey = getTutorKey(teacher)
-      if (tutorKey) {
-        nextDecisions[tutorKey] = 'good'
-      }
+      if (tutorKey) nextDecisions[tutorKey] = 'good'
     })
-
     decisions.value = nextDecisions
 
     const length = filteredTutors.value.length
@@ -315,12 +317,8 @@ function clearFilters() {
 }
 
 function getSwipeClientX(event) {
-  if (event?.touches?.length) {
-    return event.touches[0].clientX
-  }
-  if (event?.changedTouches?.length) {
-    return event.changedTouches[0].clientX
-  }
+  if (event?.touches?.length) return event.touches[0].clientX
+  if (event?.changedTouches?.length) return event.changedTouches[0].clientX
   return event?.clientX ?? 0
 }
 
@@ -337,7 +335,6 @@ function startSwipe(event) {
   showSwipeOverlay.value = false
   swipeHintState.value = 'neutral'
 
-  // Capture pointer to track movement even outside the card
   if (cardRef.value && event.pointerId !== undefined) {
     cardRef.value.setPointerCapture(event.pointerId)
   }
@@ -365,9 +362,7 @@ function moveSwipe(event) {
     swipeHintState.value = 'neutral'
   }
 
-  if (Math.abs(delta) > 3) {
-    event.preventDefault?.()
-  }
+  if (Math.abs(delta) > 3) event.preventDefault?.()
 }
 
 function endSwipe(event) {
@@ -416,9 +411,8 @@ function addCurrentTutorToList() {
 
   const likedTutor = { ...tutor, id: String(tutor.id) }
   const tutorKey = getTutorKey(likedTutor)
-  if (tutorKey) {
-    decisions.value[tutorKey] = 'good'
-  }
+  if (tutorKey) decisions.value[tutorKey] = 'good'
+
   emit('like-teacher', likedTutor)
   nextTutor()
 }
@@ -433,7 +427,6 @@ function handleDecision(isLiked) {
 
 function nextTutor() {
   resetSwipe()
-
   const remaining = filteredTutors.value.length
   if (remaining === 0) {
     currentIndex.value = 0
@@ -460,336 +453,255 @@ function toggleSelection(category, value) {
   } else {
     targetArray.push(value)
   }
+
   currentIndex.value = 0
   resetSwipe()
   emitFilterState()
 }
-
-function closePage() {
-  emit('close')
-}
-
-async function refreshTeacherRatings(teachersList = []) {
-  const ids = [...new Set(teachersList.map((teacher) => teacher?.auth_id).filter(Boolean))]
-  for (const id of ids) {
-    try {
-      const summary = await getAverageRating(id)
-      teacherRatings.value[id] = summary
-    } catch {
-      // ignore
-    }
-  }
-}
-
-watch(
-  () => tutors.value,
-  (teachers = []) => {
-    refreshTeacherRatings(teachers)
-  },
-  { deep: true, immediate: true },
-)
-
-function getTeacherRatingValue(teacher) {
-  const summary = teacherRatings.value?.[teacher?.auth_id]
-  if (!summary || summary.average == null) return 0
-  return Number(summary.average || 0)
-}
-
-function getStarFill(rating, index) {
-  const diff = Number(rating || 0) - index
-  if (diff >= 1) return 'filled'
-  if (diff >= 0.5) return 'half'
-  return 'empty'
-}
 </script>
 
 <template>
-  <div>
+  <div class="find-korks-panel" :class="{ 'guest-state': !isAuthenticated }">
     <div
-      v-if="!isAuthenticated || isAuthenticated"
-      class="find-korks-panel"
-      :class="{ 'guest-state': !isAuthenticated }"
+      class="tutors-content"
+      :class="{ 'empty-results-layout': isAuthenticated && !filteredTutors.length }"
     >
-      <div
-        class="tutors-content"
-        :class="{ 'empty-results-layout': isAuthenticated && !filteredTutors.length }"
-      >
-        <!-- Plan lekcji (left) -->
-        <div v-if="filteredTutors.length && currentTutor" class="tt-section">
-          <div class="tt-section-header">Plan lekcji</div>
-          <div class="tt-grid-wrap">
-            <div class="tt-grid">
-              <div class="tt-corner"></div>
-              <div v-for="d in dayAbbr" :key="d" class="tt-day-h">{{ d }}</div>
-              <template v-for="hour in gridHours" :key="hour">
-                <div class="tt-time-l">{{ String(hour).padStart(2, '0') }}:00</div>
-                <div
-                  v-for="day in weekdayLabels"
-                  :key="`${day}-${hour}`"
-                  class="tt-c"
-                  :class="{ on: hasSlot(currentTutor?.weeklyAvailability, day, hour) }"
-                ></div>
-              </template>
-            </div>
+      <div v-if="filteredTutors.length && currentTutor" class="tt-section">
+        <div class="tt-section-header">Plan lekcji</div>
+        <div class="tt-grid-wrap">
+          <div class="tt-grid">
+            <div class="tt-corner"></div>
+            <div v-for="d in dayAbbr" :key="d" class="tt-day-h">{{ d }}</div>
+            <template v-for="hour in gridHours" :key="hour">
+              <div class="tt-time-l">{{ String(hour).padStart(2, '0') }}:00</div>
+              <div
+                v-for="day in weekdayLabels"
+                :key="`${day}-${hour}`"
+                class="tt-c"
+                :class="{ on: hasSlot(currentTutor?.weeklyAvailability, day, hour) }"
+              ></div>
+            </template>
           </div>
-          <div v-if="currentTutor.bio || currentTutor.lessonDescription" class="bio-box">
-            <p>{{ currentTutor.bio || currentTutor.lessonDescription }}</p>
+        </div>
+        <div v-if="currentTutor.bio || currentTutor.lessonDescription" class="bio-box">
+          <p>{{ currentTutor.bio || currentTutor.lessonDescription }}</p>
+        </div>
+      </div>
+
+      <div class="tutor-section">
+        <div v-if="!isAuthenticated" class="auth-required-card">
+          <h3>Aby szukać nauczycieli</h3>
+          <p>
+            Zarejestruj konto lub zaloguj się, żeby przeglądać korepetytorów i dodawać ich do swojej
+            listy.
+          </p>
+          <div class="auth-actions">
+            <button class="btn-primary" type="button" @click="openAuthModal('login')">
+              Zaloguj się
+            </button>
+            <button class="btn-secondary" type="button" @click="openAuthModal('signup')">
+              Zarejestruj się
+            </button>
           </div>
         </div>
 
-        <!-- Teacher panel (center) -->
-        <div class="tutor-section">
-          <div v-if="!isAuthenticated" class="auth-required-card">
-            <h3>Aby szukać nauczycieli</h3>
-            <p>
-              Zarejestruj konto lub zaloguj się, żeby przeglądać korepetytorów i dodawać ich do
-              swojej listy.
-            </p>
-            <div class="auth-actions">
-              <button class="btn-primary" type="button" @click="openAuthModal('login')">
-                Zaloguj się
-              </button>
-              <button class="btn-secondary" type="button" @click="openAuthModal('signup')">
-                Zarejestruj się
-              </button>
-            </div>
-          </div>
-
+        <div
+          v-else-if="filteredTutors.length && currentTutor"
+          ref="cardRef"
+          class="tutor-card"
+          @pointerdown="startSwipe"
+          @pointermove="moveSwipe"
+          @pointerup="endSwipe"
+          @pointercancel="endSwipe"
+          @dragstart.prevent
+          :style="{
+            '--swipe-offset': `${swipeOffsetX}px`,
+            '--swipe-rotation': `${swipeRotation}deg`,
+          }"
+        >
           <div
-            v-else-if="filteredTutors.length && currentTutor"
-            ref="cardRef"
-            class="tutor-card"
-            @pointerdown="startSwipe"
-            @pointermove="moveSwipe"
-            @pointerup="endSwipe"
-            @pointercancel="endSwipe"
-            @dragstart.prevent
-            :style="{
-              '--swipe-offset': `${swipeOffsetX}px`,
-              '--swipe-rotation': `${swipeRotation}deg`,
+            class="card-image"
+            :class="{
+              'swiping-left':
+                !props.isTutorAccount && showSwipeOverlay && swipeHintState === 'dislike',
+              'swiping-right':
+                !props.isTutorAccount && showSwipeOverlay && swipeHintState === 'like',
             }"
           >
             <div
-              class="card-image"
-              :class="{
-                'swiping-left':
-                  !props.isTutorAccount && showSwipeOverlay && swipeHintState === 'dislike',
-                'swiping-right':
-                  !props.isTutorAccount && showSwipeOverlay && swipeHintState === 'like',
-              }"
+              v-if="showSwipeOverlay && swipeHintState === 'dislike' && !props.isTutorAccount"
+              class="swipe-indicator dislike"
             >
-              <div
-                v-if="showSwipeOverlay && swipeHintState === 'dislike' && !props.isTutorAccount"
-                class="swipe-indicator dislike"
-              >
-                <span>✕</span>
-              </div>
-              <div
-                v-else-if="showSwipeOverlay && swipeHintState === 'like' && !props.isTutorAccount"
-                class="swipe-indicator like"
-              >
-                <span>✓</span>
-              </div>
-              <div v-if="currentTutor.image" class="swipe-image-wrapper">
-                <img
-                  class="swipe-image"
-                  :src="currentTutor.image"
-                  :alt="currentTutor.name"
-                  draggable="false"
-                  @dragstart.prevent
-                />
-              </div>
+              <span>✕</span>
             </div>
-
-            <div class="card-rating-pill">
-              <div
-                class="rating-stars compact"
-                :aria-label="`Ocena ${getTeacherRatingValue(currentTutor).toFixed(1)} z 5`"
-              >
-                <span v-for="index in 5" :key="index" class="star-button">
-                  <span
-                    :class="['star', getStarFill(getTeacherRatingValue(currentTutor), index - 1)]"
-                    >★</span
-                  >
-                </span>
-              </div>
-              <span class="rating-value"
-                >{{ getTeacherRatingValue(currentTutor).toFixed(1) }} / 5</span
-              >
+            <div
+              v-else-if="showSwipeOverlay && swipeHintState === 'like' && !props.isTutorAccount"
+              class="swipe-indicator like"
+            >
+              <span>✓</span>
             </div>
+            <div v-if="currentTutor.image" class="swipe-image-wrapper">
+              <img
+                class="swipe-image"
+                :src="currentTutor.image"
+                :alt="currentTutor.name"
+                draggable="false"
+                @dragstart.prevent
+              />
+            </div>
+          </div>
 
-            <div class="card-info">
-              <div class="tutor-main-info">
-                <div class="browse-note"></div>
-                <div class="tutor-summary-row">
-                  <div class="tutor-summary-card">
-                    <h3 class="tutor-name">{{ currentTutor.name }}</h3>
-                    <p class="tutor-meta">
-                      {{ currentTutor.subject || currentTutor.lessonSubject || 'Korepetycje' }} •
-                      {{ currentTutor.level || currentTutor.lessonLevel || 'Liceum' }}
-                      <span v-if="currentTutor.city"> • {{ currentTutor.city }}</span>
-                    </p>
-                    <div class="tutor-rating">
-                      <div
-                        class="rating-stars compact"
-                        :aria-label="`Ocena ${getTeacherRatingValue(currentTutor).toFixed(1)} z 5`"
-                      >
-                        <span v-for="index in 5" :key="index" class="star-button">
-                          <span
-                            :class="[
-                              'star',
-                              getStarFill(getTeacherRatingValue(currentTutor), index - 1),
-                            ]"
-                            >★</span
-                          >
-                        </span>
-                      </div>
-                      <span class="rating-value-small"
-                        >{{ getTeacherRatingValue(currentTutor).toFixed(1) }} / 5</span
-                      >
-                    </div>
-                  </div>
-                  <div class="tutor-summary-card tutor-summary-price">
-                    <p class="tutor-price">{{ currentTutor.price }} zł/h</p>
-                  </div>
+          <div class="card-info">
+            <div class="tutor-main-info">
+              <div class="tutor-summary-row">
+                <div class="tutor-summary-card">
+                  <h3 class="tutor-name">{{ currentTutor.name }}</h3>
+                  <p class="tutor-meta">
+                    {{ currentTutor.subject || currentTutor.lessonSubject || 'Korepetycje' }} •
+                    {{ currentTutor.level || currentTutor.lessonLevel || 'Liceum' }}
+                    <span v-if="currentTutor.city"> • {{ currentTutor.city }}</span>
+                  </p>
+                </div>
+                <div class="tutor-summary-card tutor-summary-price">
+                  <p class="tutor-price">{{ currentTutor.price }} zł/h</p>
                 </div>
               </div>
+            </div>
 
-              <div class="tags-list">
-                <span v-for="tag in currentTutor.tags" :key="tag" class="tag">{{ tag }}</span>
-              </div>
+            <div class="tags-list">
+              <span v-for="tag in currentTutor.tags" :key="tag" class="tag">{{ tag }}</span>
             </div>
           </div>
+        </div>
 
-          <div
-            v-else-if="isAuthenticated && !filteredTutors.length"
-            class="empty-state-card inline-empty-state"
+        <div
+          v-else-if="isAuthenticated && !filteredTutors.length"
+          class="empty-state-card inline-empty-state"
+        >
+          <template v-if="allDecided">
+            <h3>Dotarłeś do końca</h3>
+            <p>Przejrzałeś już wszystkich dostępnych korepetytorów.</p>
+          </template>
+          <template v-else>
+            <h3>Brak nauczycieli</h3>
+            <p>Nie ma wyników dla tych filtrów. Zmień kryteria albo wyczyść filtry.</p>
+          </template>
+          <button
+            v-if="!allDecided"
+            class="btn-secondary clear-filters-btn"
+            type="button"
+            @click="clearFilters"
           >
-            <template v-if="allDecided">
-              <h3>Dotarłeś do końca</h3>
-              <p>Przejrzałeś już wszystkich dostępnych korepetytorów.</p>
-            </template>
-            <template v-else>
-              <h3>Brak nauczycieli</h3>
-              <p>Nie ma wyników dla tych filtrów. Zmień kryteria albo wyczyść filtry.</p>
-            </template>
-            <button
-              v-if="!allDecided"
-              class="btn-secondary clear-filters-btn"
-              type="button"
-              @click="clearFilters"
-            >
-              Wyczyść filtry
-            </button>
-          </div>
+            Wyczyść filtry
+          </button>
+        </div>
 
-          <div
-            v-if="filteredTutors.length && currentTutor && !props.isTutorAccount"
-            class="actions"
-            @pointerdown.stop
-            @pointermove.stop
-            @pointerup.stop
-            @pointercancel.stop
+        <div
+          v-if="filteredTutors.length && currentTutor && !props.isTutorAccount"
+          class="actions"
+          @pointerdown.stop
+          @pointermove.stop
+          @pointerup.stop
+          @pointercancel.stop
+        >
+          <button
+            id="dislike-button"
+            class="btn-dislike"
+            type="button"
+            aria-label="Nie pasuje"
+            @click.stop.prevent="handleDecision(false)"
           >
-            <button
-              id="dislike-button"
-              class="btn-dislike"
-              type="button"
-              aria-label="Nie pasuje"
-              @click.stop.prevent="handleDecision(false)"
-            >
-              <span aria-hidden="true">✕</span>
-              <span class="visually-hidden">Nie pasuje</span>
-            </button>
-            <button
-              id="like-button"
-              class="btn-like"
-              type="button"
-              aria-label="Lubię"
-              @click.stop.prevent="handleDecision(true)"
-            >
-              <span aria-hidden="true">✔</span>
-              <span class="visually-hidden">Lubię</span>
+            <span aria-hidden="true">✕</span>
+            <span class="visually-hidden">Nie pasuje</span>
+          </button>
+          <button
+            id="like-button"
+            class="btn-like"
+            type="button"
+            aria-label="Lubię"
+            @click.stop.prevent="handleDecision(true)"
+          >
+            <span aria-hidden="true">✔</span>
+            <span class="visually-hidden">Lubię</span>
+          </button>
+        </div>
+      </div>
+
+      <div v-if="isAuthenticated" class="tags-filter-section">
+        <div class="tags-filter-header">
+          <h4>Filtry</h4>
+        </div>
+
+        <div class="filter-group">
+          <h5>Miasto</h5>
+          <div class="filter-options city-select-group">
+            <label class="city-select-label">
+              <input
+                v-model="citySearchInput"
+                type="text"
+                placeholder="Wyszukaj miasto"
+                autocomplete="off"
+              />
+            </label>
+            <button class="city-apply-button" type="button" @click="applyCityFilter">
+              Zastosuj
             </button>
           </div>
         </div>
 
-        <div v-if="isAuthenticated" class="tags-filter-section">
-          <div class="tags-filter-header">
-            <h4>Filtry</h4>
+        <div class="filter-group">
+          <h5>Przedmioty</h5>
+          <div class="filter-options">
+            <label v-for="option in subjectOptions" :key="option">
+              <input
+                type="checkbox"
+                :checked="selectedSubjects.includes(option)"
+                @change="toggleSelection('subjects', option)"
+              />
+              {{ option }}
+            </label>
           </div>
+        </div>
 
-          <div class="filter-group">
-            <h5>Miasto</h5>
-            <div class="filter-options city-select-group">
-              <label class="city-select-label">
-                <input
-                  v-model="citySearchInput"
-                  type="text"
-                  placeholder="Wyszukaj miasto"
-                  autocomplete="off"
-                />
-              </label>
-              <button class="city-apply-button" type="button" @click="applyCityFilter">
-                Zastosuj
-              </button>
-            </div>
+        <div class="filter-group">
+          <h5>Poziom</h5>
+          <div class="filter-options">
+            <label v-for="option in levelOptions" :key="option">
+              <input
+                type="checkbox"
+                :checked="selectedLevels.includes(option)"
+                @change="toggleSelection('levels', option)"
+              />
+              {{ option }}
+            </label>
           </div>
+        </div>
 
-          <div class="filter-group">
-            <h5>Przedmioty</h5>
-            <div class="filter-options">
-              <label v-for="option in subjectOptions" :key="option">
-                <input
-                  type="checkbox"
-                  :checked="selectedSubjects.includes(option)"
-                  @change="toggleSelection('subjects', option)"
-                />
-                {{ option }}
-              </label>
-            </div>
+        <div class="filter-group">
+          <h5>Miejsce lekcji</h5>
+          <div class="filter-options">
+            <label v-for="option in lessonPlaceOptions" :key="option">
+              <input
+                type="checkbox"
+                :checked="selectedLessonPlaces.includes(option)"
+                @change="toggleSelection('lessonPlace', option)"
+              />
+              {{ option }}
+            </label>
           </div>
+        </div>
 
-          <div class="filter-group">
-            <h5>Poziom</h5>
-            <div class="filter-options">
-              <label v-for="option in levelOptions" :key="option">
-                <input
-                  type="checkbox"
-                  :checked="selectedLevels.includes(option)"
-                  @change="toggleSelection('levels', option)"
-                />
-                {{ option }}
-              </label>
-            </div>
-          </div>
-
-          <div class="filter-group">
-            <h5>Miejsce lekcji</h5>
-            <div class="filter-options">
-              <label v-for="option in lessonPlaceOptions" :key="option">
-                <input
-                  type="checkbox"
-                  :checked="selectedLessonPlaces.includes(option)"
-                  @change="toggleSelection('lessonPlace', option)"
-                />
-                {{ option }}
-              </label>
-            </div>
-          </div>
-
-          <div class="filter-group">
-            <h5>Tagi</h5>
-            <div class="filter-options">
-              <label v-for="option in tagOptions" :key="option">
-                <input
-                  type="checkbox"
-                  :checked="selectedTags.includes(option)"
-                  @change="toggleSelection('tags', option)"
-                />
-                {{ option }}
-              </label>
-            </div>
+        <div class="filter-group">
+          <h5>Tagi</h5>
+          <div class="filter-options">
+            <label v-for="option in tagOptions" :key="option">
+              <input
+                type="checkbox"
+                :checked="selectedTags.includes(option)"
+                @change="toggleSelection('tags', option)"
+              />
+              {{ option }}
+            </label>
           </div>
         </div>
       </div>
@@ -816,41 +728,6 @@ function getStarFill(rating, index) {
   box-sizing: border-box;
 }
 
-.tutor-rating {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-}
-
-.rating-value-small {
-  font-size: 13px;
-  color: var(--muted);
-  font-weight: 600;
-}
-
-.find-korks-header {
-  padding: 24px;
-  border-bottom: 2px solid rgba(79, 117, 199, 0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-shrink: 0;
-}
-
-.find-korks-header h3 {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  color: #1f2937;
-}
-
-.subtitle {
-  margin: 8px 0 0;
-  color: #4b5563;
-  font-size: 13px;
-}
-
 .tutors-content {
   flex: 1;
   padding: 0;
@@ -872,7 +749,6 @@ function getStarFill(rating, index) {
 }
 
 .tutors-content.empty-results-layout .tags-filter-section {
-  /* Only ensure it stays in its column; rely on the base .tags-filter-section styles for sizing */
   grid-column: 3;
 }
 
@@ -880,85 +756,6 @@ function getStarFill(rating, index) {
   display: flex;
   justify-content: center;
   align-items: center;
-  grid-template-columns: 1fr;
-}
-
-.find-korks-panel.guest-state .tutor-section {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0 0 8px 0;
-}
-
-.empty-state-card {
-  width: min(100%, 480px);
-  max-width: 480px;
-  padding: 28px;
-  border-radius: 24px;
-  background: var(--surface-strong);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-soft);
-  text-align: center;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: center;
-}
-
-.inline-empty-state {
-  width: 100%;
-  max-width: 50%;
-  margin: 0 auto;
-  grid-column: 1 / -1;
-  justify-self: center;
-  margin-right: 320px;
-}
-
-.empty-state-card h3 {
-  margin: 0;
-  color: var(--text);
-  font-size: 22px;
-}
-
-.empty-state-card p {
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.6;
-  font-size: 15px;
-}
-
-.empty-state-action {
-  margin-top: 16px;
-  border: none;
-  border-radius: 999px;
-  padding: 10px 16px;
-  font-weight: 700;
-  cursor: pointer;
-  background: var(--accent-strong);
-  color: white;
-}
-
-.empty-state-action:hover {
-  opacity: 0.95;
-}
-
-.tags-filter-section {
-  width: 100%;
-  min-width: 0;
-  max-height: none;
-  padding: 22px 18px 110px;
-  border-radius: 24px;
-  overflow: hidden;
-  background: var(--surface-strong);
-  border: 1px solid var(--border);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-  margin: 0 0 24px;
-  align-self: stretch;
-  position: relative;
-  pointer-events: auto;
-  z-index: 1;
 }
 
 .tt-section {
@@ -984,133 +781,60 @@ function getStarFill(rating, index) {
   margin-bottom: 12px;
 }
 
-.tags-filter-header {
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid rgba(79, 117, 199, 0.2);
+.tt-grid-wrap {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface-strong);
 }
 
-.tags-filter-header h4 {
-  margin: 0;
-  font-size: 14px;
+.tt-grid {
+  display: grid;
+  grid-template-columns: 38px repeat(7, 1fr);
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-soft);
+}
+
+.tt-corner {
+  background: transparent;
+}
+
+.tt-day-h {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
   font-weight: 700;
   color: var(--text);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.filter-group h5 {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  min-width: 90px;
-}
-
-.filter-options {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.city-select-group {
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  width: 100%;
-}
-
-.city-select-label {
-  display: block;
-  flex: 1 1 220px;
-}
-
-.city-select-label input {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 16px;
-  border: 1px solid var(--border);
+  letter-spacing: 0.03em;
   background: var(--surface-strong);
-  color: var(--text);
-  font-size: 14px;
-  pointer-events: auto;
-  box-sizing: border-box;
+  border-radius: 3px;
+  padding: 2px 0;
 }
 
-.city-select-label input:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(79, 117, 199, 0.12);
-}
-
-.city-apply-button {
-  padding: 10px 14px;
-  border: none;
-  border-radius: 999px;
-  background: var(--accent);
-  color: white;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    transform 0.15s ease,
-    opacity 0.2s ease;
-}
-
-.city-apply-button:hover {
-  transform: translateY(-1px);
-  opacity: 0.95;
-}
-
-.filter-hint {
-  margin: 0;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.filter-options label {
-  display: inline-flex;
+.tt-time-l {
+  display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  user-select: none;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.15s ease;
-  font-size: 13px;
-  color: var(--text);
-  background: var(--surface-soft);
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--muted);
+  border-radius: 3px;
+}
+
+.tt-c {
+  border-radius: 3px;
+  background: var(--surface-strong);
   border: 1px solid var(--border);
+  min-height: 22px;
 }
 
-.filter-options label:hover {
-  background: var(--accent-soft);
-  border-color: var(--border);
-  transform: translateX(2px);
-}
-
-.filter-options input[type='checkbox'] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: var(--accent-strong);
+.tt-c.on {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
 }
 
 .tutor-section {
@@ -1125,7 +849,8 @@ function getStarFill(rating, index) {
   justify-content: center;
 }
 
-.auth-required-card {
+.auth-required-card,
+.empty-state-card {
   width: min(100%, 520px);
   padding: 28px;
   border-radius: 24px;
@@ -1134,21 +859,22 @@ function getStarFill(rating, index) {
   box-shadow: var(--shadow-soft);
   text-align: center;
   box-sizing: border-box;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
+  gap: 12px;
   align-items: center;
-  justify-content: center;
 }
 
-.auth-required-card h3 {
-  margin: 0 0 10px;
+.auth-required-card h3,
+.empty-state-card h3 {
+  margin: 0;
   color: var(--text);
   font-size: 22px;
 }
 
-.auth-required-card p {
-  margin: 0 0 18px;
+.auth-required-card p,
+.empty-state-card p {
+  margin: 0;
   color: var(--muted);
   line-height: 1.6;
   font-size: 15px;
@@ -1162,7 +888,8 @@ function getStarFill(rating, index) {
 }
 
 .btn-primary,
-.btn-secondary {
+.btn-secondary,
+.city-apply-button {
   border: none;
   border-radius: 999px;
   padding: 10px 16px;
@@ -1181,13 +908,9 @@ function getStarFill(rating, index) {
   border: 1px solid var(--border);
 }
 
-.progress {
-  text-align: right;
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 500;
-  margin-top: 0;
-  align-self: flex-end;
+.city-apply-button {
+  background: var(--accent);
+  color: white;
 }
 
 .tutor-card {
@@ -1195,19 +918,9 @@ function getStarFill(rating, index) {
   flex-direction: column;
   gap: 16px;
   touch-action: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
   user-select: none;
-  -webkit-user-drag: none;
-  -webkit-touch-callout: none;
   background: transparent;
-  border: none;
-  border-radius: 0;
-  padding: 0;
-  max-height: none;
   width: 100%;
-  overflow: visible;
 }
 
 .card-image {
@@ -1218,22 +931,17 @@ function getStarFill(rating, index) {
   border-radius: 20px;
   overflow: hidden;
   background: var(--surface-soft);
-  padding: 0;
   box-shadow: var(--shadow-soft);
   transform: translateX(var(--swipe-offset, 0px)) rotate(var(--swipe-rotation, 0deg));
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
     filter 0.2s ease;
-  will-change: transform;
-  transform-origin: center center;
-  flex-shrink: 0;
 }
 
 .swipe-image-wrapper {
   width: 100%;
   height: 100%;
-  transition: opacity 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1249,11 +957,6 @@ function getStarFill(rating, index) {
   display: block;
 }
 
-.card-image.swiping-left .swipe-image-wrapper,
-.card-image.swiping-right .swipe-image-wrapper {
-  opacity: 0.4;
-}
-
 .swipe-indicator {
   position: absolute;
   inset: 0;
@@ -1265,10 +968,6 @@ function getStarFill(rating, index) {
   z-index: 2;
   opacity: 0;
   pointer-events: none;
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-  transform: scale(0.94);
   color: rgba(255, 255, 255, 0.95);
   background: rgba(15, 23, 42, 0.16);
 }
@@ -1283,30 +982,16 @@ function getStarFill(rating, index) {
   border: 3px solid rgba(255, 255, 255, 0.8);
   background: rgba(255, 255, 255, 0.16);
   backdrop-filter: blur(2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-  color: rgba(255, 255, 255, 0.95);
 }
 
-.swipe-indicator.dislike,
-.swipe-indicator.like {
-  color: rgba(255, 255, 255, 0.95);
-  background: rgba(15, 23, 42, 0.12);
+.card-image.swiping-left .swipe-image-wrapper,
+.card-image.swiping-right .swipe-image-wrapper {
+  opacity: 0.4;
 }
 
 .card-image.swiping-left .swipe-indicator.dislike,
 .card-image.swiping-right .swipe-indicator.like {
   opacity: 1;
-  transform: scale(1.02);
-}
-
-.card-image:hover {
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
-  filter: saturate(1.05);
-}
-
-.swipe-image:hover {
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
-  filter: saturate(1.05);
 }
 
 .card-info {
@@ -1314,14 +999,6 @@ function getStarFill(rating, index) {
   flex-direction: column;
   gap: 6px;
   min-width: 0;
-  margin-top: 8px;
-}
-
-.tutor-main-info {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
 }
 
 .tutor-summary-row {
@@ -1343,11 +1020,6 @@ function getStarFill(rating, index) {
   box-shadow: var(--shadow-soft);
 }
 
-.tutor-summary-price {
-  align-items: flex-end;
-  justify-content: center;
-}
-
 .tutor-name {
   margin: 0;
   font-size: 16px;
@@ -1367,22 +1039,6 @@ function getStarFill(rating, index) {
   font-size: 14px;
   color: var(--text);
   font-weight: 700;
-}
-
-.bio-box {
-  margin-top: 12px;
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: 8px;
-  padding: 10px;
-}
-
-.bio-box p {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--text);
 }
 
 .tags-list {
@@ -1479,17 +1135,12 @@ function getStarFill(rating, index) {
   justify-content: center;
   gap: 40px;
   margin-top: 16px;
-  position: relative;
-  z-index: 2;
-  width: 100%;
 }
 
 .btn-like,
 .btn-dislike {
   width: 100px;
   height: 100px;
-  min-width: 72px;
-  min-height: 72px;
   border: none;
   border-radius: 999px;
   padding: 0;
@@ -1499,14 +1150,104 @@ function getStarFill(rating, index) {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition:
-    transform 0.2s ease,
-    filter 0.2s ease;
 }
 
-.btn-like:hover,
-.btn-dislike:hover {
-  transform: translateY(-2px);
+.btn-like {
+  background: #22c55e;
+  color: white;
+}
+
+.btn-dislike {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.tags-filter-section {
+  width: 100%;
+  min-width: 0;
+  padding: 22px 18px;
+  border-radius: 24px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  max-height: 700px;
+  height: 100%;
+}
+
+.tags-filter-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(79, 117, 199, 0.2);
+}
+
+.tags-filter-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.filter-group h5 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.filter-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+}
+
+.city-select-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+  width: 100%;
+}
+
+.city-select-label {
+  display: block;
+  width: 100%;
+}
+
+.city-select-label input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  color: var(--text);
+  font-size: 14px;
+  box-sizing: border-box;
 }
 
 .visually-hidden {
@@ -1520,52 +1261,119 @@ function getStarFill(rating, index) {
   white-space: nowrap;
   border: 0;
 }
+@media (max-width: 768px) {
+  .find-korks-panel {
+    max-height: 100%;
+    padding: 10px;
+    border-radius: 16px;
+    overflow-y: auto;
+  }
 
-.btn-like {
-  background: #22c55e;
-  color: white;
-  border: 1px solid rgba(34, 197, 94, 0.4);
-  font-size: 36px;
-}
+  .tutors-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    overflow: visible;
+    align-items: start;
+  }
 
-.btn-like:hover {
-  transform: translateY(-1px);
-}
+  .tt-section,
+  .tutor-section,
+  .tags-filter-section {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    position: static;
+    top: auto;
+    padding: 12px;
+    border-radius: 16px;
+  }
 
-.btn-dislike {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
+  .tutor-section {
+    order: 1;
+    padding: 0;
+    gap: 10px;
+    justify-content: flex-start;
+  }
 
-.btn-dislike:hover {
-  transform: translateY(-1px);
-}
+  .tt-section {
+    order: 2;
+  }
 
-.empty-state {
-  padding: 32px;
-  text-align: center;
-  color: #4b5563;
-  font-size: 14px;
-}
+  .tags-filter-section {
+    order: 3;
+  }
 
-.empty-state p {
-  margin: 0;
-}
+  .auth-required-card,
+  .empty-state-card {
+    width: 100%;
+    padding: 18px;
+    border-radius: 18px;
+  }
 
-/* Legacy styles kept for compatibility */
-.find-korks-page {
-  display: none;
-}
+  .card-image {
+    width: min(100%, 280px);
+    height: auto;
+    aspect-ratio: 3 / 4;
+    max-height: 56vh;
+    margin: 0 auto;
+  }
 
-.find-korks-card {
-  display: none;
+  .tutor-card {
+    width: 100%;
+    gap: 10px;
+  }
+
+  .tutor-summary-row {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    gap: 20px;
+    margin-top: 8px;
+  }
+
+  .btn-like,
+  .btn-dislike {
+    width: 64px;
+    height: 64px;
+    font-size: 22px;
+  }
+
+  .filter-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .filter-group h5 {
+    min-width: 0;
+  }
+
+  .filter-options {
+    width: 100%;
+  }
+
+  .filter-options label {
+    flex: 1 1 calc(50% - 6px);
+    justify-content: center;
+  }
+
+  .city-select-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .city-apply-button {
+    width: 100%;
+  }
 }
 </style>
 
 <style>
 .tt-section .tt-grid-wrap {
   width: 100%;
+  min-height: 420px;
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;

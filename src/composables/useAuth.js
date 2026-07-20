@@ -24,9 +24,9 @@ async function loadProfile() {
       profileData.value = profile
       if (profile?.nickname || profile?.name) {
         const display =
-          profile.nickname || [profile.name, profile.surname].filter(Boolean).join(' ')
+          [profile.name, profile.surname].filter(Boolean).join(' ') || profile.nickname
         profileName.value = display
-        profileInitial.value = (profile.nickname || profile.name || '').charAt(0).toUpperCase()
+        profileInitial.value = (profile.name || profile.nickname || '').charAt(0).toUpperCase()
         needsProfile.value = false
       } else {
         needsProfile.value = true

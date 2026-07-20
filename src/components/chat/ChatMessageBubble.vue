@@ -263,6 +263,9 @@ function formatSize(bytes) {
   color: #fff;
   border-bottom-right-radius: 5px;
 }
+.bubble-mine ::selection {
+  background: rgba(255, 255, 255, 0.25);
+}
 .msg-time {
   font-size: 13px;
   color: var(--muted);
@@ -343,7 +346,7 @@ function formatSize(bytes) {
 }
 .bubble-text {
   white-space: pre-wrap;
-  word-break: break-all;
+  word-break: break-word;
 }
 .bubble-deleted {
   font-style: italic;

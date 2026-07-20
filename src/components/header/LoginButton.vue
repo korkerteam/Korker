@@ -12,12 +12,26 @@ const { isAuthenticated, profileData, profileName, profileInitial, signOut } = u
 function handleProfileClick() {
   toggleProfile(route, router)
 }
+
+function goToOwnProfile() {
+  handleProfileClick()
+}
 </script>
 
 <template>
   <div v-if="isAuthenticated" class="user-menu">
-    <img v-if="profileData?.profile_picture" :src="profileData.profile_picture" class="avatar" />
-    <span v-else @click="handleProfileClick" class="user-avatar click">{{ profileInitial }}</span>
+    <button
+      v-if="profileData?.profile_picture"
+      class="avatar-button"
+      type="button"
+      @click="goToOwnProfile"
+      :aria-label="`Przejdź do profilu ${profileName}`"
+    >
+      <img :src="profileData.profile_picture" class="avatar" />
+    </button>
+    <button v-else class="user-avatar click" type="button" @click="goToOwnProfile">
+      {{ profileInitial }}
+    </button>
     <span @click="handleProfileClick" class="user-email click">{{ profileName }}</span>
     <button class="logout-btn" type="button" @click="signOut" title="Wyloguj się">
       <svg
@@ -62,19 +76,52 @@ function handleProfileClick() {
   box-shadow: var(--shadow-soft);
 }
 
-.user-avatar {
+.user-avatar,
+.avatar-button {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background-color: var(--accent);
-  color: #ffffff;
+  border: 1px solid var(--border);
+  padding: 0;
+  background: var(--surface-strong);
+  color: var(--text-strong);
   font-size: 0.95rem;
   font-weight: 700;
   font-family: Inter, system-ui, sans-serif;
   flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.user-avatar {
+  background-color: var(--accent);
+  color: #ffffff;
+}
+
+.avatar-button:hover,
+.user-avatar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.14);
+}
+
+.avatar-button:active,
+.user-avatar:active {
+  transform: scale(0.96);
+}
+
+.avatar-button:focus-visible,
+.user-avatar:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79, 117, 199, 0.16);
 }
 
 .user-email {
@@ -85,7 +132,6 @@ function handleProfileClick() {
   max-width: 140px;
   text-overflow: ellipsis;
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 
@@ -146,11 +192,48 @@ function handleProfileClick() {
 }
 
 .avatar {
-  width: 34px;
-  height: 34px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid rgba(239, 246, 255, 0.95);
   display: block;
+}
+
+@media (max-width: 768px) {
+  .user-menu {
+    padding: 4px;
+    flex-shrink: 0;
+    gap: 2px;
+    border-radius: 999px;
+    margin: 0 0 0 -2px;
+  }
+
+  .user-email {
+    display: none;
+  }
+
+  .user-avatar,
+  .avatar-button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .logout-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  .login-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    min-width: 40px;
+    justify-content: center;
+    border-radius: 50%;
+  }
+
+  .login-btn span {
+    display: none;
+  }
 }
 </style>

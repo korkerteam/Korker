@@ -21,12 +21,20 @@ const displayName = computed(() => {
   )
 })
 
+function getFirstOffer(tp) {
+  if (!tp) return null
+  return Array.isArray(tp) ? tp[0] || null : tp
+}
+
+const firstOffer = computed(() => getFirstOffer(tutorPost.value))
+const profileFirstOffer = computed(() => getFirstOffer(profile.value?.tutor_post))
+
 const descriptionText = computed(() => {
   const candidates = [
     props.teacher?.bio,
     props.teacher?.description,
-    tutorPost.value?.description,
-    profile.value?.tutor_post?.description,
+    firstOffer.value?.description,
+    profileFirstOffer.value?.description,
     props.teacher?.tutor_post?.description,
     props.teacher?.tutorPost?.description,
   ]
@@ -37,42 +45,42 @@ const descriptionText = computed(() => {
 
 const subjectText = computed(() => {
   return (
-    tutorPost.value?.subject ||
+    firstOffer.value?.subject ||
     props.teacher?.subject ||
-    profile.value?.tutor_post?.subject ||
+    profileFirstOffer.value?.subject ||
     'Brak danych'
   )
 })
 
 const levelText = computed(() => {
   return (
-    tutorPost.value?.level ||
+    firstOffer.value?.level ||
     props.teacher?.level ||
-    profile.value?.tutor_post?.level ||
+    profileFirstOffer.value?.level ||
     'Brak danych'
   )
 })
 
 const priceText = computed(() => {
-  const price = tutorPost.value?.price ?? props.teacher?.price ?? profile.value?.tutor_post?.price
+  const price = firstOffer.value?.price ?? props.teacher?.price ?? profileFirstOffer.value?.price
   return price ? `${price} zł/h` : 'Brak danych'
 })
 
 const locationText = computed(() => {
   return (
-    tutorPost.value?.city ||
+    firstOffer.value?.city ||
     props.teacher?.city ||
     profile.value?.city ||
-    profile.value?.tutor_post?.city ||
+    profileFirstOffer.value?.city ||
     'Brak danych'
   )
 })
 
 const formats = computed(() => {
   const fromTutorPost =
-    tutorPost.value?.teachingFormats || profile.value?.tutor_post?.teachingFormats
+    firstOffer.value?.teachingFormats || profileFirstOffer.value?.teachingFormats
   if (Array.isArray(fromTutorPost) && fromTutorPost.length) return fromTutorPost
-  const single = tutorPost.value?.teachingFormat || profile.value?.tutor_post?.teachingFormat
+  const single = firstOffer.value?.teachingFormat || profileFirstOffer.value?.teachingFormat
   return single ? [single] : []
 })
 
