@@ -85,6 +85,8 @@ function handleProfileClick() {
   max-width: 140px;
   text-overflow: ellipsis;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .logout-btn {
