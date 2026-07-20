@@ -17,31 +17,63 @@ const props = defineProps({
 const { isAuthenticated, openAuthModal, user } = useAuth()
 
 const todayDate = new Date()
-const currentDate = ref(new Date(todayDate.getFullYear(), todayDate.getMonth(), 1))
-const weekdayLabels = ['Po', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Ni']
-const selectedDay = ref(todayDate.getDate())
-const today = ref(todayDate.getDate())
-const monthNames = [
-  'Styczeń',
-  'Luty',
-  'Marzec',
-  'Kwiecień',
-  'Maj',
-  'Czerwiec',
-  'Lipiec',
-  'Sierpień',
-  'Wrzesień',
-  'Październik',
-  'Listopad',
-  'Grudzień',
-]
-
+const weekdayLabels = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd']
 const lessonRequests = ref([])
 const userCache = ref({})
 const loadingRequests = ref(false)
 const selectedDayLessons = ref([])
 
-function formatDateLabel(date) {
+function getMonday(date) {
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  d.setDate(d.getDate() + diff)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+function toKey(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+function isToday(date) {
+  return toKey(date) === toKey(todayDate)
+}
+
+const currentWeekStart = ref(getMonday(todayDate))
+const selectedDayKey = ref(null)
+
+const weekDays = computed(() => {
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(currentWeekStart.value)
+    d.setDate(d.getDate() + i)
+    return {
+      date: d,
+      key: toKey(d),
+      dayNum: d.getDate(),
+      weekday: weekdayLabels[i],
+      isToday: isToday(d),
+      isSelected: toKey(d) === selectedDayKey.value,
+    }
+  })
+})
+
+const weekLabel = computed(() => {
+  const start = currentWeekStart.value
+  const end = new Date(start)
+  end.setDate(end.getDate() + 6)
+  const fmtShort = new Intl.DateTimeFormat('pl-PL', { day: 'numeric', month: 'short' })
+  const fmtYear = new Intl.DateTimeFormat('pl-PL', { year: 'numeric' })
+  return `${fmtShort.format(start)} – ${fmtShort.format(end)} ${fmtYear.format(end)}`
+})
+
+const fullDateLabel = computed(() => {
+  if (!selectedDayKey.value) return ''
+  const [y, m, d] = selectedDayKey.value.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
   return new Intl.DateTimeFormat('pl-PL', {
     weekday: 'long',
     day: 'numeric',
@@ -49,51 +81,7 @@ function formatDateLabel(date) {
     year: 'numeric',
   })
     .format(date)
-    .replace(/^./, (char) => char.toUpperCase())
-}
-
-const monthLabel = computed(() =>
-  new Intl.DateTimeFormat('pl-PL', { month: 'long', year: 'numeric' })
-    .format(currentDate.value)
-    .replace(/^./, (char) => char.toUpperCase()),
-)
-
-const daysInMonth = computed(() => {
-  const date = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() + 1, 0)
-  return date.getDate()
-})
-
-const calendarDays = computed(() => {
-  const firstDayOfMonth = new Date(
-    currentDate.value.getFullYear(),
-    currentDate.value.getMonth(),
-    1,
-  ).getDay()
-  const leadingEmptyDays = Array.from(
-    { length: firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1 },
-    (_, index) => ({ type: 'empty', key: `empty-${index}` }),
-  )
-
-  const monthDays = Array.from({ length: daysInMonth.value }, (_, index) => ({
-    type: 'day',
-    value: index + 1,
-    key: `day-${index + 1}`,
-  }))
-
-  return [...leadingEmptyDays, ...monthDays]
-})
-
-const selectedDate = computed(() => {
-  const day = selectedDay.value ?? today.value
-  return new Date(currentDate.value.getFullYear(), currentDate.value.getMonth(), day)
-})
-
-const selectedDateLabel = computed(() => formatDateLabel(selectedDate.value))
-
-const selectedWeekdayLabel = computed(() => {
-  const jsDay = selectedDate.value.getDay()
-  const weekdayIndex = jsDay === 0 ? 6 : jsDay - 1
-  return weekdayLabels[weekdayIndex]
+    .replace(/^./, (c) => c.toUpperCase())
 })
 
 const filteredRequests = computed(() => {
@@ -101,24 +89,6 @@ const filteredRequests = computed(() => {
     return lessonRequests.value.filter((r) => r.status === 'pending')
   }
   return lessonRequests.value
-})
-
-const requestsCountLabel = computed(() => {
-  const count = filteredRequests.value.length
-  if (count === 0) return props.isTutorAccount ? 'Brak próśb' : 'Brak lekcji'
-
-  if (props.isTutorAccount) {
-    return count === 1 ? '1 prośba' : `${count} prośby`
-  }
-
-  const approved = lessonRequests.value.filter((r) => r.status === 'approved').length
-  const rejected = lessonRequests.value.filter((r) => r.status === 'rejected').length
-  const pending = lessonRequests.value.filter((r) => r.status === 'pending').length
-  const parts = []
-  if (approved) parts.push(`${approved} zaakceptowanych`)
-  if (pending) parts.push(`${pending} oczekujących`)
-  if (rejected) parts.push(`${rejected} odrzuconych`)
-  return parts.join(', ')
 })
 
 function getOtherProfile(entry) {
@@ -137,61 +107,35 @@ function getOtherSubject(entry) {
   return p?.tutor_post?.subject || ''
 }
 
-function slotLabelsFromMasks(masks) {
-  const dayKeys = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
-  const labels = []
-  if (!Array.isArray(masks)) return labels
-  for (let di = 0; di < masks.length; di++) {
-    const mask = masks[di]
-    if (typeof mask === 'number' && mask > 0) {
-      for (let h = 0; h < 24; h++) {
-        if (mask & (1 << h)) {
-          labels.push(`${dayKeys[di]} ${String(h).padStart(2, '0')}:00`)
-        }
-      }
-    }
-  }
-  return labels
-}
-
 async function fetchLessonRequests() {
   if (!user.value) return
   loadingRequests.value = true
-
   const column = props.isTutorAccount ? 'tutor_id' : 'student_id'
   const { data, error } = await supabase
     .from('lesson_requests')
     .select('*')
     .eq(column, user.value.id)
     .order('created_at', { ascending: false })
-
   if (error) {
     console.error('Failed to fetch lesson requests:', error)
     lessonRequests.value = []
     loadingRequests.value = false
     return
   }
-
   lessonRequests.value = data || []
-
   const otherIds = new Set()
   for (const r of data || []) {
     otherIds.add(props.isTutorAccount ? r.student_id : r.tutor_id)
   }
-
   if (otherIds.size > 0) {
     const { data: profiles } = await supabase
       .from('users')
       .select('*')
       .in('auth_id', [...otherIds])
-
     const map = {}
-    for (const p of profiles || []) {
-      map[p.auth_id] = p
-    }
+    for (const p of profiles || []) map[p.auth_id] = p
     userCache.value = map
   }
-
   loadingRequests.value = false
 }
 
@@ -200,18 +144,15 @@ async function handleAccept(entry) {
     .from('lesson_requests')
     .update({ status: 'approved', updated_at: new Date().toISOString() })
     .eq('id', entry.id)
-
   if (error) {
     console.error('Failed to accept request:', error)
     return
   }
-
   const { data: tutorProfile } = await supabase
     .from('users')
     .select('saved_tutors')
     .eq('auth_id', user.value.id)
     .maybeSingle()
-
   const current = tutorProfile?.saved_tutors || []
   if (!current.includes(entry.student_id)) {
     await supabase
@@ -219,7 +160,6 @@ async function handleAccept(entry) {
       .update({ saved_tutors: [...current, entry.student_id] })
       .eq('auth_id', user.value.id)
   }
-
   entry.status = 'approved'
 }
 
@@ -228,96 +168,101 @@ async function handleReject(entry) {
     .from('lesson_requests')
     .update({ status: 'rejected', updated_at: new Date().toISOString() })
     .eq('id', entry.id)
-
   if (error) {
     console.error('Failed to reject request:', error)
     return
   }
-
   entry.status = 'rejected'
 }
 
-const lessonsByDay = computed(() => {
+async function handleCancel(lessonId, dayOfWeek, hourNums) {
+  if (!lessonId || dayOfWeek == null) return
+  const request = lessonRequests.value.find((r) => r.id === lessonId)
+  if (!request) return
+  const masks = [...(request.requested_slots || [])]
+  const bitsToClear = hourNums.reduce((acc, h) => acc | (1 << h), 0)
+  masks[dayOfWeek] = (masks[dayOfWeek] || 0) & ~bitsToClear
+  const { error } = await supabase
+    .from('lesson_requests')
+    .update({ requested_slots: masks, updated_at: new Date().toISOString() })
+    .eq('id', lessonId)
+  if (error) {
+    console.error('Failed to cancel lesson:', error)
+    return
+  }
+  request.requested_slots = masks
+}
+
+const lessonsByDate = computed(() => {
   const map = {}
   const approvedRequests = lessonRequests.value.filter((r) => r.status === 'approved')
-
   for (const request of approvedRequests) {
     const masks = request.requested_slots
     if (!Array.isArray(masks)) continue
-
     for (let dayOfWeek = 0; dayOfWeek < masks.length; dayOfWeek++) {
       const mask = masks[dayOfWeek]
       if (typeof mask !== 'number' || mask === 0) continue
-
       const hours = []
+      const hourNums = []
       for (let h = 0; h < 24; h++) {
         if (mask & (1 << h)) {
           hours.push(`${String(h).padStart(2, '0')}:00`)
+          hourNums.push(h)
         }
       }
       if (hours.length === 0) continue
-
-      const year = currentDate.value.getFullYear()
-      const month = currentDate.value.getMonth()
-      const daysInMonthCount = new Date(year, month + 1, 0).getDate()
-
-      for (let d = 1; d <= daysInMonthCount; d++) {
-        const date = new Date(year, month, d)
-        const jsDay = date.getDay()
+      for (const day of weekDays.value) {
+        const jsDay = day.date.getDay()
         const mondayBased = jsDay === 0 ? 6 : jsDay - 1
-
         if (mondayBased === dayOfWeek) {
-          if (!map[d]) map[d] = []
-          map[d].push({
+          if (!map[day.key]) map[day.key] = []
+          map[day.key].push({
             name: getOtherName(request),
             subject: getOtherSubject(request),
             hours,
+            hourNums,
+            dayOfWeek,
             id: request.id,
           })
         }
       }
     }
   }
-
   return map
 })
 
-function hasLessons(day) {
-  if (!day || day.type !== 'day') return false
-  return lessonsByDay.value[day.value] && lessonsByDay.value[day.value].length > 0
-}
-
-function selectDay(day) {
-  if (!day || day.type !== 'day') return
-  selectedDay.value = day.value
-  selectedDayLessons.value = lessonsByDay.value[day.value] || []
-}
-
-function changeMonth(event) {
-  const monthIndex = Number(event.target.value)
-  currentDate.value = new Date(currentDate.value.getFullYear(), monthIndex, 1)
-  if (selectedDay.value > daysInMonth.value) {
-    selectedDay.value = daysInMonth.value
+const weekLessons = computed(() => {
+  const all = []
+  for (const day of weekDays.value) {
+    const lessons = lessonsByDate.value[day.key]
+    if (lessons) all.push(...lessons.map((l) => ({ ...l, dayKey: day.key, weekday: day.weekday })))
   }
+  return all
+})
+
+function hasLessons(dayKey) {
+  return lessonsByDate.value[dayKey]?.length > 0
 }
 
-function goToPreviousMonth() {
-  currentDate.value = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() - 1, 1)
-  if (selectedDay.value > daysInMonth.value) {
-    selectedDay.value = daysInMonth.value
-  }
+function selectDay(key) {
+  selectedDayKey.value = key
+  selectedDayLessons.value = lessonsByDate.value[key] || []
 }
 
-function goToNextMonth() {
-  currentDate.value = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() + 1, 1)
-  if (selectedDay.value > daysInMonth.value) {
-    selectedDay.value = daysInMonth.value
-  }
+function goToPreviousWeek() {
+  const d = new Date(currentWeekStart.value)
+  d.setDate(d.getDate() - 7)
+  currentWeekStart.value = d
+}
+
+function goToNextWeek() {
+  const d = new Date(currentWeekStart.value)
+  d.setDate(d.getDate() + 7)
+  currentWeekStart.value = d
 }
 
 function goToToday() {
-  currentDate.value = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1)
-  selectedDay.value = today.value
+  currentWeekStart.value = getMonday(todayDate)
 }
 
 watch(
@@ -338,9 +283,17 @@ watch(
 watch(
   () => props.resetKey,
   () => {
-    selectedDay.value = null
+    selectedDayKey.value = null
     selectedDayLessons.value = []
   },
+)
+
+watch(
+  selectedDayKey,
+  (key) => {
+    selectedDayLessons.value = lessonsByDate.value[key] || []
+  },
+  { immediate: true },
 )
 </script>
 
@@ -359,83 +312,98 @@ watch(
       </div>
     </div>
 
-    <div v-else class="calendar-layout">
-      <div class="calendar-card">
-        <div class="calendar-top">
-          <div>
-            <p class="calendar-weekday">{{ selectedWeekdayLabel }}</p>
-            <h2>{{ monthLabel }}</h2>
-            <p class="calendar-meta">{{ selectedDateLabel }}</p>
-          </div>
-          <div class="calendar-actions">
-            <div class="month-switcher">
-              <button
-                class="nav-button"
-                type="button"
-                @click="goToPreviousMonth"
-                aria-label="Poprzedni miesiąc"
-              >
-                ‹
-              </button>
-              <select class="month-select" :value="currentDate.getMonth()" @change="changeMonth">
-                <option v-for="(month, index) in monthNames" :key="month" :value="index">
-                  {{ month }}
-                </option>
-              </select>
-              <button
-                class="nav-button"
-                type="button"
-                @click="goToNextMonth"
-                aria-label="Następny miesiąc"
-              >
-                ›
-              </button>
-            </div>
-            <button class="calendar-button" type="button" @click="goToToday">Dzisiaj</button>
-          </div>
-        </div>
-
-        <div class="calendar-grid">
-          <div class="weekday" v-for="weekday in weekdayLabels" :key="weekday">{{ weekday }}</div>
+    <div v-else class="calendar-card">
+      <div class="cal-header">
+        <div class="cal-nav">
           <button
-            v-for="day in calendarDays"
-            :key="day"
-            class="day"
-            :class="{
-              active: day.type === 'day' && day.value === selectedDay,
-              hasLesson: hasLessons(day),
-            }"
-            @click="selectDay(day)"
+            class="nav-btn"
+            type="button"
+            @click="goToPreviousWeek"
+            aria-label="Poprzedni tydzień"
           >
-            <span>{{ day.value }}</span>
-            <span v-if="hasLessons(day)" class="lesson-dot" />
+            ‹
+          </button>
+          <span class="cal-week-label">{{ weekLabel }}</span>
+          <button class="nav-btn" type="button" @click="goToNextWeek" aria-label="Następny tydzień">
+            ›
           </button>
         </div>
+        <button class="today-btn" type="button" @click="goToToday">Dzisiaj</button>
       </div>
 
-      <div class="lessons-card" :class="{ hidden: selectedDayLessons.length === 0 }">
-        <div class="lessons-header">
-          <div>
-            <p class="lessons-label">
-              {{ props.isTutorAccount ? 'Prośby o lekcję' : 'Moje zgłoszenia' }}
-            </p>
-            <h3>{{ selectedDateLabel }}</h3>
-          </div>
-        </div>
+      <div class="week-grid">
+        <button
+          v-for="day in weekDays"
+          :key="day.key"
+          class="day-cell"
+          :class="{
+            active: day.isSelected,
+            today: day.isToday,
+            hasLesson: hasLessons(day.key),
+          }"
+          @click="selectDay(day.key)"
+        >
+          <span class="day-cell-weekday">{{ day.weekday }}</span>
+          <span class="day-cell-num">{{ day.dayNum }}</span>
+          <span v-if="hasLessons(day.key)" class="day-cell-dot" />
+        </button>
+      </div>
 
-        <div class="day-lessons-list">
-          <article v-for="lesson in selectedDayLessons" :key="lesson.id" class="day-lesson-item">
-            <div class="day-lesson-info">
-              <p class="day-lesson-name">{{ lesson.name }}</p>
-              <p v-if="lesson.subject" class="day-lesson-subject">{{ lesson.subject }}</p>
+      <div class="cal-divider" />
+
+      <p class="cal-section-title">
+        {{ selectedDayKey ? fullDateLabel : 'Nadchodzące lekcje' }}
+      </p>
+
+      <div v-if="selectedDayKey" class="lessons-list">
+        <article v-for="lesson in selectedDayLessons" :key="lesson.id" class="lesson-card">
+          <div class="lesson-card-top">
+            <strong class="lesson-card-name">{{ lesson.name }}</strong>
+            <span v-if="lesson.subject" class="lesson-card-subject">{{ lesson.subject }}</span>
+          </div>
+          <div class="lesson-card-footer">
+            <div class="lesson-card-hours">
+              <span v-for="hour in lesson.hours" :key="hour" class="hour-chip">{{ hour }}</span>
             </div>
-            <div class="day-lesson-hours">
-              <span v-for="hour in lesson.hours" :key="hour" class="day-lesson-hour">{{
-                hour
-              }}</span>
-            </div>
-          </article>
-        </div>
+          </div>
+        </article>
+        <p v-if="selectedDayLessons.length === 0" class="empty-text">Brak lekcji tego dnia</p>
+      </div>
+
+      <div v-else class="week-lessons-list">
+        <template v-if="weekLessons.length > 0">
+          <div v-for="day in weekDays" :key="day.key">
+            <p
+              v-if="weekLessons.filter((l) => l.dayKey === day.key).length"
+              class="day-group-label"
+            >
+              {{ day.weekday }} {{ day.dayNum }}
+            </p>
+            <article
+              v-for="lesson in weekLessons.filter((l) => l.dayKey === day.key)"
+              :key="lesson.id"
+              class="lesson-card"
+            >
+              <div class="lesson-card-top">
+                <strong class="lesson-card-name">{{ lesson.name }}</strong>
+                <span v-if="lesson.subject" class="lesson-card-subject">{{ lesson.subject }}</span>
+              </div>
+              <div class="lesson-card-footer">
+                <div class="lesson-card-hours">
+                  <span v-for="hour in lesson.hours" :key="hour" class="hour-chip">{{ hour }}</span>
+                </div>
+                <button
+                  class="cancel-btn"
+                  type="button"
+                  @click="handleCancel(lesson.id, lesson.dayOfWeek, lesson.hourNums)"
+                >
+                  Anuluj
+                </button>
+              </div>
+            </article>
+          </div>
+        </template>
+        <p v-else class="empty-text">Brak zaplanowanych lekcji w tym tygodniu</p>
       </div>
     </div>
   </section>
@@ -492,432 +460,311 @@ watch(
   background: var(--accent-strong);
   color: white;
 }
-
 .btn-secondary {
   background: var(--surface-soft);
   color: var(--text);
   border: 1px solid var(--border);
 }
 
-.calendar-view-simple {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-.calendar-layout {
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 16px;
-  align-items: start;
-}
-
 .calendar-card {
+  width: 100%;
   background: var(--surface-strong);
   border-radius: 28px;
-  padding: 18px;
+  padding: 28px;
   box-shadow: var(--shadow-soft);
   border: 1px solid var(--border);
   color: var(--text);
-  align-self: start;
-  height: fit-content;
+  box-sizing: border-box;
 }
 
-.lessons-card {
-  background: var(--surface-strong);
-  border-radius: 28px;
-  padding: 18px;
-  box-shadow: var(--shadow-soft);
-  border: 1px solid var(--border);
-  color: var(--text);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  height: fit-content;
-  align-self: start;
-  transition: opacity var(--theme-transition-duration) var(--theme-transition-easing);
-}
-
-.lessons-card.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
-:root[data-theme='dark'] .calendar-card,
-:root[data-theme='dark'] .lessons-card,
-:root[data-theme='dark'] .notification-item,
-:root[data-theme='dark'] .lesson-empty {
+:root[data-theme='dark'] .calendar-card {
   background: var(--surface-strong);
   border-color: rgba(148, 163, 184, 0.22);
   color: var(--text);
 }
 
-:root[data-theme='dark'] .nav-button,
-:root[data-theme='dark'] .month-select,
-:root[data-theme='dark'] .calendar-button,
-:root[data-theme='dark'] .decline-button,
-:root[data-theme='dark'] .day {
+:root[data-theme='dark'] .nav-btn,
+:root[data-theme='dark'] .today-btn,
+:root[data-theme='dark'] .day-cell {
   background: var(--surface-soft);
   color: var(--text);
   border-color: var(--border);
   color-scheme: dark;
 }
 
-:root[data-theme='dark'] .month-select option {
-  background: var(--surface-strong);
-  color: var(--text);
-}
-
-.calendar-top {
+.cal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  margin-bottom: 14px;
+  margin-bottom: 24px;
 }
 
-.calendar-weekday {
-  margin: 0 0 6px;
-  color: var(--muted);
-  font-weight: 700;
-}
-
-h2 {
-  margin: 0;
-  font-size: 1.6rem;
-  color: var(--text);
-}
-
-.calendar-meta,
-.lessons-label {
-  margin: 4px 0 0;
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-
-.calendar-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 10px;
-}
-
-.month-switcher {
+.cal-nav {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.nav-button,
-.month-select,
-.calendar-button {
-  border: 1px solid var(--border);
-  background: var(--surface-soft);
-  color: var(--text);
-  border-radius: 14px;
-  padding: 10px 12px;
-  cursor: pointer;
-  font-weight: 700;
-  transition:
-    background-color var(--theme-transition-duration) var(--theme-transition-easing),
-    transform var(--theme-transition-duration) var(--theme-transition-easing);
-}
-
-.nav-button {
-  width: 40px;
-  height: 40px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-}
-
-.month-select {
-  min-width: 118px;
-  appearance: none;
-}
-
-.calendar-button {
-  border: none;
-  background: var(--primary-color);
-  color: white;
-  padding: 12px 22px;
-  border-radius: 16px;
-}
-
-:root[data-theme='dark'] .calendar-button {
-  background: var(--primary-color);
-  color: white;
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.weekday {
-  color: var(--muted);
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  text-align: center;
-}
-
-.day {
-  min-height: 58px;
-  border-radius: 20px;
-  background: var(--surface-soft);
-  color: var(--text);
-  display: grid;
-  place-items: center;
-  font-weight: 700;
-  border: 1px solid var(--border);
-  cursor: pointer;
-  transition:
-    transform var(--theme-transition-duration) var(--theme-transition-easing),
-    box-shadow var(--theme-transition-duration) var(--theme-transition-easing),
-    background-color var(--theme-transition-duration) var(--theme-transition-easing),
-    color var(--theme-transition-duration) var(--theme-transition-easing);
-}
-
-.day:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08);
-  background: color-mix(in srgb, var(--surface-soft) 88%, var(--primary-color) 12%);
-}
-
-.lesson-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--primary-color);
-  display: block;
-  margin-top: 6px;
-  box-shadow: 0 0 0 2px rgba(91, 120, 198, 0.2);
-}
-
-.day.empty {
-  background: transparent;
-  opacity: 0;
-  cursor: default;
-}
-
-.day.active {
-  background: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-  box-shadow: 0 10px 20px rgba(91, 120, 198, 0.22);
-}
-
-.lessons-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 12px;
-}
-
-.lessons-header h3 {
-  margin: 4px 0 0;
-  font-size: 1.25rem;
-}
-
-.lessons-count {
-  color: var(--accent-strong);
-  font-weight: 700;
-}
-
-.notification-list {
-  display: grid;
-  gap: 10px;
-  overflow-y: auto;
-  padding-right: 4px;
-  min-height: 0;
-  flex: 1;
-  max-height: calc(2 * 200px);
-}
-
-.notification-item {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 12px 14px;
-  border-radius: 18px;
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
-  min-height: 132px;
-}
-
-.notification-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
   gap: 12px;
 }
 
-.notification-student {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
+.cal-week-label {
+  font-weight: 800;
+  font-size: 1.15rem;
   color: var(--text);
-}
-
-.notification-topic {
-  margin: 4px 0 0;
-  color: var(--accent-strong);
-  font-weight: 600;
-}
-
-.notification-pill {
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 0.8rem;
-  font-weight: 700;
   white-space: nowrap;
+  min-width: 220px;
+  text-align: center;
 }
 
-.new-pill {
-  background: rgba(91, 120, 198, 0.12);
-  color: var(--accent-strong);
+.nav-btn {
+  width: 52px;
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text);
+  border-radius: 16px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background-color var(--theme-transition-duration) var(--theme-transition-easing);
 }
 
-.approved-pill {
-  background: rgba(34, 197, 94, 0.12);
-  color: #15803d;
+.nav-btn:hover {
+  background: var(--surface-hover);
 }
 
-.rejected-pill {
-  background: rgba(239, 68, 68, 0.12);
-  color: #b91c1c;
+.today-btn {
+  border: none;
+  background: var(--primary-color);
+  color: white;
+  padding: 16px 30px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: opacity 0.15s ease;
 }
 
-.notification-meta {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.92rem;
+.today-btn:hover {
+  opacity: 0.85;
 }
 
-.notification-slots {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+:root[data-theme='dark'] .today-btn {
+  background: var(--primary-color);
+  color: white;
 }
 
-.slot-chip {
-  background: rgba(79, 117, 199, 0.1);
-  color: var(--accent-strong);
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-size: 0.78rem;
-  font-weight: 600;
-}
-
-.day-lessons-list {
+.week-grid {
   display: grid;
-  gap: 10px;
-  margin-bottom: 14px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 14px;
 }
 
-.day-lesson-item {
+.day-cell {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 14px;
-  border-radius: 16px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 96px;
+  border-radius: 22px;
+  background: var(--surface-soft);
+  color: var(--text);
+  font-weight: 700;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.day-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+  border-color: var(--primary-color);
+}
+
+.day-cell-weekday {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.day-cell-num {
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.day-cell.today .day-cell-num {
+  color: var(--primary-color);
+}
+
+.day-cell-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  display: block;
+}
+
+.day-cell.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  box-shadow: 0 12px 28px rgba(91, 120, 198, 0.25);
+}
+
+.day-cell.active .day-cell-weekday,
+.day-cell.active .day-cell-num {
+  color: white;
+}
+.day-cell.active .day-cell-dot {
+  background: white;
+}
+
+.cal-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 24px 0 18px;
+}
+
+.cal-section-title {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.lessons-list,
+.week-lessons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lesson-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 20px;
   background: var(--accent-soft);
   border: 1px solid var(--accent);
 }
 
-.day-lesson-info {
+.lesson-card-top {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.day-lesson-name {
-  margin: 0;
-  font-weight: 700;
+.lesson-card-name {
+  font-size: 1.15rem;
+  font-weight: 800;
   color: var(--text);
-  font-size: 1rem;
 }
 
-.day-lesson-subject {
-  margin: 4px 0 0;
+.lesson-card-subject {
+  font-size: 0.95rem;
   color: var(--accent-strong);
   font-weight: 600;
-  font-size: 0.9rem;
 }
 
-.day-lesson-hours {
+.lesson-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lesson-card-hours {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.day-lesson-hour {
+.hour-chip {
   background: var(--primary-color);
   color: white;
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.notification-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.accept-button,
-.decline-button {
-  border: none;
+  padding: 5px 14px;
   border-radius: 10px;
-  padding: 8px 10px;
+  font-size: 0.9rem;
   font-weight: 700;
-  cursor: pointer;
 }
 
-.accept-button {
-  background: var(--primary-color);
-  color: white;
-}
-
-.decline-button {
-  background: var(--surface-soft);
-  color: var(--text);
+.cancel-btn {
+  background: transparent;
   border: 1px solid var(--border);
-}
-
-.lesson-empty {
-  padding: 24px;
-  border-radius: 20px;
-  background: var(--surface-soft);
   color: var(--muted);
   font-weight: 600;
+  font-size: 0.8rem;
+  padding: 5px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
-@media (max-width: 980px) {
-  .calendar-layout {
-    grid-template-columns: 1fr;
-  }
+.cancel-btn:hover {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+.empty-text {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1rem;
+  padding: 8px 0;
+}
+
+.day-group-label {
+  margin: 2px 0 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 @media (max-width: 760px) {
-  .calendar-card,
-  .lessons-card {
-    padding: 18px;
+  .calendar-card {
+    padding: 20px;
   }
-
-  .calendar-grid {
+  .week-grid {
     gap: 8px;
   }
-
-  .day {
-    min-height: 60px;
+  .day-cell {
+    min-height: 76px;
+    gap: 4px;
+  }
+  .day-cell-num {
+    font-size: 1.3rem;
+  }
+  .cal-week-label {
+    min-width: 160px;
+    font-size: 1rem;
+  }
+  .nav-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 1.2rem;
+  }
+  .today-btn {
+    padding: 14px 24px;
+  }
+  .lesson-card {
+    padding: 16px;
   }
 }
 </style>
