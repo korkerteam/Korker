@@ -130,11 +130,12 @@ async function loadTutors() {
   if (!error && rows) {
     tutors.value = rows
       .filter((r) => r.tutor_post && !blockedIds.value.has(r.auth_id))
-      .map((r, index) => {
-        const tp = r.tutor_post || {}
+      .flatMap((r) => {
+        const raw = r.tutor_post || {}
+        const offers = Array.isArray(raw) ? raw : [raw]
         const renderedName = [r.name, r.surname].filter(Boolean).join(' ') || 'Korepetytor'
-        return {
-          id: r.id || `${renderedName}-${tp.subject || 'unknown'}-${index}`,
+        return offers.map((tp, oi) => ({
+          id: `${r.id}-offer-${oi}`,
           auth_id: r.auth_id,
           name: renderedName,
           subject: tp.subject || '',
@@ -151,7 +152,7 @@ async function loadTutors() {
               ? [tp.teachingFormat]
               : [],
           weeklyAvailability: tp.weeklyAvailability || {},
-        }
+        }))
       })
   }
 
@@ -726,7 +727,6 @@ function toggleSelection(category, value) {
 }
 
 .tutors-content.empty-results-layout .tags-filter-section {
-  /* Only ensure it stays in its column; rely on the base .tags-filter-section styles for sizing */
   grid-column: 3;
 }
 
@@ -1076,6 +1076,8 @@ function toggleSelection(category, value) {
   background: var(--surface-strong);
   border: 1px solid var(--border);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  max-height: 700px;
+  height: 100%;
 }
 
 .tags-filter-header {
@@ -1095,8 +1097,8 @@ function toggleSelection(category, value) {
 
 .filter-group {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
   margin-bottom: 10px;
 }
@@ -1108,13 +1110,13 @@ function toggleSelection(category, value) {
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  min-width: 90px;
 }
 
 .filter-options {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  width: 100%;
 }
 
 .filter-options label {
@@ -1132,15 +1134,15 @@ function toggleSelection(category, value) {
 
 .city-select-group {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
-  align-items: center;
+  align-items: stretch;
   width: 100%;
 }
 
 .city-select-label {
   display: block;
-  flex: 1 1 220px;
+  width: 100%;
 }
 
 .city-select-label input {

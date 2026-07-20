@@ -10,8 +10,16 @@ const isOpen = ref(false)
 const isSearchOpen = ref(false)
 const results = ref([])
 const loading = ref(false)
-const searchInput = ref(null)
+const desktopSearchInput = ref(null)
+const mobileSearchInput = ref(null)
+const isDesktop = ref(window.innerWidth > 768)
 let searchTimeout = null
+
+const handleResize = () => {
+  isDesktop.value = window.innerWidth > 768
+}
+
+window.addEventListener('resize', handleResize)
 
 function getDisplayName(record) {
   return (
@@ -67,7 +75,7 @@ function toggleSearch() {
   isSearchOpen.value = !isSearchOpen.value
   if (isSearchOpen.value) {
     window.setTimeout(() => {
-      searchInput.value?.focus()
+      mobileSearchInput.value?.focus()
     }, 0)
   }
 }
@@ -112,12 +120,102 @@ watch(query, (value) => {
 
 onBeforeUnmount(() => {
   clearTimeout(searchTimeout)
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
 <template>
   <form class="searchbar" role="search" @submit.prevent="onSubmit">
+    <!-- Desktop: Always show search input, hide button -->
+    <div v-if="isDesktop" class="search-popup desktop-search" @click.stop>
+      <label class="search-input" aria-label="Szukaj użytkowników">
+        <svg
+          class="icon"
+          viewBox="0 0 24 24"
+          width="14"
+          height="14"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M11 19a8 8 0 1 1 5.293-14.293A8 8 0 0 1 11 19z"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M21 21l-4.35-4.35"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <input
+          ref="desktopSearchInput"
+          v-model="query"
+          type="search"
+          name="q"
+          placeholder="Szukaj"
+          aria-label="Szukaj"
+          maxlength="100"
+          @input="openResults"
+          @focus="openResults"
+          @blur="closeResults"
+        />
+        <button v-if="query" class="clear-btn" type="button" @mousedown.prevent="clearQuery">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M18 6L6 18M6 6l12 12"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+      </label>
+
+      <div v-if="isOpen && (query.trim() || loading)" class="results-list" role="listbox">
+        <div v-if="loading" class="result-loading">Szukanie...</div>
+        <div v-else-if="results.length === 0" class="result-empty">Brak wyników</div>
+        <template v-else>
+          <button
+            v-for="user in results"
+            :key="user.auth_id"
+            class="result-item"
+            type="button"
+            @mousedown.prevent="goToResult(user)"
+          >
+            <div class="result-avatar">
+              <img
+                v-if="user.profile_picture"
+                :src="user.profile_picture"
+                :alt="getDisplayName(user)"
+                class="result-avatar-img"
+              />
+              <span v-else class="result-avatar-letter">{{
+                (user.nickname || user.name || '?').charAt(0).toUpperCase()
+              }}</span>
+            </div>
+            <div class="result-text">
+              <span class="result-title">{{
+                user.nickname || [user.name, user.surname].filter(Boolean).join(' ')
+              }}</span>
+              <span
+                v-if="user.nickname && (user.name || user.surname)"
+                class="result-description"
+                >{{ [user.name, user.surname].filter(Boolean).join(' ') }}</span
+              >
+            </div>
+          </button>
+        </template>
+      </div>
+    </div>
+
+    <!-- Mobile: Show button to toggle search -->
     <button
+      v-if="!isDesktop"
       class="search-trigger"
       type="button"
       aria-label="Szukaj użytkowników"
@@ -148,7 +246,7 @@ onBeforeUnmount(() => {
       </svg>
     </button>
 
-    <div v-if="isSearchOpen" class="search-popup" @click.stop>
+    <div v-if="!isDesktop && isSearchOpen" class="search-popup" @click.stop>
       <label class="search-input" aria-label="Szukaj użytkowników">
         <svg
           class="icon"
@@ -174,7 +272,7 @@ onBeforeUnmount(() => {
           />
         </svg>
         <input
-          ref="searchInput"
+          ref="mobileSearchInput"
           v-model="query"
           type="search"
           name="q"
@@ -250,6 +348,14 @@ onBeforeUnmount(() => {
   margin-left: 0;
 }
 
+@media (min-width: 769px) {
+  .searchbar {
+    flex: 1 1 auto;
+    max-width: none;
+    min-width: 200px;
+  }
+}
+
 .search-trigger {
   display: inline-flex;
   align-items: center;
@@ -281,6 +387,22 @@ onBeforeUnmount(() => {
   z-index: 9999;
 }
 
+.search-popup.desktop-search {
+  position: relative;
+  width: auto;
+  transform: none;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  z-index: auto;
+  flex: 1;
+}
+
 .search-input {
   position: relative;
   display: flex;
@@ -295,6 +417,17 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
   box-shadow: var(--shadow-soft);
   cursor: text;
+}
+
+.desktop-search .search-input {
+  border-radius: 999px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--border);
+  position: relative;
+  width: 100%;
+  height: 53px;
+  margin-left: -108px;
+  font-size: 20px;
 }
 
 .search-input .icon {
@@ -364,6 +497,18 @@ onBeforeUnmount(() => {
   background: rgba(255, 255, 255, 0.98);
   border: 1px solid rgba(79, 117, 199, 0.16);
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+}
+
+.desktop-search .results-list {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  margin: 0;
+  border-radius: 14px;
+  width: 100%;
+  min-width: 300px;
+  z-index: 9999;
+  margin-left: -100px;
 }
 
 .result-loading,

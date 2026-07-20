@@ -23,6 +23,7 @@ const { refreshBlockedIds } = useMessaging()
 
 const profile = ref(null)
 const tutorPost = ref(null)
+const tutorOffers = ref([])
 const loading = ref(true)
 const error = ref('')
 const blockedByMe = ref(false)
@@ -83,6 +84,11 @@ async function fetchProfile(identifier) {
 
     profile.value = dataById
     tutorPost.value = dataById.tutor_post || null
+    tutorOffers.value = tutorPost.value
+      ? Array.isArray(tutorPost.value)
+        ? tutorPost.value
+        : [tutorPost.value]
+      : []
     await checkBlockStatus(dataById.auth_id)
     loading.value = false
     return
@@ -90,6 +96,11 @@ async function fetchProfile(identifier) {
 
   profile.value = data
   tutorPost.value = data.tutor_post || null
+  tutorOffers.value = tutorPost.value
+    ? Array.isArray(tutorPost.value)
+      ? tutorPost.value
+      : [tutorPost.value]
+    : []
   await checkBlockStatus(data.auth_id)
   loading.value = false
 }
@@ -190,10 +201,11 @@ function formattedLocation() {
   return tutorPost.value?.city || profile.value?.city || ''
 }
 
-function getTeachingFormats() {
-  if (!tutorPost.value) return []
-  if (Array.isArray(tutorPost.value.teachingFormats)) return tutorPost.value.teachingFormats
-  if (tutorPost.value.teachingFormat) return [tutorPost.value.teachingFormat]
+function getTeachingFormats(offer) {
+  const tp = offer || tutorPost.value
+  if (!tp) return []
+  if (Array.isArray(tp.teachingFormats)) return tp.teachingFormats
+  if (tp.teachingFormat) return [tp.teachingFormat]
   return []
 }
 
@@ -330,8 +342,9 @@ function handleSendMessage() {
                 profile &&
                 user?.id === profile.auth_id &&
                 profile?.account_type === 'tutor' &&
-                tutorPost?.weeklyAvailability &&
-                Object.keys(tutorPost.weeklyAvailability).length
+                tutorOffers.length > 0 &&
+                tutorOffers[0]?.weeklyAvailability &&
+                Object.keys(tutorOffers[0].weeklyAvailability).length
               "
               class="btn btn-secondary message-btn"
               @click="router.push({ path: '/', query: { panel: 'profile', edit: '1' } })"
@@ -343,41 +356,41 @@ function handleSendMessage() {
 
         <div class="profile-right">
           <template v-if="profile?.account_type === 'tutor'">
-            <div v-if="tutorPost" class="tutor-offer-view">
-              <h4>Oferta korepetytora</h4>
+            <template v-if="tutorOffers.length">
+              <div v-for="(offer, index) in tutorOffers" :key="index" class="tutor-offer-view">
+                <h4>Oferta korepetytora{{ tutorOffers.length > 1 ? ' ' + (index + 1) : '' }}</h4>
 
-              <div v-if="tutorPost.subject" class="offer-row">
-                <span class="offer-label">Przedmiot</span>
-                <span class="offer-value">{{ tutorPost.subject }}</span>
-              </div>
-              <div v-if="tutorPost.level" class="offer-row">
-                <span class="offer-label">Poziom</span>
-                <span class="offer-value">{{ tutorPost.level }}</span>
-              </div>
-              <div v-if="tutorPost.price" class="offer-row">
-                <span class="offer-label">Stawka</span>
-                <span class="offer-value">{{ tutorPost.price }} zł/h</span>
-              </div>
-              <div v-if="getTeachingFormats().length" class="offer-row">
-                <span class="offer-label">Forma</span>
-                <span class="offer-value">{{ getTeachingFormats().join(', ') }}</span>
-              </div>
-              <div v-if="tutorPost.description" class="offer-row offer-description">
-                <span class="offer-label">Opis</span>
-                <span class="offer-value desc-text">{{ tutorPost.description }}</span>
-              </div>
-              <div v-if="tutorPost.photo" class="offer-photo-preview">
-                <img :src="tutorPost.photo" alt="Zdjęcie oferty" />
-              </div>
+                <div v-if="offer.subject" class="offer-row">
+                  <span class="offer-label">Przedmiot</span>
+                  <span class="offer-value">{{ offer.subject }}</span>
+                </div>
+                <div v-if="offer.level" class="offer-row">
+                  <span class="offer-label">Poziom</span>
+                  <span class="offer-value">{{ offer.level }}</span>
+                </div>
+                <div v-if="offer.price" class="offer-row">
+                  <span class="offer-label">Stawka</span>
+                  <span class="offer-value">{{ offer.price }} zł/h</span>
+                </div>
+                <div v-if="getTeachingFormats(offer).length" class="offer-row">
+                  <span class="offer-label">Forma</span>
+                  <span class="offer-value">{{ getTeachingFormats(offer).join(', ') }}</span>
+                </div>
+                <div v-if="offer.description" class="offer-row offer-description">
+                  <span class="offer-label">Opis</span>
+                  <span class="offer-value desc-text">{{ offer.description }}</span>
+                </div>
+                <div v-if="offer.photo" class="offer-photo-preview">
+                  <img :src="offer.photo" alt="Zdjęcie oferty" />
+                </div>
 
-              <div
-                v-if="
-                  tutorPost.weeklyAvailability && Object.keys(tutorPost.weeklyAvailability).length
-                "
-              >
-                <AvailabilityGrid :availability="tutorPost.weeklyAvailability" readonly />
+                <div
+                  v-if="offer.weeklyAvailability && Object.keys(offer.weeklyAvailability).length"
+                >
+                  <AvailabilityGrid :availability="offer.weeklyAvailability" readonly />
+                </div>
               </div>
-            </div>
+            </template>
             <div v-else class="tutor-offer-view tutor-offer-empty">
               <h4>Oferta korepetytora</h4>
               <p class="empty-offer-text">Ten korepetytor nie ma jeszcze opublikowanej oferty.</p>

@@ -334,7 +334,10 @@ function getOtherName(entry) {
 function getOtherSubject(entry) {
   const authId = isTutorAccount.value ? entry.student_id : entry.tutor_id
   const p = otherUsers.value[authId]
-  return p?.tutor_post?.subject || ''
+  const tp = p?.tutor_post
+  if (!tp) return ''
+  const offer = Array.isArray(tp) ? tp[0] || {} : tp
+  return offer?.subject || ''
 }
 
 watch(
