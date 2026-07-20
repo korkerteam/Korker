@@ -126,8 +126,8 @@ onBeforeUnmount(() => {
 
 <template>
   <form class="searchbar" role="search" @submit.prevent="onSubmit">
-    <!-- Desktop: Always show search input, hide button -->
-    <div v-if="isDesktop" class="search-popup desktop-search" @click.stop>
+    <!-- Desktop Search -->
+    <template v-if="isDesktop">
       <label class="search-input" aria-label="Szukaj użytkowników">
         <svg
           class="icon"
@@ -176,44 +176,51 @@ onBeforeUnmount(() => {
         </button>
       </label>
 
-      <div v-if="isOpen && (query.trim() || loading)" class="results-list" role="listbox">
-        <div v-if="loading" class="result-loading">Szukanie...</div>
-        <div v-else-if="results.length === 0" class="result-empty">Brak wyników</div>
-        <template v-else>
-          <button
-            v-for="user in results"
-            :key="user.auth_id"
-            class="result-item"
-            type="button"
-            @mousedown.prevent="goToResult(user)"
-          >
-            <div class="result-avatar">
-              <img
-                v-if="user.profile_picture"
-                :src="user.profile_picture"
-                :alt="getDisplayName(user)"
-                class="result-avatar-img"
-              />
-              <span v-else class="result-avatar-letter">{{
-                (user.nickname || user.name || '?').charAt(0).toUpperCase()
-              }}</span>
-            </div>
-            <div class="result-text">
-              <span class="result-title">{{
-                user.nickname || [user.name, user.surname].filter(Boolean).join(' ')
-              }}</span>
-              <span
-                v-if="user.nickname && (user.name || user.surname)"
-                class="result-description"
-                >{{ [user.name, user.surname].filter(Boolean).join(' ') }}</span
-              >
-            </div>
-          </button>
-        </template>
+      <!-- Desktop Results Dropdown -->
+      <div
+        v-if="isOpen && (query.trim() || loading)"
+        class="search-popup desktop-search"
+        @click.stop
+      >
+        <div class="results-list" role="listbox">
+          <div v-if="loading" class="result-loading">Szukanie...</div>
+          <div v-else-if="results.length === 0" class="result-empty">Brak wyników</div>
+          <template v-else>
+            <button
+              v-for="user in results"
+              :key="user.auth_id"
+              class="result-item"
+              type="button"
+              @mousedown.prevent="goToResult(user)"
+            >
+              <div class="result-avatar">
+                <img
+                  v-if="user.profile_picture"
+                  :src="user.profile_picture"
+                  :alt="getDisplayName(user)"
+                  class="result-avatar-img"
+                />
+                <span v-else class="result-avatar-letter">{{
+                  (user.nickname || user.name || '?').charAt(0).toUpperCase()
+                }}</span>
+              </div>
+              <div class="result-text">
+                <span class="result-title">{{
+                  user.nickname || [user.name, user.surname].filter(Boolean).join(' ')
+                }}</span>
+                <span
+                  v-if="user.nickname && (user.name || user.surname)"
+                  class="result-description"
+                  >{{ [user.name, user.surname].filter(Boolean).join(' ') }}</span
+                >
+              </div>
+            </button>
+          </template>
+        </div>
       </div>
-    </div>
+    </template>
 
-    <!-- Mobile: Show button to toggle search -->
+    <!-- Mobile Search Trigger -->
     <button
       v-if="!isDesktop"
       class="search-trigger"
@@ -246,6 +253,7 @@ onBeforeUnmount(() => {
       </svg>
     </button>
 
+    <!-- Mobile Search Popup -->
     <div v-if="!isDesktop && isSearchOpen" class="search-popup" @click.stop>
       <label class="search-input" aria-label="Szukaj użytkowników">
         <svg
@@ -345,14 +353,12 @@ onBeforeUnmount(() => {
   margin: 0;
   padding: 0;
   z-index: 70;
-  margin-left: 0;
 }
 
 @media (min-width: 769px) {
   .searchbar {
-    flex: 1 1 auto;
-    max-width: none;
-    min-width: 200px;
+    flex: 0 1 240px; /* Limits searchbar width so it doesn't push adjacent navbar items */
+    min-width: 180px;
   }
 }
 
@@ -388,19 +394,18 @@ onBeforeUnmount(() => {
 }
 
 .search-popup.desktop-search {
-  position: relative;
-  width: auto;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
   transform: none;
+  width: 100%;
+  min-width: 250px;
+  max-width: 320px;
   padding: 0;
-  border-radius: 0;
-  background: transparent;
   border: none;
+  background: transparent;
   box-shadow: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  z-index: auto;
-  flex: 1;
+  z-index: 9999;
 }
 
 .search-input {
@@ -409,7 +414,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   padding: 0 10px;
-  height: 36px;
+  height: 40px;
   background: var(--surface-strong);
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -417,17 +422,6 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
   box-shadow: var(--shadow-soft);
   cursor: text;
-}
-
-.desktop-search .search-input {
-  border-radius: 999px;
-  box-shadow: var(--shadow-soft);
-  border: 1px solid var(--border);
-  position: relative;
-  width: 100%;
-  height: 53px;
-  margin-left: -108px;
-  font-size: 20px;
 }
 
 .search-input .icon {
@@ -497,18 +491,6 @@ onBeforeUnmount(() => {
   background: rgba(255, 255, 255, 0.98);
   border: 1px solid rgba(79, 117, 199, 0.16);
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
-}
-
-.desktop-search .results-list {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  margin: 0;
-  border-radius: 14px;
-  width: 100%;
-  min-width: 300px;
-  z-index: 9999;
-  margin-left: -100px;
 }
 
 .result-loading,
@@ -601,8 +583,7 @@ onBeforeUnmount(() => {
   .searchbar {
     width: auto;
     min-width: auto;
-    margin: 0;
-    margin-right: 2px;
+    margin: 0 2px 0 0;
   }
 
   .search-trigger {
@@ -614,12 +595,6 @@ onBeforeUnmount(() => {
     width: min(300px, calc(100vw - 24px));
     left: 50%;
     transform: translateX(-50%);
-  }
-}
-
-@media (max-width: 900px) {
-  .searchbar {
-    padding: 8px 10px;
   }
 }
 </style>
