@@ -160,6 +160,16 @@ const notificationsToShow = computed(() => {
       isRead: notif.isRead,
     })
   })
+  lessonNotifs.value.forEach((notif) => {
+    upsert({
+      id: notif.id,
+      senderId: notif.senderId,
+      sender: notif.sender,
+      message: notif.message,
+      time: notif.time,
+      isRead: notif.isRead,
+    })
+  })
 
   return Array.from(merged.values())
 })
@@ -175,6 +185,8 @@ const isTutorAccount = computed(() => {
 const upcomingLessons = ref([])
 const upcomingLoading = ref(false)
 const otherUsers = ref({})
+const lessonNotifs = ref([])
+const seenLessonNotifIds = ref(new Set())
 
 function slotLabelsFromMasks(masks) {
   const dayKeys = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd']
@@ -235,6 +247,65 @@ async function fetchUpcomingLessons() {
   upcomingLoading.value = false
 }
 
+async function fetchLessonNotifications() {
+  if (!user.value) return
+  const column = isTutorAccount.value ? 'tutor_id' : 'student_id'
+  const { data, error } = await supabase
+    .from('lesson_requests')
+    .select('*')
+    .eq(column, user.value.id)
+    .in('status', isTutorAccount.value ? ['pending'] : ['approved', 'rejected'])
+    .order('created_at', { ascending: false })
+
+  if (error || !data) {
+    lessonNotifs.value = []
+    return
+  }
+
+  const otherIds = new Set()
+  for (const r of data) {
+    otherIds.add(isTutorAccount.value ? r.student_id : r.tutor_id)
+  }
+  if (otherIds.size > 0) {
+    const { data: profiles } = await supabase
+      .from('users')
+      .select('*')
+      .in('auth_id', [...otherIds])
+    for (const p of profiles || []) {
+      otherUsers.value[p.auth_id] = p
+    }
+  }
+
+  lessonNotifs.value = data.map((r) => {
+    const otherId = isTutorAccount.value ? r.student_id : r.tutor_id
+    const p = otherUsers.value[otherId]
+    const name = p?.nickname || [p?.name, p?.surname].filter(Boolean).join(' ') || 'Nieznany'
+    const slotStr = slotLabelsFromMasks(r.requested_slots)
+      .slice(0, 2)
+      .map((s) => `${s.day} ${s.time}`)
+      .join(', ')
+    const extra = slotLabelsFromMasks(r.requested_slots).length > 2 ? '...' : ''
+
+    let message = ''
+    if (isTutorAccount.value) {
+      message = `Nowa prośba o lekcję od ${name}${slotStr ? ` (${slotStr}${extra})` : ''}`
+    } else if (r.status === 'approved') {
+      message = `${name} zaakceptował Twoją prośbę o lekcję${slotStr ? ` (${slotStr}${extra})` : ''}`
+    } else if (r.status === 'rejected') {
+      message = `${name} odrzucił Twoją prośbę o lekcję`
+    }
+
+    return {
+      id: `lesson-${r.id}`,
+      senderId: otherId,
+      sender: name,
+      message,
+      time: r.created_at ? new Date(r.created_at).toLocaleDateString('pl-PL') : '',
+      isRead: seenLessonNotifIds.value.has(r.id),
+    }
+  })
+}
+
 function getOtherName(entry) {
   const authId = isTutorAccount.value ? entry.student_id : entry.tutor_id
   const p = otherUsers.value[authId]
@@ -251,7 +322,10 @@ function getOtherSubject(entry) {
 watch(
   () => user.value,
   (u) => {
-    if (u) fetchUpcomingLessons()
+    if (u) {
+      fetchUpcomingLessons()
+      fetchLessonNotifications()
+    }
   },
   { immediate: true },
 )
@@ -259,11 +333,21 @@ watch(
 watch(
   () => profileData.value,
   () => {
-    if (user.value) fetchUpcomingLessons()
+    if (user.value) {
+      fetchUpcomingLessons()
+      fetchLessonNotifications()
+    }
   },
 )
 
 const handleNotificationClick = (notificationId, senderId) => {
+  if (notificationId && notificationId.startsWith('lesson-')) {
+    seenLessonNotifIds.value.add(notificationId.replace('lesson-', ''))
+    lessonNotifs.value = lessonNotifs.value.map((n) =>
+      n.id === notificationId ? { ...n, isRead: true } : n,
+    )
+    return
+  }
   openChatWithUser(senderId)
   markNotificationRead(notificationId)
 }

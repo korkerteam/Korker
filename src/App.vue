@@ -53,7 +53,8 @@ async function loadSavedTutors() {
       .filter((p) => {
         if (!p) return false
         const accountType = [p.account_type, p.accountType].find(Boolean)
-        return `${accountType || ''}`.toLowerCase().includes('tutor')
+        const isTutor = `${accountType || ''}`.toLowerCase().includes('tutor')
+        return isTutorAccount.value ? !isTutor : isTutor
       })
   } catch (e) {
     console.error('Failed to load saved tutors:', e)
@@ -68,6 +69,10 @@ watch(
     }
   },
 )
+
+watch(isTutorAccount, () => {
+  if (profileData.value) loadSavedTutors()
+})
 
 // --- GLOBALNY STAN CZATU (DO PRZEKAZYWANIA MIĘDZY KOMPONENTAMI) ---
 const showChatGlobal = ref(false)

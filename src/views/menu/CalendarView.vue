@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 
@@ -90,6 +90,28 @@ const filteredRequests = computed(() => {
   }
   return lessonRequests.value
 })
+
+const pendingRequests = computed(() => {
+  if (!props.isTutorAccount) return []
+  return lessonRequests.value.filter((r) => r.status === 'pending')
+})
+
+function slotLabelsFromMasks(masks) {
+  const dayKeys = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd']
+  const labels = []
+  if (!Array.isArray(masks)) return labels
+  for (let di = 0; di < masks.length; di++) {
+    const mask = masks[di]
+    if (typeof mask === 'number' && mask > 0) {
+      for (let h = 0; h < 24; h++) {
+        if (mask & (1 << h)) {
+          labels.push({ day: dayKeys[di], time: `${String(h).padStart(2, '0')}:00` })
+        }
+      }
+    }
+  }
+  return labels
+}
 
 function getOtherProfile(entry) {
   const authId = props.isTutorAccount ? entry.student_id : entry.tutor_id
@@ -295,6 +317,26 @@ watch(
   },
   { immediate: true },
 )
+
+let realtimeChannel = null
+
+onMounted(() => {
+  if (user.value) {
+    realtimeChannel = supabase
+      .channel('calendar-lesson-requests')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lesson_requests' }, () => {
+        if (user.value) fetchLessonRequests()
+      })
+      .subscribe()
+  }
+})
+
+onUnmounted(() => {
+  if (realtimeChannel) {
+    supabase.removeChannel(realtimeChannel)
+    realtimeChannel = null
+  }
+})
 </script>
 
 <template>
@@ -349,7 +391,32 @@ watch(
         </button>
       </div>
 
-      <div class="cal-divider" />
+      <!-- Pending Requests (tutor only) -->
+      <div v-if="isTutorAccount && pendingRequests.length > 0" class="pending-section">
+        <p class="cal-section-title">Oczekujące prośby ({{ pendingRequests.length }})</p>
+        <div v-for="req in pendingRequests" :key="req.id" class="pending-card">
+          <div class="pending-card-top">
+            <strong class="pending-card-name">{{ getOtherName(req) }}</strong>
+            <span v-if="getOtherSubject(req)" class="pending-card-subject">{{
+              getOtherSubject(req)
+            }}</span>
+          </div>
+          <div class="pending-card-slots">
+            <span
+              v-for="slot in slotLabelsFromMasks(req.requested_slots)"
+              :key="slot.day + slot.time"
+              class="pending-slot-chip"
+            >
+              {{ slot.day }} {{ slot.time }}
+            </span>
+          </div>
+          <div class="pending-card-actions">
+            <button class="accept-btn" type="button" @click="handleAccept(req)">Akceptuj</button>
+            <button class="reject-btn" type="button" @click="handleReject(req)">Odrzuć</button>
+          </div>
+        </div>
+        <div class="cal-divider" />
+      </div>
 
       <p class="cal-section-title">
         {{ selectedDayKey ? fullDateLabel : 'Nadchodzące lekcje' }}
@@ -726,6 +793,96 @@ watch(
   color: var(--muted);
   font-size: 1rem;
   padding: 8px 0;
+}
+
+.pending-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.pending-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+}
+
+.pending-card-top {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pending-card-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.pending-card-subject {
+  font-size: 0.85rem;
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.pending-card-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pending-slot-chip {
+  background: var(--primary-color);
+  color: white;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.pending-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.accept-btn {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.accept-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.reject-btn {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.reject-btn:hover {
+  color: #ef4444;
+  border-color: #ef4444;
 }
 
 .day-group-label {
