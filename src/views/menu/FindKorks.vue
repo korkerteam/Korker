@@ -56,9 +56,20 @@ function hasSlot(availability, day, hour) {
   return (availability?.[day] || []).includes(slot)
 }
 
-const subjectOptions = ['Matematyka', 'Fizyka', 'Język polski', 'Angielski']
+const subjectOptions = [
+  'Język polski',
+  'Język angielski',
+  'Język niemiecki',
+  'Matematyka',
+  'Fizyka',
+  'Chemia',
+  'Biologia',
+  'Historia',
+  'Geografia',
+  'Informatyka',
+]
 const levelOptions = ['Szkoła podstawowa', 'Liceum', 'Studia']
-const tagOptions = ['Matura', 'Egzamin']
+const tagOptions = ['Matura', 'Egzamin', 'Olimpiada']
 const lessonPlaceOptions = ['Online', 'Stacjonarnie', 'Z dojazdem']
 
 function normalizeChoice(value) {
