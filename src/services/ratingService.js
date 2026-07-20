@@ -1,35 +1,10 @@
 import { supabase } from '@/lib/supabase.js'
 
-const LOCAL_RATING_STORAGE_KEY = 'korker-local-ratings'
-
 function normalizeToFive(value) {
   const n = Number(value)
   if (!Number.isFinite(n)) return 0
   return Math.max(0, Math.min(5, n))
 }
-
-function readLocal() {
-  if (typeof window === 'undefined') return new Map()
-  try {
-    const raw = window.localStorage.getItem(LOCAL_RATING_STORAGE_KEY)
-    if (!raw) return new Map()
-    const parsed = JSON.parse(raw)
-    return new Map(Object.entries(parsed))
-  } catch {
-    return new Map()
-  }
-}
-
-function writeLocal(map) {
-  if (typeof window === 'undefined') return
-  try {
-    const obj = Object.fromEntries(map)
-    window.localStorage.setItem(LOCAL_RATING_STORAGE_KEY, JSON.stringify(obj))
-  } catch {
-    // ignore storage errors
-  }
-}
-
 async function getCurrentUserId() {
   try {
     const { data } = await supabase.auth.getUser()
@@ -55,55 +30,76 @@ function getOrCreateLocalClientId() {
 }
 
 export async function getAverageRating(tutorAuthId) {
-  const map = readLocal()
-  const entries = []
-  for (const [key, raw] of map.entries()) {
-    try {
-      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
-      if (parsed && parsed.tutor_auth_id === tutorAuthId) entries.push(parsed)
-    } catch {
-      // ignore malformed
+  if (!tutorAuthId) return { average: 0, count: 0 }
+  try {
+    const { data, error } = await supabase
+      .from('ratings')
+      .select('rating')
+      .eq('tutor_auth_id', tutorAuthId)
+
+    if (error) {
+      console.error('getAverageRating supabase error', error)
+      return { average: 0, count: 0 }
     }
-  }
 
-  if (entries.length) {
-    const sum = entries.reduce((acc, e) => acc + normalizeToFive(e.rating), 0)
-    return { average: sum / entries.length, count: entries.length }
+    if (!data || data.length === 0) return { average: 0, count: 0 }
+    const sum = data.reduce((acc, r) => acc + normalizeToFive(r.rating), 0)
+    return { average: sum / data.length, count: data.length }
+  } catch (err) {
+    console.error('getAverageRating unexpected error', err)
+    return { average: 0, count: 0 }
   }
-
-  return { average: 0, count: 0 }
 }
 
 export async function getMyRatingForTutor(tutorAuthId) {
-  const userId = (await getCurrentUserId()) || getOrCreateLocalClientId()
+  const userId = await getCurrentUserId()
   if (!userId) return null
-  const map = readLocal()
-  const key = `${tutorAuthId}:${userId}`
-  const raw = map.get(key)
-  if (!raw) return null
   try {
-    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
-    return normalizeToFive(parsed.rating)
-  } catch {
+    const { data, error } = await supabase
+      .from('ratings')
+      .select('rating')
+      .eq('tutor_auth_id', tutorAuthId)
+      .eq('rater_auth_id', userId)
+      .single()
+
+    if (error) {
+      // no rating yet or access denied
+      return null
+    }
+    return normalizeToFive(data.rating)
+  } catch (err) {
+    console.error('getMyRatingForTutor unexpected error', err)
     return null
   }
 }
 
 export async function submitRating(tutorAuthId, rating) {
-  const userId = (await getCurrentUserId()) || getOrCreateLocalClientId()
-  if (!userId) throw new Error('No user id available')
-  const normalized = normalizeToFive(rating)
-  const map = readLocal()
-  const key = `${tutorAuthId}:${userId}`
-  const payload = { tutor_auth_id: tutorAuthId, rater_auth_id: userId, rating: normalized }
-  map.set(key, JSON.stringify(payload))
-  writeLocal(map)
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('Authentication required to submit rating')
+  const normalized = Math.max(1, normalizeToFive(rating))
   try {
-    if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('korker-rating-changed', { detail: { tutorAuthId } }))
+    const payload = { tutor_auth_id: tutorAuthId, rater_auth_id: userId, rating: normalized }
+    const { data, error } = await supabase.from('ratings').upsert(payload, {
+      onConflict: ['tutor_auth_id', 'rater_auth_id'],
+      returning: 'representation',
+    })
+
+    if (error) {
+      console.error('submitRating supabase error', error)
+      throw error
     }
-  } catch {
-    // ignore
+
+    try {
+      if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('korker-rating-changed', { detail: { tutorAuthId } }))
+      }
+    } catch {
+      // ignore
+    }
+
+    return normalized
+  } catch (err) {
+    console.error('submitRating unexpected error', err)
+    throw err
   }
-  return normalized
 }
