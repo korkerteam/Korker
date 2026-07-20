@@ -916,15 +916,16 @@ function onSubjectHover(e, enter) {
   background: var(--surface-strong);
   border: 1px solid var(--border);
   border-radius: 16px;
-  width: fit-content;
-  min-width: 500px;
+  width: 100%;
   max-width: 1000px;
+  min-width: 0;
   padding: 32px;
   margin: 0 auto;
   box-shadow: var(--shadow-soft);
   font-family: Inter, system-ui, sans-serif;
   color: var(--text);
   min-height: 0;
+  box-sizing: border-box;
 }
 
 .header {
@@ -1200,7 +1201,7 @@ function onSubjectHover(e, enter) {
 
 .format-option.selected {
   background: #eef2ff;
-  border-color: #4f75c7;
+  border-color: var(--accent);
   color: #1f2937;
 }
 
@@ -1591,7 +1592,7 @@ function onSubjectHover(e, enter) {
 .av-action-btn {
   font-size: 12px;
   padding: 6px 14px;
-  color: #4f75c7;
+  color: var(--accent);
   background: transparent;
   border: 1px solid #d1d5db;
   border-radius: 6px;
@@ -1602,5 +1603,121 @@ function onSubjectHover(e, enter) {
 
 .av-action-btn:hover {
   background: #f3f4f6;
+}
+
+@media (max-width: 768px) {
+  .profile-card {
+    padding: 16px 12px;
+    border-radius: 14px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .avatar-wrapper {
+    align-self: center;
+  }
+
+  .header-text {
+    width: 100%;
+    align-items: center;
+    text-align: center;
+  }
+
+  .details {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .field-row {
+    gap: 3px;
+  }
+
+  .field-row textarea {
+    min-height: 80px;
+  }
+
+  .info-row,
+  .offer-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+  }
+
+  .offer-value {
+    text-align: left;
+  }
+
+  .subject-table {
+    grid-template-columns: 1fr;
+  }
+
+  .address-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .lesson-photo-row {
+    gap: 6px;
+  }
+
+  .lesson-photo-input {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .lesson-photo-preview,
+  .offer-photo-preview {
+    width: 100%;
+    max-width: 220px;
+  }
+
+  .actions,
+  .delete-confirm-actions {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .btn,
+  .btn-sm {
+    width: 100%;
+  }
+
+  .availability-section {
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  .av-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .av-grid {
+    grid-template-columns: 36px repeat(7, minmax(24px, 1fr));
+    gap: 1px;
+    padding: 3px;
+    overflow-x: auto;
+  }
+
+  .tutor-offer-view {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .av-header-cell {
+    font-size: 8px;
+    padding: 1px;
+  }
+
+  .av-day-header {
+    font-size: 7px;
+  }
 }
 </style>
