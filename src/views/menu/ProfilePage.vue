@@ -1,12 +1,15 @@
 ﻿<script setup>
 import { reactive, ref, watch, computed, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { upsertProfile, deleteProfile } from '@/services/profileService.js'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { translateAuthError } from '@/utils/authErrors.js'
+import { compressImage } from '@/utils/imageCompress.js'
 import LoadingBox from '@/components/LoadingBox.vue'
+import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
 
+const route = useRoute()
 const router = useRouter()
 const { user, profileData, profileLoading, setProfileName, clearNeedsProfile, signOut } = useAuth()
 const profile = reactive({
@@ -41,31 +44,12 @@ const weeklyDayLabels = [
   'Sobota',
   'Niedziela',
 ]
-const weeklyTimeSlots = Array.from(
-  { length: 24 },
-  (_, h) => `${String(h).padStart(2, '0')}:00-${String((h + 1) % 24).padStart(2, '0')}:00`,
-)
-
-const mirrorWeekdays = ref(false)
-const showAllHours = ref(false)
-const visibleHours = computed(() => {
-  if (showAllHours.value) return Array.from({ length: 24 }, (_, h) => h)
-  return [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
-})
-
-function toggleShowAllHours() {
-  showAllHours.value = !showAllHours.value
-}
-
 const isEditing = ref(false)
 const saving = ref(false)
 const loading = ref(true)
 const saveError = ref('')
 const pendingAvatarFile = ref(null)
 const pendingLessonPhotoFile = ref(null)
-const isDragging = ref(false)
-const dragMode = ref(null)
-const focusedCell = ref(null)
 let originalProfilePicture = ''
 let originalLessonPhoto = ''
 const draft = reactive({
@@ -126,94 +110,6 @@ function fromDb(data) {
   profile.flatNumber = ''
 }
 
-function initWeeklyAvailability() {
-  return Object.fromEntries(weeklyDayLabels.map((d) => [d, []]))
-}
-
-function getSlotLabel(hour) {
-  return `${String(hour).padStart(2, '0')}:00-${String((hour + 1) % 24).padStart(2, '0')}:00`
-}
-
-function isCellSelected(day, hour) {
-  return (draft.weeklyAvailability?.[day] || []).includes(getSlotLabel(hour))
-}
-
-function setCellState(day, hour, selected) {
-  if (!draft.weeklyAvailability) draft.weeklyAvailability = initWeeklyAvailability()
-  if (!draft.weeklyAvailability[day]) draft.weeklyAvailability[day] = []
-  const slot = getSlotLabel(hour)
-  const slots = draft.weeklyAvailability[day]
-  const idx = slots.indexOf(slot)
-  if (selected && idx === -1) slots.push(slot)
-  if (!selected && idx > -1) slots.splice(idx, 1)
-}
-
-function clearAvailability() {
-  draft.weeklyAvailability = initWeeklyAvailability()
-}
-
-function toggleCell(day, hour, skipMirror) {
-  const wasSelected = isCellSelected(day, hour)
-  setCellState(day, hour, !wasSelected)
-  if (!skipMirror && mirrorWeekdays.value) {
-    const dayIdx = weeklyDayLabels.indexOf(day)
-    if (dayIdx >= 0 && dayIdx <= 4) {
-      for (let i = 0; i <= 4; i++) {
-        if (i === dayIdx) continue
-        setCellState(weeklyDayLabels[i], hour, !wasSelected)
-      }
-    }
-  }
-}
-
-function onCellMouseDown(day, hour) {
-  isDragging.value = true
-  const wasSelected = isCellSelected(day, hour)
-  dragMode.value = wasSelected ? 'deselect' : 'select'
-  toggleCell(day, hour)
-}
-
-function onCellMouseEnter(day, hour) {
-  if (!isDragging.value) return
-  if (mirrorWeekdays.value) {
-    const dayIdx = weeklyDayLabels.indexOf(day)
-    if (dayIdx >= 0 && dayIdx <= 4) {
-      for (let i = 0; i <= 4; i++) {
-        const d = weeklyDayLabels[i]
-        if (dragMode.value === 'select' && !isCellSelected(d, hour)) setCellState(d, hour, true)
-        if (dragMode.value === 'deselect' && isCellSelected(d, hour)) setCellState(d, hour, false)
-      }
-      return
-    }
-  }
-  if (dragMode.value === 'select' && !isCellSelected(day, hour)) toggleCell(day, hour, true)
-  if (dragMode.value === 'deselect' && isCellSelected(day, hour)) toggleCell(day, hour, true)
-}
-
-function onGridMouseUp() {
-  isDragging.value = false
-  dragMode.value = null
-}
-
-function onCellKeydown(e, day, hour) {
-  const idx = weeklyDayLabels.indexOf(day)
-  let nextDay = idx
-  let nextHour = hour
-  if (e.key === 'ArrowRight') nextDay = Math.min(idx + 1, 6)
-  else if (e.key === 'ArrowLeft') nextDay = Math.max(idx - 1, 0)
-  else if (e.key === 'ArrowDown') nextHour = Math.min(hour + 1, 23)
-  else if (e.key === 'ArrowUp') nextHour = Math.max(hour - 1, 0)
-  else if (e.key === ' ' || e.key === 'Enter') {
-    e.preventDefault()
-    toggleCell(day, hour)
-    return
-  } else return
-  e.preventDefault()
-  focusedCell.value = `${weeklyDayLabels[nextDay]}-${nextHour}`
-  const el = document.querySelector(`[data-cell="${focusedCell.value}"]`)
-  el?.focus()
-}
-
 function applySavedTutorPost(data) {
   if (data?.tutor_post) {
     const tp = data.tutor_post
@@ -257,6 +153,16 @@ watch(
       startEdit()
     }
     loading.value = false
+    if (!isEditing.value && route.query.edit === '1') {
+      nextTick(() => {
+        startEdit()
+        nextTick(() => {
+          document
+            .getElementById('availability-section')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        })
+      })
+    }
   },
   { immediate: true },
 )
@@ -335,6 +241,11 @@ async function saveProfile() {
   try {
     if (pendingAvatarFile.value) {
       const file = pendingAvatarFile.value
+      if (file.size > 3 * 1024 * 1024) {
+        saveError.value = 'Zdjęcie profilowe może mieć maksymalnie 3 MB'
+        saving.value = false
+        return
+      }
       const path = `${Date.now()}-${file.name}`
       const { error: uploadError } = await supabase.storage
         .from('profile_pictures')
@@ -355,6 +266,11 @@ async function saveProfile() {
 
     if (pendingLessonPhotoFile.value) {
       const file = pendingLessonPhotoFile.value
+      if (file.size > 5 * 1024 * 1024) {
+        saveError.value = 'Zdjęcie oferty może mieć maksymalnie 5 MB'
+        saving.value = false
+        return
+      }
       const path = `lesson-${Date.now()}-${file.name}`
       const { error: uploadError } = await supabase.storage
         .from('profile_pictures')
@@ -465,21 +381,33 @@ function triggerLessonPhotoUpload() {
   document.getElementById('lesson-photo-input')?.click()
 }
 
-function onAvatarChange(event) {
-  const file = event.target.files?.[0]
+async function pickAndCompressAvatar(file) {
   if (!file) return
-
+  if (file.type.startsWith('image/')) {
+    file = await compressImage(file, { maxWidth: 128, maxHeight: 128, maxSizeMB: 3 })
+  }
+  if (file.size > 3 * 1024 * 1024) return
   pendingAvatarFile.value = file
   profile.profile_picture = URL.createObjectURL(file)
   draft.profile_picture = profile.profile_picture
 }
 
-function onLessonPhotoChange(event) {
-  const file = event.target.files?.[0]
-  if (!file) return
+function onAvatarChange(event) {
+  pickAndCompressAvatar(event.target.files?.[0])
+}
 
+async function pickAndCompressLessonPhoto(file) {
+  if (!file) return
+  if (file.type.startsWith('image/')) {
+    file = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, maxSizeMB: 5 })
+  }
+  if (file.size > 5 * 1024 * 1024) return
   pendingLessonPhotoFile.value = file
   draft.lessonPhoto = URL.createObjectURL(file)
+}
+
+function onLessonPhotoChange(event) {
+  pickAndCompressLessonPhoto(event.target.files?.[0])
 }
 
 function formattedLocation() {
@@ -729,56 +657,11 @@ function onSubjectHover(e, enter) {
               <span class="field-label">Stawka za lekcję (zł/h)<span class="req">*</span></span>
               <input v-model="draft.lessonPrice" type="number" min="10" placeholder="50" />
             </label>
-            <div class="availability-section">
-              <div class="av-header-row">
-                <span class="field-label">Dostępne godziny w tygodniu</span>
-                <label class="mirror-toggle">
-                  <input type="checkbox" v-model="mirrorWeekdays" />
-                  <span class="mirror-label">Lustro (Pn–Pt)</span>
-                </label>
-              </div>
-              <div class="av-grid-wrap">
-                <div class="av-grid" @mouseup="onGridMouseUp" @mouseleave="onGridMouseUp">
-                  <div class="av-header-cell av-corner"></div>
-                  <div
-                    v-for="day in weeklyDayLabels"
-                    :key="day"
-                    class="av-header-cell av-day-header"
-                  >
-                    {{ day }}
-                  </div>
-                  <template v-for="hour in visibleHours" :key="hour">
-                    <div class="av-header-cell av-time-header">
-                      {{ String(hour).padStart(2, '0') }}:00
-                    </div>
-                    <div
-                      v-for="day in weeklyDayLabels"
-                      :key="`${day}-${hour}`"
-                      :data-cell="`${day}-${hour}`"
-                      class="av-cell"
-                      :class="{ selected: isCellSelected(day, hour) }"
-                      @mousedown.prevent="onCellMouseDown(day, hour)"
-                      @mouseenter="onCellMouseEnter(day, hour)"
-                      @keydown="onCellKeydown($event, day, hour)"
-                      tabindex="0"
-                      role="checkbox"
-                      :aria-checked="isCellSelected(day, hour)"
-                    ></div>
-                  </template>
-                </div>
-              </div>
-              <div class="av-actions-row">
-                <button type="button" class="btn btn-text av-action-btn" @click="clearAvailability">
-                  Wyczyść
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-text av-action-btn"
-                  @click="toggleShowAllHours"
-                >
-                  {{ showAllHours ? 'Pokaż mniej' : 'Pokaż więcej godzin' }}
-                </button>
-              </div>
+            <div id="availability-section">
+              <AvailabilityGrid
+                :availability="draft.weeklyAvailability"
+                @update:availability="draft.weeklyAvailability = $event"
+              />
             </div>
             <label class="field-row">
               <span class="field-label">Opis oferty</span>
@@ -1321,129 +1204,6 @@ function onSubjectHover(e, enter) {
   color: var(--muted);
 }
 
-.availability-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 6px;
-}
-
-.av-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.mirror-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  user-select: none;
-  flex-shrink: 0;
-}
-
-.mirror-toggle input {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-.mirror-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.av-grid-wrap {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface-soft);
-}
-
-.av-grid {
-  display: grid;
-  grid-template-columns: 44px repeat(7, 1fr);
-  grid-auto-rows: 22px;
-  gap: 2px;
-  padding: 4px;
-  background: var(--surface-soft);
-  user-select: none;
-}
-
-.av-header-cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-  background: var(--surface);
-  border-radius: 3px;
-  padding: 2px;
-  position: sticky;
-  z-index: 2;
-}
-
-.av-corner {
-  top: 0;
-  left: 0;
-  z-index: 3;
-  background: transparent;
-}
-
-.av-day-header {
-  top: 0;
-  z-index: 2;
-  background: var(--surface-soft);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--text);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.av-time-header {
-  left: 0;
-  z-index: 1;
-  background: transparent;
-  color: var(--muted);
-}
-
-.av-cell {
-  border-radius: 3px;
-  background: var(--surface-strong);
-  border: 1px solid var(--border);
-  cursor: pointer;
-  transition: background 0.08s;
-  outline: none;
-  min-width: 0;
-}
-
-.av-cell.selected {
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
-.av-cell:hover {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-}
-
-.av-cell.selected:hover {
-  background: var(--accent-strong);
-  border-color: var(--accent-strong);
-}
-
-.av-cell:focus-visible {
-  box-shadow: 0 0 0 2px var(--accent);
-}
-
 .offer-label {
   font-weight: 600;
   color: var(--muted);
@@ -1595,31 +1355,5 @@ function onSubjectHover(e, enter) {
   font-weight: 500;
   color: #991b1b;
   text-align: center;
-}
-
-.name-input-label {
-  width: 100%;
-}
-
-.av-actions-row {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-}
-
-.av-action-btn {
-  font-size: 12px;
-  padding: 6px 14px;
-  color: #4f75c7;
-  background: transparent;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background 0.15s;
-}
-
-.av-action-btn:hover {
-  background: #f3f4f6;
 }
 </style>

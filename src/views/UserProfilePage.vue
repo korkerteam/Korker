@@ -6,6 +6,7 @@ import { useAuth } from '@/composables/useAuth.js'
 import { useMessaging } from '@/composables/useMessaging.js'
 import { blockUser, unblockUser, isBlockedByMe, isBlockingMe } from '@/services/blockService.js'
 import LoadingBox from '@/components/LoadingBox.vue'
+import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
 
 const props = defineProps({
   likedTeachers: {
@@ -28,16 +29,6 @@ const blockedByMe = ref(false)
 const blockingMe = ref(false)
 const showBlockConfirm = ref(false)
 const blockLoading = ref(false)
-
-const weeklyDayLabels = [
-  'Poniedziałek',
-  'Wtorek',
-  'Środa',
-  'Czwartek',
-  'Piątek',
-  'Sobota',
-  'Niedziela',
-]
 
 const globalChat = inject('globalChat')
 
@@ -206,15 +197,6 @@ function getTeachingFormats() {
   return []
 }
 
-function isCellSelected(day, hour) {
-  const slot = `${String(hour).padStart(2, '0')}:00-${String((hour + 1) % 24).padStart(2, '0')}:00`
-  return (tutorPost.value?.weeklyAvailability?.[day] || []).includes(slot)
-}
-
-function visibleHours() {
-  return Array.from({ length: 24 }, (_, h) => h)
-}
-
 function handleSendMessage() {
   if (!isAuthenticated.value) {
     openAuthModal()
@@ -296,52 +278,67 @@ function handleSendMessage() {
             </div>
           </div>
 
-          <button
-            v-if="profile && user?.id !== profile.auth_id && canAddTeacher"
-            class="btn save-btn"
-            :class="{ saved: isLiked }"
-            @click="toggleLike"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path
-                v-if="!isLiked"
-                d="M12 5v14m-7-7h14"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-              <path
-                v-else
-                d="M20 6L9 17l-5-5"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            {{ isLiked ? 'Dodano' : 'Dodaj' }}
-          </button>
-          <button
-            v-if="profile && user?.id !== profile.auth_id && !blockedByMe && !blockingMe"
-            class="btn btn-primary message-btn"
-            @click.stop="handleSendMessage"
-          >
-            Wyślij wiadomość
-          </button>
-          <button
-            v-if="profile && user?.id !== profile.auth_id && !blockedByMe"
-            class="btn block-btn"
-            @click="showBlockConfirm = true"
-          >
-            Zablokuj użytkownika
-          </button>
-          <button
-            v-if="profile && user?.id === profile.auth_id"
-            class="btn btn-primary message-btn"
-            style="background: var(--muted); cursor: default; opacity: 0.5"
-          >
-            To Twój profil
-          </button>
+          <div style="gap: 8px; display: flex; flex-direction: column; width: 100%">
+            <button
+              v-if="profile && user?.id !== profile.auth_id && canAddTeacher"
+              class="btn save-btn"
+              :class="{ saved: isLiked }"
+              @click="toggleLike"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path
+                  v-if="!isLiked"
+                  d="M12 5v14m-7-7h14"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <path
+                  v-else
+                  d="M20 6L9 17l-5-5"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              {{ isLiked ? 'Dodano' : 'Dodaj' }}
+            </button>
+            <button
+              v-if="profile && user?.id !== profile.auth_id && !blockedByMe && !blockingMe"
+              class="btn btn-primary message-btn"
+              @click.stop="handleSendMessage"
+            >
+              Wyślij wiadomość
+            </button>
+            <button
+              v-if="profile && user?.id !== profile.auth_id && !blockedByMe"
+              class="btn block-btn"
+              @click="showBlockConfirm = true"
+            >
+              Zablokuj użytkownika
+            </button>
+            <button
+              v-if="profile && user?.id === profile.auth_id"
+              class="btn btn-primary message-btn"
+              @click="router.push({ path: '/', query: { panel: 'profile' } })"
+            >
+              Edytuj profil
+            </button>
+            <button
+              v-if="
+                profile &&
+                user?.id === profile.auth_id &&
+                profile?.account_type === 'tutor' &&
+                tutorPost?.weeklyAvailability &&
+                Object.keys(tutorPost.weeklyAvailability).length
+              "
+              class="btn btn-secondary message-btn"
+              @click="router.push({ path: '/', query: { panel: 'profile', edit: '1' } })"
+            >
+              Edytuj dostępność
+            </button>
+          </div>
         </div>
 
         <div class="profile-right">
@@ -377,30 +374,8 @@ function handleSendMessage() {
                 v-if="
                   tutorPost.weeklyAvailability && Object.keys(tutorPost.weeklyAvailability).length
                 "
-                class="availability-section"
               >
-                <span class="offer-label">Dostępność</span>
-                <div class="av-grid">
-                  <div class="av-header-cell av-corner"></div>
-                  <div
-                    v-for="day in weeklyDayLabels"
-                    :key="day"
-                    class="av-header-cell av-day-header"
-                  >
-                    {{ day }}
-                  </div>
-                  <template v-for="hour in visibleHours()" :key="hour">
-                    <div class="av-header-cell av-time-header">
-                      {{ String(hour).padStart(2, '0') }}:00
-                    </div>
-                    <div
-                      v-for="day in weeklyDayLabels"
-                      :key="`${day}-${hour}`"
-                      class="av-cell"
-                      :class="{ selected: isCellSelected(day, hour) }"
-                    ></div>
-                  </template>
-                </div>
+                <AvailabilityGrid :availability="tutorPost.weeklyAvailability" readonly />
               </div>
             </div>
             <div v-else class="tutor-offer-view tutor-offer-empty">
@@ -648,68 +623,6 @@ function handleSendMessage() {
   width: 100%;
   height: auto;
   display: block;
-}
-
-.availability-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.av-grid {
-  display: grid;
-  grid-template-columns: 44px repeat(7, 1fr);
-  grid-auto-rows: 22px;
-  gap: 2px;
-  padding: 4px;
-  background: #f3f4f6;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-  overflow: auto;
-  user-select: none;
-}
-
-.av-header-cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  background: #fff;
-  border-radius: 3px;
-  padding: 2px;
-}
-
-.av-corner {
-  background: transparent;
-}
-
-.av-day-header {
-  background: #f9fafb;
-  font-size: 9px;
-  font-weight: 700;
-  color: #374151;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.av-time-header {
-  background: transparent;
-  color: #9ca3af;
-}
-
-.av-cell {
-  border-radius: 3px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  min-width: 0;
-}
-
-.av-cell.selected {
-  background: #4f75c7;
-  border-color: #4f75c7;
 }
 
 .btn {
