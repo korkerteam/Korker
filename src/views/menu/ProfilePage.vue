@@ -245,7 +245,7 @@ watch(
     if (busy) return
     if (data) {
       fromDb(data)
-      setProfileName(profile.nickname || profile.name)
+      setProfileName(profile.name || profile.nickname)
       applySavedTutorPost(data)
     } else {
       const meta = user.value?.user_metadata
@@ -269,11 +269,6 @@ function startEdit() {
 
 async function saveProfile() {
   saveError.value = ''
-
-  if (!draft.nickname.trim() && !draft.name.trim()) {
-    saveError.value = 'Pseudonim lub imię i nazwisko jest wymagane'
-    return
-  }
 
   const sf = draft.accountType === 'tutor' ? strictestFormat.value : 't'
   if (draft.accountType === 'tutor') {
@@ -407,7 +402,7 @@ async function saveProfile() {
       profileData.value = { ...result }
     }
 
-    setProfileName(profile.nickname || profile.name)
+    setProfileName(profile.name || profile.nickname)
     clearNeedsProfile()
     isEditing.value = false
   } catch (err) {
@@ -582,7 +577,7 @@ function onSubjectHover(e, enter) {
             <input
               v-model="draft.nickname"
               class="name-input"
-              placeholder="janek123"
+              placeholder="Pozostaw puste aby wygenerować"
               :maxlength="LIMITS.nickname"
             />
           </label>
@@ -598,11 +593,11 @@ function onSubjectHover(e, enter) {
         </template>
         <template v-else>
           <div class="header-text">
-            <template v-if="profile.nickname">
-              <h2>{{ profile.nickname }}</h2>
-              <span v-if="profile.name" class="profile-real-name">{{ profile.name }}</span>
+            <template v-if="profile.name">
+              <h2>{{ profile.name }}</h2>
+              <span v-if="profile.nickname" class="profile-nickname">{{ profile.nickname }}</span>
             </template>
-            <h2 v-else>{{ profile.name }}</h2>
+            <h2 v-else-if="profile.nickname">{{ profile.nickname }}</h2>
           </div>
         </template>
       </div>
@@ -1018,10 +1013,11 @@ function onSubjectHover(e, enter) {
   margin: 0;
   color: var(--text);
 }
-.profile-real-name {
+.profile-real-name,
+.profile-nickname {
   font-size: 14px;
   color: var(--muted);
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .name-input {
