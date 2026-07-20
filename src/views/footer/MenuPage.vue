@@ -196,7 +196,7 @@ function handleToggleCalendar() {
   min-width: 0;
   align-items: stretch;
   justify-content: flex-start;
-  padding: 28px 0;
+  padding: 23px 0;
   width: 100%;
   overflow-y: visible;
   overflow-x: hidden;
