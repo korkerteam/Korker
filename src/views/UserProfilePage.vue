@@ -37,6 +37,13 @@ const showRatingEditor = ref(false)
 const ratingDraft = ref(0)
 const ratingSaving = ref(false)
 
+const formattedDraftRating = computed(() => {
+  if (!ratingDraft.value) return 'Wybierz ocenę'
+  return Number.isInteger(ratingDraft.value)
+    ? `${ratingDraft.value}.0 / 5`
+    : `${ratingDraft.value.toFixed(1)} / 5`
+})
+
 const globalChat = inject('globalChat')
 
 onMounted(async () => {
@@ -264,7 +271,7 @@ async function submitTeacherRating() {
 }
 
 function getStarFill(rating, index) {
-  const diff = Number(rating || 0) - index
+  const diff = Number(rating || 0) - (index - 1)
   if (diff >= 1) return 'filled'
   if (diff >= 0.5) return 'half'
   return 'empty'
@@ -373,20 +380,30 @@ function getStarFill(rating, index) {
               type="button"
               @click="toggleRatingEditor"
             >
-              {{ myTeacherRating != null ? 'Zmień ocenę' : 'Oceń' }}
+              {{ showRatingEditor ? 'Zamknij' : myTeacherRating != null ? 'Zmień ocenę' : 'Oceń' }}
             </button>
             <div v-if="showRatingEditor" class="rating-editor">
-              <div class="rating-options">
-                <button
-                  v-for="value in [1, 2, 3, 4, 5]"
-                  :key="value"
-                  class="rating-option"
-                  :class="{ active: ratingDraft === value }"
-                  type="button"
-                  @click="setDraftRating(value)"
-                >
-                  {{ value }}★
-                </button>
+              <div class="rating-options-wrapper">
+                <div class="rating-options" role="radiogroup" aria-label="Wybierz ocenę">
+                  <div v-for="index in 5" :key="index" class="rating-star">
+                    <span class="rating-star-icon" :class="getStarFill(ratingDraft, index)">★</span>
+                    <button
+                      type="button"
+                      class="rating-star-control left"
+                      :class="{ active: ratingDraft >= index - 0.5 }"
+                      @click="setDraftRating(index - 0.5)"
+                      :aria-label="`Ocena ${index - 0.5}`"
+                    ></button>
+                    <button
+                      type="button"
+                      class="rating-star-control right"
+                      :class="{ active: ratingDraft >= index }"
+                      @click="setDraftRating(index)"
+                      :aria-label="`Ocena ${index}`"
+                    ></button>
+                  </div>
+                </div>
+                <div class="rating-selected">{{ formattedDraftRating }}</div>
               </div>
               <button
                 class="btn btn-primary rating-submit"
@@ -677,25 +694,74 @@ function getStarFill(rating, index) {
   gap: 8px;
 }
 
-.rating-options {
+.rating-options-wrapper {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   flex-wrap: wrap;
-  gap: 8px;
 }
 
-.rating-option {
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface-strong);
-  color: var(--text);
-  padding: 6px 10px;
+.rating-options {
+  display: flex;
+  gap: 4px;
+}
+
+.rating-star {
+  position: relative;
+  width: 36px;
+  height: 36px;
+}
+
+.rating-star-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  color: #cbd5e1;
+}
+
+.rating-star-icon.filled {
+  color: #fbbf24;
+}
+
+.rating-star-icon.half {
+  color: transparent;
+  background: linear-gradient(90deg, #fbbf24 50%, #cbd5e1 50%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.rating-star-control {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  padding: 0;
   cursor: pointer;
 }
 
-.rating-option.active {
-  background: var(--primary-color);
-  color: #fff;
-  border-color: var(--primary-color);
+.rating-star-control.left {
+  left: 0;
+}
+
+.rating-star-control.right {
+  right: 0;
+}
+
+.rating-star-control:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.rating-selected {
+  font-size: 0.95rem;
+  color: var(--muted);
+  min-width: 78px;
 }
 
 .rating-submit {
