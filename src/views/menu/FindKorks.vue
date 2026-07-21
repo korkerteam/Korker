@@ -158,8 +158,9 @@ async function loadTutors() {
         const offers = Array.isArray(raw) ? raw : [raw]
         const renderedName = [r.name, r.surname].filter(Boolean).join(' ') || 'Korepetytor'
         return offers.map((tp, oi) => ({
-          id: `${r.id}-offer-${oi}`,
+          id: r.id,
           auth_id: r.auth_id,
+          offerIdx: oi,
           name: renderedName,
           subject: tp.subject || '',
           level: tp.level || '',
