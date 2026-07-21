@@ -45,7 +45,10 @@ watch(citySearchInput, (val) => {
 const selectedLessonPlaces = ref([])
 const { cities, loadCities } = useCityCache()
 
+const selectedCityInfo = ref(null)
+
 function onCitySelect(city) {
+  selectedCityInfo.value = city
   selectedCity.value = city.Name
   emitFilterState()
 }
@@ -722,6 +725,9 @@ function toggleSelection(category, value) {
               Wpisz co najmniej 3 znaki
             </p>
             <CityMap :cities="cities" :filter-query="cityFilterQuery" @city-select="onCitySelect" />
+            <div v-if="selectedCityInfo" class="city-selected-info">
+              Wybrano: {{ selectedCityInfo.Name }}
+            </div>
             <button class="city-apply-button" type="button" @click="applyCityFilter">
               Zastosuj
             </button>
@@ -1294,7 +1300,8 @@ function toggleSelection(category, value) {
 .tags-filter-section {
   width: 100%;
   min-width: 0;
-  padding: 22px 18px;
+  padding: 20px 13px;
+  overflow-y: auto;
   border-radius: 24px;
   background: var(--surface-strong);
   border: 1px solid var(--border);
@@ -1383,6 +1390,15 @@ function toggleSelection(category, value) {
   margin: 6px 0;
   font-size: 12px;
   color: var(--text-muted);
+  text-align: center;
+}
+
+.city-selected-info {
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface-soft);
+  border-radius: 8px;
   text-align: center;
 }
 

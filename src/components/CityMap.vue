@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -11,13 +11,6 @@ const props = defineProps({
 const emit = defineEmits(['city-select'])
 
 const mapContainer = ref(null)
-const fullscreen = ref(false)
-
-function toggleFullscreen() {
-  fullscreen.value = !fullscreen.value
-  document.body.style.overflow = fullscreen.value ? 'hidden' : ''
-  nextTick(() => map?.invalidateSize())
-}
 let map = null
 let markerLayer = null
 let boundaryLayer = null
@@ -190,7 +183,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  document.body.style.overflow = ''
   resizeObserver?.disconnect()
   if (map) {
     map.remove()
@@ -200,94 +192,15 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="city-map-wrapper">
-    <div v-if="fullscreen" class="map-overlay" @click="toggleFullscreen"></div>
-    <div ref="mapContainer" class="city-map" :class="{ 'city-map--fullscreen': fullscreen }"></div>
-    <button class="map-expand-btn" @click.stop="toggleFullscreen">
-      <svg
-        v-if="!fullscreen"
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-      >
-        <path
-          d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"
-        />
-      </svg>
-      <svg
-        v-else
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-      >
-        <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" />
-      </svg>
-    </button>
-  </div>
+  <div ref="mapContainer" class="city-map"></div>
 </template>
 
 <style scoped>
-.city-map-wrapper {
-  position: relative;
-  width: 100%;
-}
-
 .city-map {
   width: 100%;
   height: 320px;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--border);
-  transition: all 0.25s ease;
-  position: relative;
-  z-index: 1;
-}
-
-.city-map--fullscreen {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(90vw, 1200px);
-  height: 80vh;
-  border-radius: 16px;
-  z-index: 10001;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
-}
-
-.map-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  z-index: 10000;
-}
-
-.map-expand-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 1000;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: none;
-  background: rgba(255, 255, 255, 0.9);
-  color: #333;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-  transition: background 0.15s;
-}
-
-.map-expand-btn:hover {
-  background: #fff;
 }
 </style>
