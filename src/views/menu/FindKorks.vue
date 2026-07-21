@@ -259,6 +259,44 @@ const currentTutor = computed(() => {
   return list[safeIndex] || null
 })
 
+const currentTutorRating = computed(() => {
+  const tutor = currentTutor.value
+  if (!tutor || !tutor.auth_id) return { average: 0, count: 0 }
+  return teacherRatings.value[tutor.auth_id] || { average: 0, count: 0 }
+})
+
+function getStarFill(rating, index) {
+  const diff = Number(rating || 0) - (index - 1)
+  if (diff >= 1) return 'filled'
+  if (diff >= 0.5) return 'half'
+  return ''
+}
+
+function loadTutorRating(tutorAuthId) {
+  if (!tutorAuthId || teacherRatings.value[tutorAuthId]) return
+  getAverageRating(tutorAuthId)
+    .then((summary) => {
+      teacherRatings.value = {
+        ...teacherRatings.value,
+        [tutorAuthId]: summary || { average: 0, count: 0 },
+      }
+    })
+    .catch(() => {
+      teacherRatings.value = {
+        ...teacherRatings.value,
+        [tutorAuthId]: { average: 0, count: 0 },
+      }
+    })
+}
+
+watch(
+  currentTutor,
+  (tutor) => {
+    if (tutor?.auth_id) loadTutorRating(tutor.auth_id)
+  },
+  { immediate: true },
+)
+
 watch(
   () => props.filters,
   () => {
@@ -564,6 +602,21 @@ function toggleSelection(category, value) {
                 </div>
                 <div class="tutor-summary-card tutor-summary-price">
                   <p class="tutor-price">{{ currentTutor.price }} zł/h</p>
+                </div>
+                <div v-if="currentTutorRating" class="rating-row">
+                  <div class="rating-stars">
+                    <span
+                      v-for="i in 5"
+                      :key="i"
+                      class="star"
+                      :class="getStarFill(currentTutorRating.average, i)"
+                      >★</span
+                    >
+                  </div>
+                  <span class="rating-value">
+                    {{ currentTutorRating.average ? currentTutorRating.average.toFixed(1) : '0' }} /
+                    5
+                  </span>
                 </div>
               </div>
             </div>
@@ -1003,10 +1056,40 @@ function toggleSelection(category, value) {
 
 .tutor-summary-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) auto;
+  grid-template-columns: minmax(0, 1.2fr) auto auto;
   gap: 10px;
   align-items: center;
   width: 100%;
+}
+
+.rating-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rating-stars {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  font-size: 1.1rem;
+}
+
+.rating-stars .star {
+  color: #cbd5e1;
+}
+
+.rating-stars .star.filled,
+.rating-stars .star.half {
+  color: #fbbf24;
+}
+
+.rating-row .rating-value {
+  color: var(--text);
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .tutor-summary-card {
@@ -1105,6 +1188,14 @@ function toggleSelection(category, value) {
 }
 
 /* inline tutor-rating stars */
+.tutor-rating {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+
 .tutor-rating .star {
   position: relative;
   color: #e5e7eb;
@@ -1123,6 +1214,12 @@ function toggleSelection(category, value) {
 }
 .tutor-rating .star.half::before {
   width: 50%;
+}
+
+.tutor-rating .rating-value {
+  color: var(--text);
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .card-rating-pill .rating-value {
