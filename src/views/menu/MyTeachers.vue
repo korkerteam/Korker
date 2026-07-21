@@ -30,6 +30,7 @@ const timetableLoading = ref(false)
 const timetableError = ref('')
 const selectedSlots = ref(new Set())
 const requestedSlots = ref(new Set())
+const busySlots = ref(new Set())
 const submitting = ref(false)
 const feedbackMessage = ref('')
 const dayKeys = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
@@ -56,8 +57,12 @@ function isRequested(day, hour) {
   return requestedSlots.value.has(slotKey(day, hour))
 }
 
+function isBusy(day, hour) {
+  return busySlots.value.has(slotKey(day, hour))
+}
+
 function toggleSlot(day, hour) {
-  if (!hasSlot(day, hour) || isRequested(day, hour)) return
+  if (!hasSlot(day, hour) || isRequested(day, hour) || isBusy(day, hour)) return
   const key = slotKey(day, hour)
   const next = new Set(selectedSlots.value)
   if (next.has(key)) {
@@ -84,7 +89,7 @@ async function openTimetable(teacher) {
 
   const tutorId = teacher.auth_id || teacher.id
 
-  const [tutorResult, requestsResult] = await Promise.all([
+  const [tutorResult, requestsResult, busyResult] = await Promise.all([
     supabase.from('users').select('tutor_post').eq('id', teacher.id).maybeSingle(),
     user.value
       ? supabase
@@ -94,6 +99,11 @@ async function openTimetable(teacher) {
           .eq('tutor_id', tutorId)
           .in('status', ['pending', 'approved'])
       : Promise.resolve({ data: [] }),
+    supabase
+      .from('lesson_requests')
+      .select('requested_slots')
+      .eq('tutor_id', tutorId)
+      .eq('status', 'approved'),
   ])
 
   if (tutorResult.error) {
@@ -126,6 +136,26 @@ async function openTimetable(teacher) {
     requestedSlots.value = requested
   }
 
+  if (busyResult.data) {
+    const busy = new Set()
+    for (const req of busyResult.data) {
+      const masks = req.requested_slots
+      if (Array.isArray(masks)) {
+        for (let dayIdx = 0; dayIdx < masks.length; dayIdx++) {
+          const mask = masks[dayIdx]
+          if (typeof mask === 'number' && mask > 0) {
+            for (let h = 0; h < 24; h++) {
+              if (mask & (1 << h)) {
+                busy.add(slotKey(dayKeys[dayIdx], h))
+              }
+            }
+          }
+        }
+      }
+    }
+    busySlots.value = busy
+  }
+
   timetableLoading.value = false
 }
 
@@ -137,6 +167,7 @@ function closeTimetable() {
   timetableError.value = ''
   selectedSlots.value = new Set()
   requestedSlots.value = new Set()
+  busySlots.value = new Set()
   feedbackMessage.value = ''
   router.replace({ query: { panel: 'teachers' } })
 }
@@ -329,7 +360,13 @@ function openChat(teacher) {
             <div class="actions">
               <button class="btn small" @click="onShow(teacher)">Pokaż</button>
               <button class="btn small" @click.stop="openChat(teacher)">Napisz</button>
-              <button class="btn small accent" @click="openTimetable(teacher)">Plan</button>
+              <button
+                v-if="!props.isTutorAccount"
+                class="btn small accent"
+                @click="openTimetable(teacher)"
+              >
+                Plan
+              </button>
               <button class="btn small ghost" @click="onRemove(teacher)">Usuń</button>
             </div>
           </div>
@@ -437,6 +474,7 @@ function openChat(teacher) {
             <span class="legend-item"
               ><span class="legend-dot requested-dot"></span> Zarezerwowane</span
             >
+            <span class="legend-item"><span class="legend-dot busy-dot"></span> Zajęte</span>
           </div>
 
           <LoadingBox v-if="timetableLoading" />
@@ -452,9 +490,10 @@ function openChat(teacher) {
                   :key="`${d}-${hour}`"
                   class="tt-cell"
                   :class="{
-                    available: hasSlot(d, hour) && !isRequested(d, hour),
+                    available: hasSlot(d, hour) && !isRequested(d, hour) && !isBusy(d, hour),
                     selected: isSelected(d, hour),
-                    requested: isRequested(d, hour),
+                    requested: isRequested(d, hour) && !isBusy(d, hour),
+                    busy: isBusy(d, hour),
                   }"
                   @click="toggleSlot(d, hour)"
                 ></div>
@@ -979,6 +1018,10 @@ function openChat(teacher) {
   background: #f59e0b;
 }
 
+.legend-dot.busy-dot {
+  background: #ef4444;
+}
+
 .tt-grid-wrap {
   width: 100%;
   border: 1px solid #e5e7eb;
@@ -1048,6 +1091,13 @@ function openChat(teacher) {
 .tt-cell.requested {
   background: #f59e0b;
   border-color: #f59e0b;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.tt-cell.busy {
+  background: #ef4444;
+  border-color: #ef4444;
   cursor: not-allowed;
   opacity: 0.7;
 }

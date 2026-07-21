@@ -184,15 +184,18 @@ async function cancelApprovedSlot() {
 async function confirmCancelLesson() {
   if (!selectedSlot.value) return
   const { request } = selectedSlot.value
-  const { error } = await supabase.from('lesson_requests').delete().eq('id', request.id)
+  const { error } = await supabase
+    .from('lesson_requests')
+    .update({ status: 'rejected', updated_at: new Date().toISOString() })
+    .eq('id', request.id)
   if (error) {
     console.error('Failed to cancel lesson:', error)
     showCancelConfirm.value = false
     return
   }
+  lessonRequests.value = lessonRequests.value.filter((r) => r.id !== request.id)
   selectedSlot.value = null
   showCancelConfirm.value = false
-  await fetchLessonRequests()
 }
 
 function dismissCancelConfirm() {
@@ -377,6 +380,18 @@ onUnmounted(() => {
               </button>
               <button class="action-btn action-reject" type="button" @click="rejectSlot()">
                 Odrzuć
+              </button>
+            </template>
+            <template v-else-if="selectedSlot.request.status === 'pending' && !isTutorAccount">
+              <button
+                class="action-btn action-profile"
+                type="button"
+                @click="openProfile(selectedSlot.request)"
+              >
+                Pokaż profil
+              </button>
+              <button class="action-btn action-cancel" type="button" @click="cancelApprovedSlot()">
+                Anuluj lekcję
               </button>
             </template>
             <template v-else-if="selectedSlot.request.status === 'approved'">

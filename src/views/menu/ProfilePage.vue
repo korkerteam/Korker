@@ -1,7 +1,7 @@
 ﻿<script setup>
-import { reactive, ref, watch, computed, nextTick } from 'vue'
+import { reactive, ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { upsertProfile, deleteProfile } from '@/services/profileService.js'
+import { upsertProfile } from '@/services/profileService.js'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { translateAuthError } from '@/utils/authErrors.js'
@@ -11,7 +11,7 @@ import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
 
 const route = useRoute()
 const router = useRouter()
-const { user, profileData, profileLoading, setProfileName, clearNeedsProfile, signOut } = useAuth()
+const { user, profileData, profileLoading, setProfileName, clearNeedsProfile } = useAuth()
 const profile = reactive({
   name: '',
   nickname: '',
@@ -37,7 +37,6 @@ const offerDraft = reactive({
   lessonPrice: '',
   lessonSubject: '',
   lessonLevel: 'Liceum',
-  lessonPlace: '',
   lessonDescription: '',
   weeklyAvailability: {},
 })
@@ -65,7 +64,6 @@ const weeklyDayLabels = [
   'Sobota',
   'Niedziela',
 ]
-const isEditing = ref(false)
 const saving = ref(false)
 const loading = ref(true)
 const saveError = ref('')
@@ -87,7 +85,6 @@ const draft = reactive({
   lessonPrice: '',
   lessonSubject: '',
   lessonLevel: 'Liceum',
-  lessonPlace: '',
   lessonDescription: '',
   weeklyAvailability: {},
 })
@@ -127,7 +124,6 @@ function applySavedTutorPost(data) {
   tutorOffers.value = raw.map((o) => ({
     subject: o.subject || '',
     level: o.level || 'Liceum',
-    lessonPlace: o.lessonPlace || '',
     price: String(o.price ?? ''),
     description: o.description || '',
     photo: o.photo || '',
@@ -158,29 +154,14 @@ watch(
       if (meta?.name) {
         profile.name = [meta.name, meta.surname].filter(Boolean).join(' ')
       }
-      startEdit()
     }
+    originalProfilePicture = profile.profile_picture
+    Object.assign(draft, profile)
+    applySavedTutorPost(profileData.value)
     loading.value = false
-    if (!isEditing.value && route.query.edit === '1') {
-      nextTick(() => {
-        startEdit()
-        nextTick(() => {
-          document
-            .getElementById('availability-section')
-            ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        })
-      })
-    }
   },
   { immediate: true },
 )
-
-function startEdit() {
-  originalProfilePicture = profile.profile_picture
-  Object.assign(draft, profile)
-  applySavedTutorPost(profileData.value)
-  isEditing.value = true
-}
 
 async function saveProfile() {
   saveError.value = ''
@@ -248,7 +229,6 @@ async function saveProfile() {
       tutorPost = tutorOffers.value.map((o) => ({
         subject: o.subject || '',
         level: o.level || 'Liceum',
-        lessonPlace: o.lessonPlace || '',
         price: Number(o.price) || null,
         description: o.description || '',
         photo: o.photo || null,
@@ -277,7 +257,11 @@ async function saveProfile() {
 
     setProfileName(profile.name || profile.nickname)
     clearNeedsProfile()
-    isEditing.value = false
+    if (profile.nickname) {
+      router.push('/user/' + encodeURIComponent(profile.nickname))
+    } else {
+      router.push('/')
+    }
   } catch (err) {
     saveError.value = translateAuthError(err)
   } finally {
@@ -295,7 +279,11 @@ function cancelEdit() {
   applySavedTutorPost(profileData.value)
   showOfferEditor.value = false
   confirmingDeleteOfferIndex.value = null
-  isEditing.value = false
+  if (profile.nickname) {
+    router.push('/user/' + encodeURIComponent(profile.nickname))
+  } else {
+    router.push('/')
+  }
 }
 
 const LIMITS = {
@@ -306,28 +294,6 @@ const LIMITS = {
   homeNumber: 10,
   flatNumber: 10,
   description: 300,
-}
-
-const confirmingDelete = ref(false)
-const deleting = ref(false)
-const deleteError = ref('')
-
-async function deleteAccount() {
-  deleteError.value = ''
-  deleting.value = true
-  try {
-    await deleteProfile(user.value?.id)
-    try {
-      await signOut()
-    } catch {
-      // account already removed from auth.users, session is stale
-    }
-    router.push('/')
-  } catch (err) {
-    deleteError.value = translateAuthError(err)
-  } finally {
-    deleting.value = false
-  }
 }
 
 function triggerAvatarUpload() {
@@ -373,7 +339,6 @@ const offerNeedsAddress = computed(() => {
 function resetOfferDraft() {
   offerDraft.lessonSubject = ''
   offerDraft.lessonLevel = 'Liceum'
-  offerDraft.lessonPlace = ''
   offerDraft.lessonPrice = ''
   offerDraft.lessonDescription = ''
   offerDraft.lessonPhoto = ''
@@ -398,7 +363,6 @@ function openEditOffer(index) {
   const offer = tutorOffers.value[index]
   offerDraft.lessonSubject = offer.subject
   offerDraft.lessonLevel = offer.level
-  offerDraft.lessonPlace = offer.lessonPlace
   offerDraft.lessonPrice = offer.price
   offerDraft.lessonDescription = offer.description
   offerDraft.lessonPhoto = offer.photo
@@ -495,7 +459,6 @@ async function saveOffer() {
     const offer = {
       subject: offerDraft.lessonSubject,
       level: offerDraft.lessonLevel,
-      lessonPlace: offerDraft.lessonPlace,
       price: String(offerDraft.lessonPrice),
       description: offerDraft.lessonDescription,
       photo: offerDraft.lessonPhoto || null,
@@ -561,18 +524,14 @@ async function pickAndCompressOfferPhoto(file) {
     <LoadingBox v-if="loading" />
     <template v-else>
       <div class="header">
-        <div
-          class="avatar-wrapper"
-          :class="{ 'avatar-editable': isEditing }"
-          @click="isEditing ? triggerAvatarUpload() : null"
-        >
+        <div class="avatar-wrapper avatar-editable" @click="triggerAvatarUpload()">
           <img v-if="profile.profile_picture" :src="profile.profile_picture" class="avatar" />
           <span v-else class="avatar avatar-letter">{{
             profile.nickname?.charAt(0)?.toUpperCase() ||
             profile.name?.charAt(0)?.toUpperCase() ||
             '?'
           }}</span>
-          <div v-if="isEditing" class="avatar-overlay">
+          <div class="avatar-overlay">
             <span class="change-prof-pic">Zmień</span>
           </div>
         </div>
@@ -583,201 +542,124 @@ async function pickAndCompressOfferPhoto(file) {
           class="avatar-input"
           @change="onAvatarChange"
         />
-        <template v-if="isEditing">
-          <label class="field-row name-input-label">
-            <span class="field-label">Pseudonim</span>
-            <input
-              v-model="draft.nickname"
-              class="name-input"
-              placeholder="Pozostaw puste aby wygenerować"
-              :maxlength="LIMITS.nickname"
-            />
-          </label>
-          <label class="field-row name-input-label">
-            <span class="field-label">Imię i nazwisko</span>
-            <input
-              v-model="draft.name"
-              class="name-input"
-              placeholder="Jan Kowalski"
-              :maxlength="LIMITS.name"
-            />
-          </label>
-        </template>
-        <template v-else>
-          <div class="header-text">
-            <template v-if="profile.name">
-              <h2>{{ profile.name }}</h2>
-              <span v-if="profile.nickname" class="profile-nickname">{{ profile.nickname }}</span>
-            </template>
-            <h2 v-else-if="profile.nickname">{{ profile.nickname }}</h2>
-          </div>
-        </template>
+        <label class="field-row name-input-label">
+          <span class="field-label">Pseudonim</span>
+          <input
+            v-model="draft.nickname"
+            class="name-input"
+            placeholder="Pozostaw puste aby wygenerować"
+            :maxlength="LIMITS.nickname"
+          />
+        </label>
+        <label class="field-row name-input-label">
+          <span class="field-label">Imię i nazwisko</span>
+          <input
+            v-model="draft.name"
+            class="name-input"
+            placeholder="Jan Kowalski"
+            :maxlength="LIMITS.name"
+          />
+        </label>
       </div>
 
       <div class="divider"></div>
 
       <div class="details">
-        <template v-if="isEditing">
-          <label class="field-row">
-            <span class="field-label">Typ konta<span class="req">*</span></span>
-            <select v-model="draft.accountType">
-              <option value="" disabled>Wybierz typ konta</option>
-              <option value="student">Student</option>
-              <option value="tutor">Korepetytor</option>
-            </select>
-          </label>
-          <label class="field-row">
-            <span class="field-label">Wiek</span>
-            <input v-model="draft.age" type="number" placeholder="25" />
-          </label>
-          <template v-if="draft.accountType === 'tutor'">
-            <div class="tutor-offers-section">
-              <div class="tutor-offers-header">Twoje oferty korepetytorskie</div>
+        <label class="field-row">
+          <span class="field-label">Typ konta<span class="req">*</span></span>
+          <select v-model="draft.accountType">
+            <option value="" disabled>Wybierz typ konta</option>
+            <option value="student">Student</option>
+            <option value="tutor">Korepetytor</option>
+          </select>
+        </label>
+        <label class="field-row">
+          <span class="field-label">Wiek</span>
+          <input v-model="draft.age" type="number" placeholder="25" />
+        </label>
+        <template v-if="draft.accountType === 'tutor'">
+          <div class="tutor-offers-section">
+            <div class="tutor-offers-header">Twoje oferty korepetytorskie</div>
 
-              <div v-for="(offer, index) in tutorOffers" :key="index" class="tutor-offer-card">
-                <div class="offer-preview">
-                  <div class="offer-preview-row">
-                    <span class="offer-preview-label">Przedmiot</span>
-                    <span class="offer-preview-value">{{ offer.subject || 'Korepetycje' }}</span>
-                  </div>
-                  <div class="offer-preview-row">
-                    <span class="offer-preview-label">Stawka</span>
-                    <span class="offer-preview-value">{{
-                      offer.price ? offer.price + ' zł/h' : 'Brak'
-                    }}</span>
-                  </div>
-                  <div class="offer-preview-row">
-                    <span class="offer-preview-label">Poziom</span>
-                    <span class="offer-preview-value">{{ offer.level || 'Liceum' }}</span>
-                  </div>
-                  <div class="offer-preview-row" v-if="getOfferLessonPlace(offer)">
-                    <span class="offer-preview-label">Miejsce</span>
-                    <span class="offer-preview-value">{{ getOfferLessonPlace(offer) }}</span>
-                  </div>
+            <div v-for="(offer, index) in tutorOffers" :key="index" class="tutor-offer-card">
+              <div class="offer-preview">
+                <div class="offer-preview-row">
+                  <span class="offer-preview-label">Przedmiot</span>
+                  <span class="offer-preview-value">{{ offer.subject || 'Korepetycje' }}</span>
                 </div>
-                <div class="offer-card-actions">
-                  <button
-                    type="button"
-                    class="btn btn-secondary btn-sm"
-                    @click="openEditOffer(index)"
-                  >
-                    Edytuj
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-danger btn-sm"
-                    @click="confirmDeleteOffer(index)"
-                  >
-                    Usuń
-                  </button>
+                <div class="offer-preview-row">
+                  <span class="offer-preview-label">Stawka</span>
+                  <span class="offer-preview-value">{{
+                    offer.price ? offer.price + ' zł/h' : 'Brak'
+                  }}</span>
+                </div>
+                <div class="offer-preview-row">
+                  <span class="offer-preview-label">Poziom</span>
+                  <span class="offer-preview-value">{{ offer.level || 'Liceum' }}</span>
+                </div>
+                <div class="offer-preview-row" v-if="offer.teachingFormats.length">
+                  <span class="offer-preview-label">Forma</span>
+                  <span class="offer-preview-value">{{ offer.teachingFormats.join(', ') }}</span>
                 </div>
               </div>
-
-              <button
-                v-if="tutorOffers.length < 5"
-                type="button"
-                class="btn btn-secondary add-offer-btn"
-                @click="openNewOffer"
-              >
-                + Dodaj ofertę ({{ tutorOffers.length }}/5)
-              </button>
-
-              <div v-if="confirmingDeleteOfferIndex !== null" class="delete-offer-confirm">
-                <span class="delete-confirm-text">Czy na pewno chcesz usunąć tę ofertę?</span>
-                <div class="delete-confirm-actions">
-                  <button class="btn btn-danger btn-sm" @click="executeDeleteOffer">
-                    Tak, usuń
-                  </button>
-                  <button class="btn btn-secondary btn-sm" @click="cancelDeleteOffer">
-                    Anuluj
-                  </button>
-                </div>
+              <div class="offer-card-actions">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  @click="openEditOffer(index)"
+                >
+                  Edytuj
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  @click="confirmDeleteOffer(index)"
+                >
+                  Usuń
+                </button>
               </div>
             </div>
-          </template>
-          <label class="field-row" v-if="draft.accountType !== 'tutor'">
-            <span class="field-label">Miasto<span class="req">*</span></span>
-            <input v-model="draft.city" placeholder="Warszawa" :maxlength="LIMITS.city" />
-          </label>
-          <label class="field-row">
-            <span class="field-label">Płeć</span>
-            <select v-model="draft.gender">
-              <option value="" disabled>Wybierz płeć</option>
-              <option value="male">Mężczyzna</option>
-              <option value="female">Kobieta</option>
-            </select>
-          </label>
 
-          <div v-if="saveError" class="error-box">{{ saveError }}</div>
-
-          <div class="actions">
-            <button class="btn btn-primary" :disabled="saving" @click="saveProfile">
-              <span v-if="saving" class="btn-spinner"></span>
-              {{ saving ? 'Zapisywanie...' : 'Zapisz' }}
+            <button
+              v-if="tutorOffers.length < 5"
+              type="button"
+              class="btn btn-secondary add-offer-btn"
+              @click="openNewOffer"
+            >
+              + Dodaj ofertę ({{ tutorOffers.length }}/5)
             </button>
-            <button class="btn btn-secondary" :disabled="saving" @click="cancelEdit">Anuluj</button>
-          </div>
-        </template>
 
-        <template v-else>
-          <div class="info-row">
-            <span class="info-label">Typ konta</span>
-            <span class="info-value">{{
-              profile?.accountType === 'student'
-                ? 'Student'
-                : profile?.accountType === 'tutor'
-                  ? 'Korepetytor'
-                  : ''
-            }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Wiek</span>
-            <span class="info-value">{{ profile.age || '' }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Miasto</span>
-            <span class="info-value">{{ formattedLocation() }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Płeć</span>
-            <span class="info-value">{{
-              profile.gender === 'male' ? 'Mężczyzna' : profile.gender === 'female' ? 'Kobieta' : ''
-            }}</span>
-          </div>
-
-          <template v-if="profile.accountType === 'tutor'">
-            <div v-for="(offer, index) in tutorOffers" :key="index" class="tutor-offer-view">
-              <h4>Oferta {{ index + 1 }}</h4>
-              <div class="offer-row">
-                <span class="offer-label">Przedmiot</span>
-                <span class="offer-value">{{ offer.subject || 'Korepetycje' }}</span>
-              </div>
-              <div class="offer-row">
-                <span class="offer-label">Poziom</span>
-                <span class="offer-value">{{ offer.level || 'Liceum' }}</span>
-              </div>
-              <div class="offer-row">
-                <span class="offer-label">Stawka</span>
-                <span class="offer-value">{{ offer.price ? offer.price + ' zł/h' : 'Brak' }}</span>
-              </div>
-              <div class="offer-row" v-if="getOfferLessonPlace(offer)">
-                <span class="offer-label">Miejsce</span>
-                <span class="offer-value">{{ getOfferLessonPlace(offer) }}</span>
-              </div>
-              <div class="offer-row" v-if="offer.city">
-                <span class="offer-label">Miasto</span>
-                <span class="offer-value">{{ offer.city }}</span>
-              </div>
-              <div class="offer-row" v-if="offer.description">
-                <span class="offer-label">Opis</span>
-                <span class="offer-value">{{ offer.description }}</span>
-              </div>
-              <div v-if="offer.photo" class="offer-photo-preview">
-                <img :src="offer.photo" alt="Oferta korepetytora" />
+            <div v-if="confirmingDeleteOfferIndex !== null" class="delete-offer-confirm">
+              <span class="delete-confirm-text">Czy na pewno chcesz usunąć tę ofertę?</span>
+              <div class="delete-confirm-actions">
+                <button class="btn btn-danger btn-sm" @click="executeDeleteOffer">Tak, usuń</button>
+                <button class="btn btn-secondary btn-sm" @click="cancelDeleteOffer">Anuluj</button>
               </div>
             </div>
-          </template>
+          </div>
         </template>
+        <label class="field-row" v-if="draft.accountType !== 'tutor'">
+          <span class="field-label">Miasto<span class="req">*</span></span>
+          <input v-model="draft.city" placeholder="Warszawa" :maxlength="LIMITS.city" />
+        </label>
+        <label class="field-row">
+          <span class="field-label">Płeć</span>
+          <select v-model="draft.gender">
+            <option value="" disabled>Wybierz płeć</option>
+            <option value="male">Mężczyzna</option>
+            <option value="female">Kobieta</option>
+          </select>
+        </label>
+
+        <div v-if="saveError" class="error-box">{{ saveError }}</div>
+
+        <div class="actions">
+          <button class="btn btn-primary" :disabled="saving" @click="saveProfile">
+            <span v-if="saving" class="btn-spinner"></span>
+            {{ saving ? 'Zapisywanie...' : 'Zapisz' }}
+          </button>
+          <button class="btn btn-secondary" :disabled="saving" @click="cancelEdit">Anuluj</button>
+        </div>
       </div>
 
       <!-- Offer Editor Overlay -->
@@ -802,15 +684,6 @@ async function pickAndCompressOfferPhoto(file) {
                   {{ subject }}
                 </button>
               </div>
-            </label>
-            <label class="field-row">
-              <span class="field-label">Miejsce lekcji</span>
-              <select v-model="offerDraft.lessonPlace">
-                <option value="" disabled>Wybierz miejsce lekcji</option>
-                <option value="Online">Online</option>
-                <option value="Stacjonarnie">Stacjonarnie</option>
-                <option value="Z dojazdem">Z dojazdem</option>
-              </select>
             </label>
             <label class="field-row">
               <span class="field-label">Poziom</span>
@@ -920,37 +793,6 @@ async function pickAndCompressOfferPhoto(file) {
           </div>
         </div>
       </div>
-
-      <button v-if="!isEditing" class="btn btn-primary edit-btn" @click="startEdit">
-        Edytuj profil
-      </button>
-
-      <template v-if="!isEditing">
-        <button
-          v-if="!confirmingDelete"
-          class="btn btn-danger delete-btn"
-          @click="confirmingDelete = true"
-        >
-          Usuń konto
-        </button>
-        <div v-else class="delete-confirm">
-          <span class="delete-confirm-text">Czy na pewno chcesz usunąć konto?</span>
-          <div class="delete-confirm-actions">
-            <button class="btn btn-danger btn-sm" :disabled="deleting" @click="deleteAccount">
-              <span v-if="deleting" class="btn-spinner"></span>
-              {{ deleting ? 'Usuwanie...' : 'Tak, usuń' }}
-            </button>
-            <button
-              class="btn btn-secondary btn-sm"
-              :disabled="deleting"
-              @click="confirmingDelete = false"
-            >
-              Anuluj
-            </button>
-          </div>
-          <div v-if="deleteError" class="error-box">{{ deleteError }}</div>
-        </div>
-      </template>
     </template>
   </div>
 </template>
@@ -1042,23 +884,6 @@ async function pickAndCompressOfferPhoto(file) {
   display: none;
 }
 
-.header-text {
-  display: flex;
-  flex-direction: column;
-}
-.header h2 {
-  font-size: 20px;
-  font-weight: 700;
-  margin: 0;
-  color: var(--text);
-}
-.profile-real-name,
-.profile-nickname {
-  font-size: 14px;
-  color: var(--muted);
-  margin-top: 3px;
-}
-
 .name-input {
   width: 100%;
   padding: 10px 14px;
@@ -1088,14 +913,6 @@ async function pickAndCompressOfferPhoto(file) {
   flex-direction: column;
   gap: 16px;
   margin-bottom: 24px;
-}
-
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  padding-top: 4px;
 }
 
 .field-row {
@@ -1311,8 +1128,7 @@ async function pickAndCompressOfferPhoto(file) {
   border: 1px solid rgba(79, 117, 199, 0.15);
 }
 
-.lesson-photo-preview img,
-.offer-photo-preview img {
+.lesson-photo-preview img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -1323,62 +1139,6 @@ async function pickAndCompressOfferPhoto(file) {
   margin-top: 12px;
   font-weight: 700;
   color: var(--text);
-}
-
-.tutor-offer-view {
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px;
-  display: grid;
-  gap: 10px;
-}
-
-.tutor-offer-view h4 {
-  margin: 0;
-  font-size: 15px;
-  color: var(--text);
-}
-
-.offer-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.offer-label {
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.offer-value {
-  text-align: right;
-  color: var(--text);
-}
-
-.offer-photo-preview {
-  justify-self: center;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(79, 117, 199, 0.15);
-  width: 200px;
-  aspect-ratio: 1 / 1;
-}
-
-.info-label {
-  font-weight: 600;
-  color: var(--muted);
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.info-value {
-  color: var(--text);
-  font-size: 15px;
-  font-weight: 500;
 }
 
 .actions {
@@ -1441,11 +1201,6 @@ async function pickAndCompressOfferPhoto(file) {
   background: rgba(138, 180, 255, 0.2);
 }
 
-.edit-btn {
-  width: 100%;
-  padding: 12px;
-}
-
 .btn-danger {
   background: #dc2626;
   color: #ffffff;
@@ -1458,36 +1213,6 @@ async function pickAndCompressOfferPhoto(file) {
 .btn-sm {
   padding: 8px 16px;
   font-size: 13px;
-}
-
-.delete-btn {
-  width: 100%;
-  padding: 12px;
-  margin-top: 8px;
-}
-
-.delete-confirm {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-  padding: 16px;
-  border: 1px solid #fca5a5;
-  border-radius: 12px;
-  background: #fef2f2;
-}
-
-.delete-confirm-text {
-  font-size: 14px;
-  font-weight: 600;
-  color: #991b1b;
-  text-align: center;
-}
-
-.delete-confirm-actions {
-  display: flex;
-  gap: 10px;
 }
 
 .error-box {
