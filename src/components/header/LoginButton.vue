@@ -1,7 +1,6 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth.js'
-import { toggleProfile } from '../../composables/menuToggle'
 
 const emit = defineEmits(['login'])
 
@@ -9,12 +8,9 @@ const route = useRoute()
 const router = useRouter()
 const { isAuthenticated, profileData, profileName, profileInitial, signOut } = useAuth()
 
-function handleProfileClick() {
-  toggleProfile(route, router)
-}
-
 function goToOwnProfile() {
-  handleProfileClick()
+  const nickname = profileData.value?.nickname || profileName.value
+  router.push('/user/' + encodeURIComponent(nickname))
 }
 </script>
 
@@ -33,7 +29,7 @@ function goToOwnProfile() {
       {{ profileInitial }}
     </button>
     <button
-      @click="handleProfileClick"
+      @click="goToOwnProfile"
       class="user-email"
       type="button"
       :aria-label="`Profil: ${profileName}`"
