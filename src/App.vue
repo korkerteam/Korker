@@ -19,6 +19,7 @@ import {
   fetchTutorProfiles,
 } from '@/services/likeService.js'
 import { toggleProfile, toggleRank, toggleTeachers } from '@/composables/menuToggle.js'
+import { buildLikedTeachersState } from '@/utils/savedTutorState.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -58,20 +59,8 @@ const shouldHideSettingsFab = computed(() => {
 async function loadSavedTutors() {
   try {
     const authIds = await fetchSavedTutorIds()
-    if (!authIds.length) return
-    const profiles = await fetchTutorProfiles(authIds)
-    const byAuthId = {}
-    for (const p of profiles) {
-      byAuthId[p.auth_id] = { ...p, id: String(p.id) }
-    }
-    likedTeachers.value = authIds
-      .map((id) => byAuthId[id])
-      .filter((p) => {
-        if (!p) return false
-        const accountType = [p.account_type, p.accountType].find(Boolean)
-        const isTutor = `${accountType || ''}`.toLowerCase().includes('tutor')
-        return isTutorAccount.value ? !isTutor : isTutor
-      })
+    const profiles = authIds.length ? await fetchTutorProfiles(authIds) : []
+    likedTeachers.value = buildLikedTeachersState(authIds, profiles, isTutorAccount.value)
   } catch (e) {
     console.error('Failed to load saved tutors:', e)
   }
@@ -130,7 +119,7 @@ function normalizeTeacher(teacher, teacherId) {
   }
 }
 
-function handleTeacherLike(teacher) {
+async function handleTeacherLike(teacher) {
   if (!teacher) return
 
   const teacherId = teacher?.id != null ? String(teacher.id) : null
@@ -139,13 +128,18 @@ function handleTeacherLike(teacher) {
     return itemId && teacherId ? itemId === teacherId : item?.name === teacher?.name
   })
 
-  if (!exists) {
-    likedTeachers.value = [...likedTeachers.value, normalizeTeacher(teacher, teacherId)]
+  if (exists) return
 
-    const authId = teacher.auth_id
-    if (authId) {
-      addSavedTutor(authId).catch(console.error)
-      loadSavedTutors()
+  const normalizedTeacher = normalizeTeacher(teacher, teacherId)
+  likedTeachers.value = [...likedTeachers.value, normalizedTeacher]
+
+  const authId = teacher.auth_id
+  if (authId) {
+    try {
+      await addSavedTutor(authId)
+      await loadSavedTutors()
+    } catch (error) {
+      console.error('Failed to persist saved tutor:', error)
     }
   }
 }
@@ -156,7 +150,7 @@ function showTeacherProfile(teacher) {
 
 provide('showTeacherProfile', showTeacherProfile)
 
-function removeLikedTeacher(teacher) {
+async function removeLikedTeacher(teacher) {
   if (!teacher) return
 
   const teacherId = teacher.id !== undefined ? String(teacher.id) : undefined
@@ -178,7 +172,12 @@ function removeLikedTeacher(teacher) {
 
   const authId = teacher.auth_id
   if (authId) {
-    removeSavedTutor(authId).catch(console.error)
+    try {
+      await removeSavedTutor(authId)
+      await loadSavedTutors()
+    } catch (error) {
+      console.error('Failed to remove saved tutor:', error)
+    }
   }
 }
 
