@@ -77,6 +77,8 @@ const locationText = computed(() => {
 })
 
 const formats = computed(() => {
+  const place = firstOffer.value?.lessonPlace || profileFirstOffer.value?.lessonPlace
+  if (place) return [place]
   const fromTutorPost =
     firstOffer.value?.teachingFormats || profileFirstOffer.value?.teachingFormats
   if (Array.isArray(fromTutorPost) && fromTutorPost.length) return fromTutorPost
@@ -183,7 +185,7 @@ watch(
               <span class="value">{{ locationText }}</span>
             </div>
             <div v-if="formats.length" class="info-cell">
-              <span class="label">Forma</span>
+              <span class="label">Miejsce</span>
               <span class="value">{{ formats.join(', ') }}</span>
             </div>
           </div>

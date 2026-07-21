@@ -44,7 +44,6 @@ const offerDraft = reactive({
 const offerSaving = ref(false)
 const offerSaveError = ref('')
 
-const teachingFormats = ['Stacjonarnie', 'Z dojazdem', 'Online']
 const subjectOptions = [
   'Język polski',
   'Język angielski',
@@ -354,22 +353,22 @@ function formattedLocation() {
   return profile.city || ''
 }
 
-const offerStrictestFormat = computed(() => {
-  const sf = offerDraft.teachingFormats
-  if (sf.includes('Stacjonarnie')) return 'Stacjonarnie'
-  if (sf.includes('Z dojazdem')) return 'Z dojazdem'
-  if (sf.includes('Online')) return 'Online'
-  return ''
-})
-
-function toggleOfferFormat(format) {
-  const idx = offerDraft.teachingFormats.indexOf(format)
-  if (idx > -1) {
-    offerDraft.teachingFormats.splice(idx, 1)
-  } else {
-    offerDraft.teachingFormats.push(format)
+function getOfferLessonPlace(offer) {
+  if (!offer) return ''
+  if (typeof offer.lessonPlace === 'string' && offer.lessonPlace.trim()) return offer.lessonPlace
+  if (Array.isArray(offer.teachingFormats) && offer.teachingFormats.length) {
+    return offer.teachingFormats[0]
   }
+  if (typeof offer.teachingFormat === 'string' && offer.teachingFormat.trim()) {
+    return offer.teachingFormat
+  }
+  return ''
 }
+
+const offerNeedsAddress = computed(() => {
+  const place = (offerDraft.lessonPlace || '').trim()
+  return place === 'Stacjonarnie' || place === 'Z dojazdem'
+})
 
 function resetOfferDraft() {
   offerDraft.lessonSubject = ''
@@ -403,7 +402,7 @@ function openEditOffer(index) {
   offerDraft.lessonPrice = offer.price
   offerDraft.lessonDescription = offer.description
   offerDraft.lessonPhoto = offer.photo
-  offerDraft.teachingFormats = [...offer.teachingFormats]
+  offerDraft.teachingFormats = getOfferLessonPlace(offer) ? [getOfferLessonPlace(offer)] : []
   offerDraft.city = offer.city
   offerDraft.street = offer.street
   offerDraft.homeNumber = offer.homeNumber
@@ -435,15 +434,15 @@ async function saveOffer() {
     offerSaveError.value = 'Podaj stawkę za lekcję'
     return
   }
-  if (!offerDraft.teachingFormats.length) {
-    offerSaveError.value = 'Wybierz formę nauczania'
+  if (!offerDraft.lessonPlace) {
+    offerSaveError.value = 'Wybierz miejsce lekcji'
     return
   }
-  if (offerStrictestFormat.value === 'Stacjonarnie' && !offerDraft.city) {
+  if (offerNeedsAddress.value && !offerDraft.city) {
     offerSaveError.value = 'Podaj miasto'
     return
   }
-  if (offerStrictestFormat.value === 'Stacjonarnie' && !offerDraft.street) {
+  if (offerNeedsAddress.value && !offerDraft.street) {
     offerSaveError.value = 'Podaj ulicę'
     return
   }
@@ -500,7 +499,7 @@ async function saveOffer() {
       price: String(offerDraft.lessonPrice),
       description: offerDraft.lessonDescription,
       photo: offerDraft.lessonPhoto || null,
-      teachingFormats: [...offerDraft.teachingFormats],
+      teachingFormats: offerDraft.lessonPlace ? [offerDraft.lessonPlace] : [],
       city: offerDraft.city,
       street: offerDraft.street,
       homeNumber: offerDraft.homeNumber,
@@ -651,9 +650,9 @@ async function pickAndCompressOfferPhoto(file) {
                     <span class="offer-preview-label">Poziom</span>
                     <span class="offer-preview-value">{{ offer.level || 'Liceum' }}</span>
                   </div>
-                  <div class="offer-preview-row" v-if="offer.teachingFormats.length">
-                    <span class="offer-preview-label">Forma</span>
-                    <span class="offer-preview-value">{{ offer.teachingFormats.join(', ') }}</span>
+                  <div class="offer-preview-row" v-if="getOfferLessonPlace(offer)">
+                    <span class="offer-preview-label">Miejsce</span>
+                    <span class="offer-preview-value">{{ getOfferLessonPlace(offer) }}</span>
                   </div>
                 </div>
                 <div class="offer-card-actions">
@@ -761,9 +760,9 @@ async function pickAndCompressOfferPhoto(file) {
                 <span class="offer-label">Stawka</span>
                 <span class="offer-value">{{ offer.price ? offer.price + ' zł/h' : 'Brak' }}</span>
               </div>
-              <div class="offer-row" v-if="offer.teachingFormats.length">
-                <span class="offer-label">Forma</span>
-                <span class="offer-value">{{ offer.teachingFormats.join(', ') }}</span>
+              <div class="offer-row" v-if="getOfferLessonPlace(offer)">
+                <span class="offer-label">Miejsce</span>
+                <span class="offer-value">{{ getOfferLessonPlace(offer) }}</span>
               </div>
               <div class="offer-row" v-if="offer.city">
                 <span class="offer-label">Miasto</span>
@@ -825,29 +824,12 @@ async function pickAndCompressOfferPhoto(file) {
               <span class="field-label">Stawka za lekcję (zł/h)<span class="req">*</span></span>
               <input v-model="offerDraft.lessonPrice" type="number" min="10" placeholder="50" />
             </label>
-            <label class="field-row">
-              <span class="field-label">Forma nauczania<span class="req">*</span></span>
-              <div class="format-options-row">
-                <button
-                  v-for="fmt in teachingFormats"
-                  :key="fmt"
-                  type="button"
-                  class="format-option"
-                  :class="{ selected: offerDraft.teachingFormats.includes(fmt) }"
-                  @click="toggleOfferFormat(fmt)"
-                >
-                  {{ fmt }}
-                </button>
-              </div>
-            </label>
-            <template v-if="offerStrictestFormat">
+            <template v-if="offerNeedsAddress">
               <label class="field-row">
-                <span class="field-label"
-                  >Miasto<span v-if="offerStrictestFormat !== 'Online'" class="req">*</span></span
-                >
+                <span class="field-label">Miasto<span class="req">*</span></span>
                 <input v-model="offerDraft.city" placeholder="Warszawa" :maxlength="LIMITS.city" />
               </label>
-              <template v-if="offerStrictestFormat === 'Stacjonarnie'">
+              <template v-if="offerDraft.lessonPlace === 'Stacjonarnie'">
                 <label class="field-row">
                   <span class="field-label">Ulica<span class="req">*</span></span>
                   <input

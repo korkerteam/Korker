@@ -229,7 +229,9 @@ function formattedLocation() {
 function getTeachingFormats(offer) {
   const tp = offer || tutorPost.value
   if (!tp) return []
-  if (Array.isArray(tp.teachingFormats)) return tp.teachingFormats
+  const place = typeof tp.lessonPlace === 'string' && tp.lessonPlace.trim() ? tp.lessonPlace : ''
+  if (place) return [place]
+  if (Array.isArray(tp.teachingFormats) && tp.teachingFormats.length) return tp.teachingFormats
   if (tp.teachingFormat) return [tp.teachingFormat]
   return []
 }
@@ -498,7 +500,7 @@ function getStarFill(rating, index) {
                   <span class="offer-value">{{ offer.price }} zł/h</span>
                 </div>
                 <div v-if="getTeachingFormats(offer).length" class="offer-row">
-                  <span class="offer-label">Forma</span>
+                  <span class="offer-label">Miejsce</span>
                   <span class="offer-value">{{ getTeachingFormats(offer).join(', ') }}</span>
                 </div>
                 <div v-if="offer.description" class="offer-row offer-description">

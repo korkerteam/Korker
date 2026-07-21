@@ -124,6 +124,8 @@ function emitFilterState() {
 
 function getTutorKey(tutor) {
   if (!tutor) return null
+  const authId = tutor.auth_id || tutor.authId || tutor.user_id
+  if (authId) return String(authId)
   if (tutor.id != null) return String(tutor.id)
   if (tutor.name) return `name:${tutor.name}`
   return null
@@ -818,15 +820,21 @@ function toggleSelection(category, value) {
 }
 
 .tutors-content.empty-results-layout {
-  grid-template-columns: 1fr auto minmax(260px, 360px);
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  gap: 20px;
+  align-items: start;
 }
 
 .tutors-content.empty-results-layout .tutor-section {
-  grid-column: 2;
+  grid-column: 1;
+  justify-self: center;
+  padding: 0;
+  padding-top: 224px;
 }
 
 .tutors-content.empty-results-layout .tags-filter-section {
-  grid-column: 3;
+  grid-column: 2;
+  align-self: start;
 }
 
 .find-korks-panel.guest-state .tutors-content {
