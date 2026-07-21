@@ -1,13 +1,15 @@
 ﻿<script setup>
-import { reactive, ref, watch, computed } from 'vue'
+import { reactive, ref, watch, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { upsertProfile } from '@/services/profileService.js'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { translateAuthError } from '@/utils/authErrors.js'
 import { compressImage } from '@/utils/imageCompress.js'
+import { useCityCache } from '@/composables/useCityCache.js'
 import LoadingBox from '@/components/LoadingBox.vue'
 import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
+import CityMap from '@/components/CityMap.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -338,6 +340,50 @@ const offerNeedsAddress = computed(() => {
   )
 })
 
+const { cities, loadCities } = useCityCache()
+const offerCityFilterQuery = ref('')
+const showCitySuggestions = ref(false)
+const showCityMap = ref(false)
+let offerCityFilterTimer = null
+let skipCityFilter = false
+
+watch(
+  () => offerDraft.city,
+  (val) => {
+    if (skipCityFilter) {
+      skipCityFilter = false
+      return
+    }
+    clearTimeout(offerCityFilterTimer)
+    offerCityFilterTimer = setTimeout(() => {
+      offerCityFilterQuery.value = val
+    }, 300)
+  },
+)
+
+const offerCitySuggestions = computed(() => {
+  const query = (offerDraft.city || '').trim().toLowerCase()
+  if (!query) return cities.value.filter((c) => c.Type === 'city').slice(0, 50)
+  return cities.value.filter((c) => c.Name.toLowerCase().includes(query)).slice(0, 30)
+})
+
+function selectOfferCity(city) {
+  offerDraft.city = city.Name
+  showCitySuggestions.value = false
+}
+
+function onOfferCityMapSelect(city) {
+  skipCityFilter = true
+  clearTimeout(offerCityFilterTimer)
+  offerDraft.city = city.Name
+  offerCityFilterQuery.value = ''
+  showCitySuggestions.value = false
+}
+
+function toggleCityMap() {
+  showCityMap.value = !showCityMap.value
+}
+
 function toggleOfferFormat(fmt) {
   const idx = offerDraft.teachingFormats.indexOf(fmt)
   if (idx > -1) {
@@ -360,7 +406,13 @@ function resetOfferDraft() {
   offerDraft.flatNumber = ''
   offerDraft.weeklyAvailability = {}
   pendingOfferPhotoFile.value = null
+  showCityMap.value = false
+  showCitySuggestions.value = false
 }
+
+onMounted(() => {
+  loadCities()
+})
 
 function openNewOffer() {
   resetOfferDraft()
@@ -728,10 +780,41 @@ async function pickAndCompressOfferPhoto(file) {
               </div>
             </label>
             <template v-if="offerNeedsAddress">
-              <label class="field-row">
+              <div class="field-row">
                 <span class="field-label">Miasto<span class="req">*</span></span>
-                <input v-model="offerDraft.city" placeholder="Warszawa" :maxlength="LIMITS.city" />
-              </label>
+                <div class="city-search-wrapper">
+                  <input
+                    v-model="offerDraft.city"
+                    type="text"
+                    placeholder="Wyszukaj miasto"
+                    autocomplete="off"
+                    :maxlength="LIMITS.city"
+                    @focus="showCitySuggestions = true"
+                    @blur="showCitySuggestions = false"
+                  />
+                  <ul
+                    v-if="showCitySuggestions && offerCitySuggestions.length"
+                    class="city-suggestions"
+                  >
+                    <li
+                      v-for="city in offerCitySuggestions"
+                      :key="city.Id"
+                      @mousedown.prevent="selectOfferCity(city)"
+                    >
+                      {{ city.Name }}
+                    </li>
+                  </ul>
+                </div>
+                <button type="button" class="city-map-toggle" @click="toggleCityMap">
+                  {{ showCityMap ? 'Ukryj mapę' : 'Wybierz z mapy' }}
+                </button>
+                <CityMap
+                  v-if="showCityMap"
+                  :cities="cities"
+                  :filter-query="offerCityFilterQuery"
+                  @city-select="onOfferCityMapSelect"
+                />
+              </div>
               <template v-if="offerDraft.teachingFormats.includes('Stacjonarnie')">
                 <label class="field-row">
                   <span class="field-label">Ulica<span class="req">*</span></span>
@@ -1392,5 +1475,76 @@ async function pickAndCompressOfferPhoto(file) {
   padding: 16px 24px;
   border-top: 1px solid var(--border);
   flex-shrink: 0;
+}
+
+.city-search-wrapper {
+  position: relative;
+}
+
+.city-search-wrapper input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  background: var(--surface);
+  color: var(--text);
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.city-search-wrapper input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(79, 117, 199, 0.12);
+}
+
+.city-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+}
+
+.city-suggestions li {
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.city-suggestions li:hover {
+  background: var(--surface-hover);
+}
+
+.city-map-toggle {
+  margin-top: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.city-map-toggle:hover {
+  background: var(--surface-hover);
 }
 </style>
