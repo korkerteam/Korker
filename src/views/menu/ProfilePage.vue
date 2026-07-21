@@ -332,9 +332,20 @@ function getOfferLessonPlace(offer) {
 }
 
 const offerNeedsAddress = computed(() => {
-  const place = (offerDraft.lessonPlace || '').trim()
-  return place === 'Stacjonarnie' || place === 'Z dojazdem'
+  return (
+    offerDraft.teachingFormats.includes('Stacjonarnie') ||
+    offerDraft.teachingFormats.includes('Z dojazdem')
+  )
 })
+
+function toggleOfferFormat(fmt) {
+  const idx = offerDraft.teachingFormats.indexOf(fmt)
+  if (idx > -1) {
+    offerDraft.teachingFormats.splice(idx, 1)
+  } else {
+    offerDraft.teachingFormats.push(fmt)
+  }
+}
 
 function resetOfferDraft() {
   offerDraft.lessonSubject = ''
@@ -366,7 +377,11 @@ function openEditOffer(index) {
   offerDraft.lessonPrice = offer.price
   offerDraft.lessonDescription = offer.description
   offerDraft.lessonPhoto = offer.photo
-  offerDraft.teachingFormats = getOfferLessonPlace(offer) ? [getOfferLessonPlace(offer)] : []
+  offerDraft.teachingFormats = Array.isArray(offer.teachingFormats)
+    ? [...offer.teachingFormats]
+    : getOfferLessonPlace(offer)
+      ? [getOfferLessonPlace(offer)]
+      : []
   offerDraft.city = offer.city
   offerDraft.street = offer.street
   offerDraft.homeNumber = offer.homeNumber
@@ -398,7 +413,7 @@ async function saveOffer() {
     offerSaveError.value = 'Podaj stawkę za lekcję'
     return
   }
-  if (!offerDraft.lessonPlace) {
+  if (!offerDraft.teachingFormats.length) {
     offerSaveError.value = 'Wybierz miejsce lekcji'
     return
   }
@@ -462,7 +477,7 @@ async function saveOffer() {
       price: String(offerDraft.lessonPrice),
       description: offerDraft.lessonDescription,
       photo: offerDraft.lessonPhoto || null,
-      teachingFormats: offerDraft.lessonPlace ? [offerDraft.lessonPlace] : [],
+      teachingFormats: [...offerDraft.teachingFormats],
       city: offerDraft.city,
       street: offerDraft.street,
       homeNumber: offerDraft.homeNumber,
@@ -697,12 +712,27 @@ async function pickAndCompressOfferPhoto(file) {
               <span class="field-label">Stawka za lekcję (zł/h)<span class="req">*</span></span>
               <input v-model="offerDraft.lessonPrice" type="number" min="10" placeholder="50" />
             </label>
+            <label class="field-row">
+              <span class="field-label">Miejsce lekcji<span class="req">*</span></span>
+              <div class="format-options-row">
+                <button
+                  v-for="fmt in ['Online', 'Stacjonarnie', 'Z dojazdem']"
+                  :key="fmt"
+                  type="button"
+                  class="format-option"
+                  :class="{ selected: offerDraft.teachingFormats.includes(fmt) }"
+                  @click="toggleOfferFormat(fmt)"
+                >
+                  {{ fmt }}
+                </button>
+              </div>
+            </label>
             <template v-if="offerNeedsAddress">
               <label class="field-row">
                 <span class="field-label">Miasto<span class="req">*</span></span>
                 <input v-model="offerDraft.city" placeholder="Warszawa" :maxlength="LIMITS.city" />
               </label>
-              <template v-if="offerDraft.lessonPlace === 'Stacjonarnie'">
+              <template v-if="offerDraft.teachingFormats.includes('Stacjonarnie')">
                 <label class="field-row">
                   <span class="field-label">Ulica<span class="req">*</span></span>
                   <input
