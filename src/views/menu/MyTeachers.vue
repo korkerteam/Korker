@@ -249,7 +249,7 @@ function getTeacherLevel(teacher) {
 }
 
 function onShow(teacher) {
-  const identifier = teacher.nickname || teacher.auth_id
+  const identifier = teacher.nickname || teacher.auth_id || teacher.id
   if (identifier) {
     router.push('/user/' + identifier)
   }

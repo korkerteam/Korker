@@ -3,8 +3,6 @@ import { computed, ref, watch, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { getBlockedIds, getBlockingMeIds } from '@/services/blockService.js'
-import { getAverageRating } from '@/services/ratingService.js'
-import { onUnmounted } from 'vue'
 
 const props = defineProps({
   filters: {
@@ -40,7 +38,6 @@ const swipeRotation = ref(0)
 const cardRef = ref(null)
 const showSwipeOverlay = ref(false)
 const swipeHintState = ref('neutral')
-const teacherRatings = ref({})
 
 const weekdayLabels = [
   'Poniedziałek',
@@ -164,21 +161,7 @@ async function loadTutors() {
 
 onMounted(() => {
   loadTutors()
-  if (typeof window !== 'undefined') {
-    window.addEventListener('korker-rating-changed', onRatingChanged)
-  }
 })
-
-function onRatingChanged(e) {
-  const tutorId = e?.detail?.tutorAuthId
-  if (!tutorId) return
-  // refresh only that tutor
-  getAverageRating(tutorId)
-    .then((summary) => {
-      teacherRatings.value = { ...teacherRatings.value, [tutorId]: summary }
-    })
-    .catch(() => {})
-}
 
 watch(isAuthenticated, (authenticated) => {
   if (authenticated) {
@@ -189,11 +172,7 @@ watch(isAuthenticated, (authenticated) => {
   }
 })
 
-onUnmounted(() => {
-  if (typeof window !== 'undefined') {
-    window.removeEventListener('korker-rating-changed', onRatingChanged)
-  }
-})
+onUnmounted(() => {})
 const filteredTutors = computed(() => {
   return tutors.value.filter((tutor) => {
     const tutorKey = getTutorKey(tutor)
@@ -1056,78 +1035,6 @@ function toggleSelection(category, value) {
   font-size: 10px;
   font-weight: 600;
   border: 1px solid var(--border);
-}
-
-.card-rating-pill {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: rgba(25, 45, 75, 0.88);
-  color: #fff;
-  border-radius: 999px;
-  padding: 8px 12px;
-  font-size: 14px;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 3;
-}
-
-.card-rating-pill .rating-stars {
-  display: flex;
-  gap: 2px;
-}
-
-.card-rating-pill .star {
-  font-size: 14px;
-}
-
-/* half/full star overlay for pill */
-.card-rating-pill .star {
-  position: relative;
-  color: rgba(255, 255, 255, 0.35);
-}
-.card-rating-pill .star::before {
-  content: '★';
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 0;
-  overflow: hidden;
-  color: #f59e0b;
-}
-.card-rating-pill .star.filled::before {
-  width: 100%;
-}
-.card-rating-pill .star.half::before {
-  width: 50%;
-}
-
-/* inline tutor-rating stars */
-.tutor-rating .star {
-  position: relative;
-  color: #e5e7eb;
-}
-.tutor-rating .star::before {
-  content: '★';
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 0;
-  overflow: hidden;
-  color: #f59e0b;
-}
-.tutor-rating .star.filled::before {
-  width: 100%;
-}
-.tutor-rating .star.half::before {
-  width: 50%;
-}
-
-.card-rating-pill .rating-value {
-  color: #fff;
-  font-size: 13px;
 }
 
 .actions {

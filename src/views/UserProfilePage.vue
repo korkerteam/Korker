@@ -218,39 +218,6 @@ function handleSendMessage() {
   if (user.value?.id === profile.value.auth_id) return
   globalChat.openChatWithUser(profile.value.auth_id)
 }
-
-function setDraftRating(value) {
-  ratingDraft.value = Number(value)
-}
-
-function toggleRatingEditor() {
-  if (!profile.value?.auth_id) return
-  if (!showRatingEditor.value) {
-    ratingDraft.value = myTeacherRating.value ?? 0
-  }
-  showRatingEditor.value = !showRatingEditor.value
-}
-
-async function submitTeacherRating() {
-  if (!profile.value?.auth_id) return
-  ratingSaving.value = true
-  try {
-    await submitRating(profile.value.auth_id, Number(ratingDraft.value))
-    await loadTeacherRating(profile.value.auth_id)
-    showRatingEditor.value = false
-  } catch (e) {
-    console.error('submitTeacherRating error:', e)
-  } finally {
-    ratingSaving.value = false
-  }
-}
-
-function getStarFill(rating, index) {
-  const diff = Number(rating || 0) - index
-  if (diff >= 1) return 'filled'
-  if (diff >= 0.5) return 'half'
-  return 'empty'
-}
 </script>
 
 <template>
@@ -320,63 +287,6 @@ function getStarFill(rating, index) {
                     ? 'Kobieta'
                     : ''
               }}</span>
-            </div>
-          </div>
-
-          <div v-if="profile?.account_type === 'tutor'" class="rating-block">
-            <div class="rating-header">
-              <span class="rating-title">Ocena korepetytora</span>
-              <span class="rating-summary"
-                >{{ teacherRating.average ? teacherRating.average.toFixed(1) : 'Brak' }} / 5</span
-              >
-            </div>
-            <div
-              class="rating-stars"
-              :aria-label="`Średnia ocena ${teacherRating.average || 0} z 5`"
-            >
-              <span
-                v-for="i in 5"
-                :key="i"
-                class="star"
-                :class="getStarFill(teacherRating.average, i)"
-                >★</span
-              >
-            </div>
-            <div class="rating-meta">
-              <span v-if="teacherRating.count">{{ teacherRating.count }} ocen</span>
-              <span v-else>Brak ocen</span>
-            </div>
-            <div v-if="myTeacherRating != null" class="rating-my">
-              Twoja ocena: {{ myTeacherRating }}/5
-            </div>
-            <button
-              v-if="profile && user?.id !== profile.auth_id && !blockedByMe && !blockingMe"
-              class="btn btn-secondary rating-action"
-              type="button"
-              @click="toggleRatingEditor"
-            >
-              {{ myTeacherRating != null ? 'Zmień ocenę' : 'Oceń' }}
-            </button>
-            <div v-if="showRatingEditor" class="rating-editor">
-              <div class="rating-options">
-                <button
-                  v-for="value in [1, 2, 3, 4, 5]"
-                  :key="value"
-                  class="rating-option"
-                  :class="{ active: ratingDraft === value }"
-                  type="button"
-                  @click="setDraftRating(value)"
-                >
-                  {{ value }}★
-                </button>
-              </div>
-              <button
-                class="btn btn-primary rating-submit"
-                :disabled="ratingSaving"
-                @click="submitTeacherRating"
-              >
-                {{ ratingSaving ? '...' : 'Zapisz ocenę' }}
-              </button>
             </div>
           </div>
 
@@ -593,95 +503,6 @@ function getStarFill(rating, index) {
   border: 3px solid var(--border);
   width: 110px;
   height: 110px;
-}
-
-.rating-block {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
-}
-
-.rating-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.rating-title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.rating-summary {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--primary-color);
-}
-
-.rating-stars {
-  display: flex;
-  gap: 4px;
-  font-size: 1.1rem;
-}
-
-.star {
-  color: #cbd5e1;
-}
-
-.star.filled {
-  color: #fbbf24;
-}
-
-.star.half {
-  color: #fbbf24;
-}
-
-.rating-meta,
-.rating-my {
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-.rating-action {
-  width: 100%;
-}
-
-.rating-editor {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.rating-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.rating-option {
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface-strong);
-  color: var(--text);
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-.rating-option.active {
-  background: var(--primary-color);
-  color: #fff;
-  border-color: var(--primary-color);
-}
-
-.rating-submit {
-  width: 100%;
 }
 
 .profile-name {
