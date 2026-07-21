@@ -555,7 +555,12 @@ function goToMyTeachers() {
 
 <template>
   <div class="find-korks-panel" :class="{ 'guest-state': !isAuthenticated }">
+    <div v-if="loading" class="loading-screen">
+      <div class="loading-spinner"></div>
+      <span class="loading-text">Ładowanie...</span>
+    </div>
     <div
+      v-else
       class="tutors-content"
       :class="{ 'empty-results-layout': isAuthenticated && !filteredTutors.length }"
     >
@@ -837,7 +842,8 @@ function goToMyTeachers() {
 .find-korks-panel {
   width: 100%;
   max-width: 100%;
-  min-height: 0;
+  min-height: 560px;
+  height: 100%;
   max-height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
@@ -850,6 +856,47 @@ function goToMyTeachers() {
   border: 1px solid var(--border);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
   box-sizing: border-box;
+}
+
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
+  min-height: 560px;
+  height: 100%;
+  max-height: calc(100vh - 160px);
+  gap: 16px;
+  padding: 24px;
+  border-radius: 24px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  box-sizing: border-box;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--border);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--muted);
 }
 
 .tutors-content {
