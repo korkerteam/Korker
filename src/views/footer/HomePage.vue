@@ -93,7 +93,7 @@ import { computed, ref, inject, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
-import { useMessaging } from '@/composables/useMessaging.js'
+import { useMessaging, getDisplayName } from '@/composables/useMessaging.js'
 
 const router = useRouter()
 
@@ -297,7 +297,7 @@ async function fetchLessonNotifications() {
     .map((r) => {
       const otherId = isTutorAccount.value ? r.student_id : r.tutor_id
       const p = otherUsers.value[otherId]
-      const name = p?.nickname || [p?.name, p?.surname].filter(Boolean).join(' ') || 'Nieznany'
+      const name = getDisplayName(p)
       const slotStr = slotLabelsFromMasks(r.requested_slots)
         .slice(0, 2)
         .map((s) => `${s.day} ${s.time}`)
