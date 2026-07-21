@@ -20,6 +20,7 @@ const dayKeys = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'So
 const dayAbbr = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd']
 const gridHours = Array.from({ length: 24 }, (_, i) => i)
 const selectedSlot = ref(null)
+const showCancelConfirm = ref(false)
 
 function getMonday(date) {
   const d = new Date(date)
@@ -177,10 +178,25 @@ async function rejectSlot() {
 
 async function cancelApprovedSlot() {
   if (!selectedSlot.value) return
+  showCancelConfirm.value = true
+}
+
+async function confirmCancelLesson() {
+  if (!selectedSlot.value) return
   const { request } = selectedSlot.value
-  await supabase.from('lesson_requests').delete().eq('id', request.id)
+  const { error } = await supabase.from('lesson_requests').delete().eq('id', request.id)
+  if (error) {
+    console.error('Failed to cancel lesson:', error)
+    showCancelConfirm.value = false
+    return
+  }
   selectedSlot.value = null
+  showCancelConfirm.value = false
   await fetchLessonRequests()
+}
+
+function dismissCancelConfirm() {
+  showCancelConfirm.value = false
 }
 
 function openProfile(request) {
@@ -372,7 +388,7 @@ onUnmounted(() => {
                 Pokaż profil
               </button>
               <button class="action-btn action-cancel" type="button" @click="cancelApprovedSlot()">
-                Anuluj
+                Anuluj lekcję
               </button>
             </template>
           </div>
@@ -386,18 +402,50 @@ onUnmounted(() => {
         </template>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="showCancelConfirm"
+        class="cancel-confirm-backdrop"
+        @click.self="dismissCancelConfirm"
+      >
+        <div class="cancel-confirm-card">
+          <h3 class="cancel-confirm-title">Anuluj lekcję</h3>
+          <p class="cancel-confirm-text">
+            Na pewno chcesz anulować tę lekcję? Tej operacji nie można cofnąć.
+          </p>
+          <div class="cancel-confirm-actions">
+            <button
+              class="cancel-confirm-btn cancel-confirm-keep"
+              type="button"
+              @click="dismissCancelConfirm"
+            >
+              Zostaw
+            </button>
+            <button
+              class="cancel-confirm-btn cancel-confirm-do"
+              type="button"
+              @click="confirmCancelLesson"
+            >
+              Anuluj lekcję
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </section>
 </template>
 
 <style scoped>
 .calendar-view-simple {
   width: 100%;
+  --s: 1.15;
 }
 
 .auth-required-card {
-  width: min(100%, 560px);
-  padding: 28px;
-  border-radius: 24px;
+  width: min(100%, calc(560px * var(--s)));
+  padding: calc(28px * var(--s));
+  border-radius: calc(24px * var(--s));
   background: var(--surface-strong);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-soft);
@@ -406,20 +454,20 @@ onUnmounted(() => {
 }
 
 .auth-required-card h3 {
-  margin: 0 0 10px;
+  margin: 0 0 calc(10px * var(--s));
   color: var(--text);
-  font-size: 22px;
+  font-size: calc(22px * var(--s));
 }
 .auth-required-card p {
-  margin: 0 0 18px;
+  margin: 0 0 calc(18px * var(--s));
   color: var(--muted);
   line-height: 1.6;
-  font-size: 15px;
+  font-size: calc(15px * var(--s));
 }
 .auth-actions {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: calc(12px * var(--s));
   flex-wrap: wrap;
 }
 
@@ -427,7 +475,7 @@ onUnmounted(() => {
 .btn-secondary {
   border: none;
   border-radius: 999px;
-  padding: 10px 16px;
+  padding: calc(10px * var(--s)) calc(16px * var(--s));
   font-weight: 700;
   cursor: pointer;
 }
@@ -443,8 +491,8 @@ onUnmounted(() => {
 
 .card {
   background: var(--surface-strong);
-  border-radius: 24px;
-  padding: 20px;
+  border-radius: calc(24px * var(--s));
+  padding: calc(20px * var(--s));
   box-shadow: var(--shadow-soft);
   border: 1px solid var(--border);
   color: var(--text);
@@ -457,43 +505,43 @@ onUnmounted(() => {
 }
 
 .card-left {
-  width: 520px;
+  width: calc(520px * var(--s));
   flex: none;
 }
 
 .card-right {
-  width: 320px;
+  width: calc(320px * var(--s));
   flex: none;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: calc(14px * var(--s));
   align-self: flex-start;
   position: sticky;
-  top: 20px;
+  top: calc(20px * var(--s));
 }
 
 .calendar-title {
-  margin: 0 0 12px;
-  font-size: 1.2rem;
+  margin: 0 0 calc(12px * var(--s));
+  font-size: calc(1.2rem * var(--s));
   font-weight: 800;
 }
 
 .cal-legend {
   display: flex;
-  gap: 12px;
-  margin-bottom: 10px;
-  font-size: 11px;
+  gap: calc(12px * var(--s));
+  margin-bottom: calc(10px * var(--s));
+  font-size: calc(11px * var(--s));
   color: var(--muted);
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: calc(6px * var(--s));
 }
 .legend-dot {
-  width: 12px;
-  height: 12px;
+  width: calc(12px * var(--s));
+  height: calc(12px * var(--s));
   border-radius: 3px;
   flex-shrink: 0;
 }
@@ -507,21 +555,21 @@ onUnmounted(() => {
 .calendar-body {
   display: flex;
   justify-content: center;
-  gap: 16px;
+  gap: calc(16px * var(--s));
 }
 
 .tt-grid-wrap {
   flex: 1;
   min-width: 0;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border-radius: calc(10px * var(--s));
   overflow: hidden;
 }
 
 .tt-grid {
   display: grid;
-  grid-template-columns: 36px repeat(7, 1fr);
-  grid-template-rows: 22px repeat(24, 20px);
+  grid-template-columns: calc(36px * var(--s)) repeat(7, 1fr);
+  grid-template-rows: calc(22px * var(--s)) repeat(24, calc(20px * var(--s)));
   gap: 1px;
   padding: 3px;
   background: #f3f4f6;
@@ -536,7 +584,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 9px;
+  font-size: calc(9px * var(--s));
   font-weight: 700;
   color: #374151;
   text-transform: uppercase;
@@ -550,7 +598,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 8px;
+  font-size: calc(8px * var(--s));
   font-weight: 600;
   color: #9ca3af;
   border-radius: 2px;
@@ -600,11 +648,11 @@ onUnmounted(() => {
 
 .tt-cell-name {
   display: block;
-  font-size: 8px;
+  font-size: calc(8px * var(--s));
   font-weight: 700;
   color: #fff;
   text-align: center;
-  line-height: 18px;
+  line-height: calc(18px * var(--s));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -620,13 +668,13 @@ onUnmounted(() => {
 
 .detail-panel-title {
   margin: 0;
-  font-size: 1rem;
+  font-size: calc(1rem * var(--s));
   font-weight: 800;
 }
 
 .detail-empty-text {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: calc(0.85rem * var(--s));
   color: var(--muted);
   line-height: 1.5;
 }
@@ -635,10 +683,10 @@ onUnmounted(() => {
   background: transparent;
   border: none;
   color: var(--muted);
-  font-size: 1.1rem;
+  font-size: calc(1.1rem * var(--s));
   cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 6px;
+  padding: 2px calc(6px * var(--s));
+  border-radius: calc(6px * var(--s));
 }
 
 .detail-close:hover {
@@ -648,12 +696,12 @@ onUnmounted(() => {
 .detail-person {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: calc(12px * var(--s));
 }
 
 .detail-avatar {
-  width: 44px;
-  height: 44px;
+  width: calc(44px * var(--s));
+  height: calc(44px * var(--s));
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
@@ -664,7 +712,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: calc(1.1rem * var(--s));
   font-weight: 800;
   color: var(--muted);
 }
@@ -677,7 +725,7 @@ onUnmounted(() => {
 }
 
 .detail-name {
-  font-size: 0.95rem;
+  font-size: calc(0.95rem * var(--s));
   font-weight: 700;
   color: var(--text);
   overflow: hidden;
@@ -686,7 +734,7 @@ onUnmounted(() => {
 }
 
 .detail-fullname {
-  font-size: 0.75rem;
+  font-size: calc(0.75rem * var(--s));
   color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -694,9 +742,9 @@ onUnmounted(() => {
 }
 
 .detail-badge {
-  font-size: 0.65rem;
+  font-size: calc(0.65rem * var(--s));
   font-weight: 700;
-  padding: 3px 8px;
+  padding: 3px calc(8px * var(--s));
   border-radius: 999px;
   text-transform: uppercase;
   align-self: flex-start;
@@ -714,11 +762,11 @@ onUnmounted(() => {
 .detail-section {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: calc(6px * var(--s));
 }
 
 .detail-section-title {
-  font-size: 0.7rem;
+  font-size: calc(0.7rem * var(--s));
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -728,48 +776,48 @@ onUnmounted(() => {
 .detail-slots {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: calc(4px * var(--s));
 }
 
 .detail-slot-chip {
-  padding: 4px 8px;
+  padding: calc(4px * var(--s)) calc(8px * var(--s));
   background: var(--surface-strong);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 0.75rem;
+  border-radius: calc(6px * var(--s));
+  font-size: calc(0.75rem * var(--s));
   font-weight: 600;
   color: var(--text);
 }
 
 .detail-subject {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: calc(0.85rem * var(--s));
   font-weight: 600;
   color: var(--text);
-  padding: 8px 10px;
+  padding: calc(8px * var(--s)) calc(10px * var(--s));
   background: var(--surface-strong);
-  border-radius: 8px;
+  border-radius: calc(8px * var(--s));
 }
 
 .detail-meta {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem * var(--s));
   color: var(--muted);
 }
 
 .detail-actions {
   display: flex;
-  gap: 8px;
+  gap: calc(8px * var(--s));
   flex-wrap: wrap;
-  margin-top: 4px;
+  margin-top: calc(4px * var(--s));
 }
 
 .action-btn {
   border: none;
-  border-radius: 10px;
-  padding: 10px 18px;
+  border-radius: calc(10px * var(--s));
+  padding: calc(10px * var(--s)) calc(18px * var(--s));
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: calc(0.85rem * var(--s));
   cursor: pointer;
   flex: 1;
   min-width: 0;
@@ -820,5 +868,76 @@ onUnmounted(() => {
     width: 100%;
     position: static;
   }
+}
+</style>
+
+<style>
+.cancel-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.cancel-confirm-card {
+  width: min(90vw, 380px);
+  padding: 28px 24px 24px;
+  background: var(--surface-strong);
+  border-radius: 24px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.cancel-confirm-title {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.cancel-confirm-text {
+  margin: 0 0 22px;
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.cancel-confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.cancel-confirm-btn {
+  flex: 1;
+  border: none;
+  border-radius: 12px;
+  padding: 11px 16px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.cancel-confirm-keep {
+  background: var(--surface-soft);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.cancel-confirm-keep:hover {
+  background: var(--surface-hover);
+}
+
+.cancel-confirm-do {
+  background: #ef4444;
+  color: white;
+}
+
+.cancel-confirm-do:hover {
+  background: #dc2626;
 }
 </style>
