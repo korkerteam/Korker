@@ -576,7 +576,7 @@ onUnmounted(() => {
 .tt-grid-wrap {
   flex: 1;
   min-width: 0;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: calc(10px * var(--s));
   overflow: hidden;
 }
@@ -587,7 +587,7 @@ onUnmounted(() => {
   grid-template-rows: calc(22px * var(--s)) repeat(24, calc(20px * var(--s)));
   gap: 1px;
   padding: 3px;
-  background: #f3f4f6;
+  background: var(--surface-soft);
   width: 100%;
 }
 
@@ -601,10 +601,10 @@ onUnmounted(() => {
   justify-content: center;
   font-size: calc(9px * var(--s));
   font-weight: 700;
-  color: #374151;
+  color: var(--text);
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  background: #f9fafb;
+  background: var(--surface-strong);
   border-radius: 2px;
   padding: 1px;
 }
@@ -615,14 +615,14 @@ onUnmounted(() => {
   justify-content: center;
   font-size: calc(8px * var(--s));
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--muted);
   border-radius: 2px;
 }
 
 .tt-cell {
   border-radius: 3px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
   min-width: 0;
   min-height: 0;
   transition: background 0.08s;

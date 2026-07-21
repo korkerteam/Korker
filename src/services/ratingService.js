@@ -112,6 +112,8 @@ export async function getAverageRating(tutorAuthId) {
     const sum = deduped.reduce((acc, e) => acc + normalizeToFive(e.rating), 0)
     return { average: sum / deduped.length, count: deduped.length }
   }
+
+  return { average: 0, count: 0 }
 }
 
 export async function getMyRatingForTutor(tutorAuthId) {
@@ -159,9 +161,11 @@ export async function submitRating(tutorAuthId, rating) {
   writeLocal(map)
 
   try {
-    await supabase.from(RATING_TABLE).upsert(payload, { onConflict: 'tutor_auth_id,rater_auth_id' })
+    if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('korker-rating-changed', { detail: { tutorAuthId } }))
+    }
   } catch {
-    // keep local storage fallback when Supabase is unavailable
+    // ignore
   }
 
   try {
@@ -173,21 +177,9 @@ export async function submitRating(tutorAuthId, rating) {
 
     if (error) {
       console.error('submitRating supabase error', error)
-      throw error
     }
-
-    try {
-      if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('korker-rating-changed', { detail: { tutorAuthId } }))
-      }
-    } catch {
-      // ignore
-    }
-
-    return normalized
   } catch (err) {
     console.error('submitRating unexpected error', err)
-    throw err
   }
 
   return normalized

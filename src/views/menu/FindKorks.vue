@@ -1,10 +1,11 @@
 <script setup>
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { getBlockedIds, getBlockingMeIds } from '@/services/blockService.js'
 import { getAverageRating } from '@/services/ratingService.js'
-import { onUnmounted } from 'vue'
+import { useCityCache } from '@/composables/useCityCache.js'
+import CityMap from '@/components/CityMap.vue'
 
 const props = defineProps({
   filters: {
@@ -33,7 +34,21 @@ const selectedLevels = ref([])
 const selectedTags = ref([])
 const selectedCity = ref('')
 const citySearchInput = ref('')
+const cityFilterQuery = ref('')
+let cityFilterTimer = null
+watch(citySearchInput, (val) => {
+  clearTimeout(cityFilterTimer)
+  cityFilterTimer = setTimeout(() => {
+    cityFilterQuery.value = val
+  }, 300)
+})
 const selectedLessonPlaces = ref([])
+const { cities, loadCities } = useCityCache()
+
+function onCitySelect(city) {
+  selectedCity.value = city.Name
+  emitFilterState()
+}
 const swipeStartX = ref(null)
 const swipeOffsetX = ref(0)
 const swipeRotation = ref(0)
@@ -109,6 +124,8 @@ function emitFilterState() {
 
 function getTutorKey(tutor) {
   if (!tutor) return null
+  const authId = tutor.auth_id || tutor.authId || tutor.user_id
+  if (authId) return String(authId)
   if (tutor.id != null) return String(tutor.id)
   if (tutor.name) return `name:${tutor.name}`
   return null
@@ -164,6 +181,7 @@ async function loadTutors() {
 
 onMounted(() => {
   loadTutors()
+  loadCities()
   if (typeof window !== 'undefined') {
     window.addEventListener('korker-rating-changed', onRatingChanged)
   }
@@ -190,6 +208,7 @@ watch(isAuthenticated, (authenticated) => {
 })
 
 onUnmounted(() => {
+  clearTimeout(cityFilterTimer)
   if (typeof window !== 'undefined') {
     window.removeEventListener('korker-rating-changed', onRatingChanged)
   }
@@ -258,6 +277,44 @@ const currentTutor = computed(() => {
   const safeIndex = Math.min(Math.max(currentIndex.value, 0), list.length - 1)
   return list[safeIndex] || null
 })
+
+const currentTutorRating = computed(() => {
+  const tutor = currentTutor.value
+  if (!tutor || !tutor.auth_id) return { average: 0, count: 0 }
+  return teacherRatings.value[tutor.auth_id] || { average: 0, count: 0 }
+})
+
+function getStarFill(rating, index) {
+  const diff = Number(rating || 0) - (index - 1)
+  if (diff >= 1) return 'filled'
+  if (diff >= 0.5) return 'half'
+  return ''
+}
+
+function loadTutorRating(tutorAuthId) {
+  if (!tutorAuthId || teacherRatings.value[tutorAuthId]) return
+  getAverageRating(tutorAuthId)
+    .then((summary) => {
+      teacherRatings.value = {
+        ...teacherRatings.value,
+        [tutorAuthId]: summary || { average: 0, count: 0 },
+      }
+    })
+    .catch(() => {
+      teacherRatings.value = {
+        ...teacherRatings.value,
+        [tutorAuthId]: { average: 0, count: 0 },
+      }
+    })
+}
+
+watch(
+  currentTutor,
+  (tutor) => {
+    if (tutor?.auth_id) loadTutorRating(tutor.auth_id)
+  },
+  { immediate: true },
+)
 
 watch(
   () => props.filters,
@@ -565,6 +622,21 @@ function toggleSelection(category, value) {
                 <div class="tutor-summary-card tutor-summary-price">
                   <p class="tutor-price">{{ currentTutor.price }} zł/h</p>
                 </div>
+                <div v-if="currentTutorRating" class="rating-row">
+                  <div class="rating-stars">
+                    <span
+                      v-for="i in 5"
+                      :key="i"
+                      class="star"
+                      :class="getStarFill(currentTutorRating.average, i)"
+                      >★</span
+                    >
+                  </div>
+                  <span class="rating-value">
+                    {{ currentTutorRating.average ? currentTutorRating.average.toFixed(1) : '0' }} /
+                    5
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -643,6 +715,13 @@ function toggleSelection(category, value) {
                 autocomplete="off"
               />
             </label>
+            <p
+              v-if="citySearchInput.trim().length > 0 && citySearchInput.trim().length < 3"
+              class="city-hint"
+            >
+              Wpisz co najmniej 3 znaki
+            </p>
+            <CityMap :cities="cities" :filter-query="cityFilterQuery" @city-select="onCitySelect" />
             <button class="city-apply-button" type="button" @click="applyCityFilter">
               Zastosuj
             </button>
@@ -741,15 +820,21 @@ function toggleSelection(category, value) {
 }
 
 .tutors-content.empty-results-layout {
-  grid-template-columns: 1fr auto minmax(260px, 360px);
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  gap: 20px;
+  align-items: start;
 }
 
 .tutors-content.empty-results-layout .tutor-section {
-  grid-column: 2;
+  grid-column: 1;
+  justify-self: center;
+  padding: 0;
+  padding-top: 224px;
 }
 
 .tutors-content.empty-results-layout .tags-filter-section {
-  grid-column: 3;
+  grid-column: 2;
+  align-self: start;
 }
 
 .find-korks-panel.guest-state .tutors-content {
@@ -1003,10 +1088,40 @@ function toggleSelection(category, value) {
 
 .tutor-summary-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) auto;
+  grid-template-columns: minmax(0, 1.2fr) auto auto;
   gap: 10px;
   align-items: center;
   width: 100%;
+}
+
+.rating-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rating-stars {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  font-size: 1.1rem;
+}
+
+.rating-stars .star {
+  color: #cbd5e1;
+}
+
+.rating-stars .star.filled,
+.rating-stars .star.half {
+  color: #fbbf24;
+}
+
+.rating-row .rating-value {
+  color: var(--text);
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .tutor-summary-card {
@@ -1105,6 +1220,14 @@ function toggleSelection(category, value) {
 }
 
 /* inline tutor-rating stars */
+.tutor-rating {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+
 .tutor-rating .star {
   position: relative;
   color: #e5e7eb;
@@ -1123,6 +1246,12 @@ function toggleSelection(category, value) {
 }
 .tutor-rating .star.half::before {
   width: 50%;
+}
+
+.tutor-rating .rating-value {
+  color: var(--text);
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .card-rating-pill .rating-value {
@@ -1248,6 +1377,13 @@ function toggleSelection(category, value) {
   color: var(--text);
   font-size: 14px;
   box-sizing: border-box;
+}
+
+.city-hint {
+  margin: 6px 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
 }
 
 .visually-hidden {

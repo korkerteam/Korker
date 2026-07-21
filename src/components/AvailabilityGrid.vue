@@ -29,9 +29,8 @@ function isCellSelected(day, hour) {
   return (props.availability?.[day] || []).includes(getSlotLabel(hour))
 }
 
-function setCellState(day, hour, selected) {
-  if (props.readonly) return
-  const avail = { ...props.availability }
+function applyCellState(availability, day, hour, selected) {
+  const avail = { ...(availability || {}) }
   if (!avail[day]) avail[day] = []
   const slots = [...avail[day]]
   const slot = getSlotLabel(hour)
@@ -39,19 +38,28 @@ function setCellState(day, hour, selected) {
   if (selected && idx === -1) slots.push(slot)
   if (!selected && idx > -1) slots.splice(idx, 1)
   avail[day] = slots
-  emit('update:availability', avail)
+  return avail
+}
+
+function setCellState(day, hour, selected) {
+  if (props.readonly) return
+  emit('update:availability', applyCellState(props.availability, day, hour, selected))
 }
 
 function toggleCell(day, hour, skipMirror) {
   if (props.readonly) return
   const was = isCellSelected(day, hour)
-  setCellState(day, hour, !was)
+  const targetState = !was
+  let nextAvailability = applyCellState(props.availability, day, hour, targetState)
+
   if (!skipMirror && mirrorWeekdays.value) {
-    for (let i = 0; i <= 4; i++) {
-      const d = dayKeys[i]
-      if (d !== day) setCellState(d, hour, !was)
+    const mirroredDays = dayKeys.slice(0, 5).filter((d) => d !== day)
+    for (const d of mirroredDays) {
+      nextAvailability = applyCellState(nextAvailability, d, hour, targetState)
     }
   }
+
+  emit('update:availability', nextAvailability)
 }
 
 function onCellMouseDown(day, hour) {
@@ -63,8 +71,8 @@ function onCellMouseDown(day, hour) {
 
 function onCellMouseEnter(day, hour) {
   if (!isDragging.value || props.readonly) return
-  if (dragMode.value === 'select' && !isCellSelected(day, hour)) toggleCell(day, hour, true)
-  if (dragMode.value === 'deselect' && isCellSelected(day, hour)) toggleCell(day, hour, true)
+  if (dragMode.value === 'select' && !isCellSelected(day, hour)) toggleCell(day, hour, false)
+  if (dragMode.value === 'deselect' && isCellSelected(day, hour)) toggleCell(day, hour, false)
 }
 
 function onGridMouseUp() {

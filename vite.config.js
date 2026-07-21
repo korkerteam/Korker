@@ -13,4 +13,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    proxy: {
+      '/nominatim': {
+        target: 'https://nominatim.openstreetmap.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/nominatim/, ''),
+      },
+    },
+  },
 })
