@@ -1,10 +1,11 @@
 <script setup>
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { getBlockedIds, getBlockingMeIds } from '@/services/blockService.js'
 import { getAverageRating } from '@/services/ratingService.js'
-import { onUnmounted } from 'vue'
+import { useCityCache } from '@/composables/useCityCache.js'
+import CityMap from '@/components/CityMap.vue'
 
 const props = defineProps({
   filters: {
@@ -33,7 +34,21 @@ const selectedLevels = ref([])
 const selectedTags = ref([])
 const selectedCity = ref('')
 const citySearchInput = ref('')
+const cityFilterQuery = ref('')
+let cityFilterTimer = null
+watch(citySearchInput, (val) => {
+  clearTimeout(cityFilterTimer)
+  cityFilterTimer = setTimeout(() => {
+    cityFilterQuery.value = val
+  }, 300)
+})
 const selectedLessonPlaces = ref([])
+const { cities, loadCities } = useCityCache()
+
+function onCitySelect(city) {
+  selectedCity.value = city.Name
+  emitFilterState()
+}
 const swipeStartX = ref(null)
 const swipeOffsetX = ref(0)
 const swipeRotation = ref(0)
@@ -164,6 +179,7 @@ async function loadTutors() {
 
 onMounted(() => {
   loadTutors()
+  loadCities()
   if (typeof window !== 'undefined') {
     window.addEventListener('korker-rating-changed', onRatingChanged)
   }
@@ -190,6 +206,7 @@ watch(isAuthenticated, (authenticated) => {
 })
 
 onUnmounted(() => {
+  clearTimeout(cityFilterTimer)
   if (typeof window !== 'undefined') {
     window.removeEventListener('korker-rating-changed', onRatingChanged)
   }
@@ -643,6 +660,13 @@ function toggleSelection(category, value) {
                 autocomplete="off"
               />
             </label>
+            <p
+              v-if="citySearchInput.trim().length > 0 && citySearchInput.trim().length < 3"
+              class="city-hint"
+            >
+              Wpisz co najmniej 3 znaki
+            </p>
+            <CityMap :cities="cities" :filter-query="cityFilterQuery" @city-select="onCitySelect" />
             <button class="city-apply-button" type="button" @click="applyCityFilter">
               Zastosuj
             </button>
@@ -1248,6 +1272,13 @@ function toggleSelection(category, value) {
   color: var(--text);
   font-size: 14px;
   box-sizing: border-box;
+}
+
+.city-hint {
+  margin: 6px 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
 }
 
 .visually-hidden {

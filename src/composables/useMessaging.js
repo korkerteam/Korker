@@ -61,13 +61,19 @@ function formatRelativeTime(dateStr) {
   return d.toLocaleDateString([], { day: 'numeric', month: 'short' })
 }
 
+export function getDisplayName(profile) {
+  if (!profile) return 'Nieznany'
+  const fullName = [profile.name, profile.surname].filter(Boolean).join(' ')
+  const nick = profile.nickname
+  if (fullName && nick && fullName !== nick) return `${fullName} (${nick})`
+  return fullName || nick || 'Nieznany'
+}
+
 function makeContact(userId, profile) {
   return {
     userId,
     nickname: profile?.nickname || null,
-    name: profile
-      ? profile.nickname || [profile.name, profile.surname].filter(Boolean).join(' ') || 'Nieznany'
-      : 'Nieznany',
+    name: getDisplayName(profile),
     avatarColor: stringToColor(userId),
     profilePicture: profile?.profile_picture || null,
   }
@@ -486,9 +492,7 @@ export function useMessaging() {
     if (existing?.name) return existing.name
 
     const profile = await getProfileByAuthId(senderId)
-    return (
-      profile?.nickname || [profile?.name, profile?.surname].filter(Boolean).join(' ') || 'Nieznany'
-    )
+    return getDisplayName(profile)
   }
 
   async function addChatNotification(msg) {
