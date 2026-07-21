@@ -476,7 +476,6 @@ onUnmounted(() => {
   gap: 10px;
   position: relative;
   z-index: 50;
-  padding: 16px 0 0;
 }
 
 .search-block {
@@ -649,7 +648,6 @@ onUnmounted(() => {
     align-items: center;
     justify-content: flex-end;
     gap: 6px;
-    padding: 12px 0 0;
   }
 
   .Korker {

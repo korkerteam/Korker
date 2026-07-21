@@ -326,14 +326,10 @@ onBeforeUnmount(() => {
               }}</span>
             </div>
             <div class="result-text">
-              <span class="result-title">{{
-                user.nickname || [user.name, user.surname].filter(Boolean).join(' ')
-              }}</span>
-              <span
-                v-if="user.nickname && (user.name || user.surname)"
-                class="result-description"
-                >{{ [user.name, user.surname].filter(Boolean).join(' ') }}</span
-              >
+              <span class="result-title">
+                {{ [user.name, user.surname].filter(Boolean).join(' ') || user.nickname }}
+              </span>
+              <span v-if="user.nickname" class="result-description"> {{ user.nickname }} </span>
             </div>
           </button>
         </template>
@@ -568,6 +564,7 @@ onBeforeUnmount(() => {
   font-size: 0.95rem;
   font-weight: 700;
   text-overflow: ellipsis;
+  overflow: hidden;
   white-space: nowrap;
 }
 

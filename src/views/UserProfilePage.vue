@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { useMessaging } from '@/composables/useMessaging.js'
 import { blockUser, unblockUser, isBlockedByMe, isBlockingMe } from '@/services/blockService.js'
+import { getAverageRating, getMyRatingForTutor, submitRating } from '@/services/ratingService.js'
 import LoadingBox from '@/components/LoadingBox.vue'
 import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
 
@@ -30,6 +31,11 @@ const blockedByMe = ref(false)
 const blockingMe = ref(false)
 const showBlockConfirm = ref(false)
 const blockLoading = ref(false)
+const teacherRating = ref(null)
+const myTeacherRating = ref(null)
+const showRatingEditor = ref(false)
+const ratingDraft = ref(0)
+const ratingSaving = ref(false)
 
 const globalChat = inject('globalChat')
 
@@ -90,6 +96,7 @@ async function fetchProfile(identifier) {
         : [tutorPost.value]
       : []
     await checkBlockStatus(dataById.auth_id)
+    if (dataById.account_type === 'tutor') await loadTeacherRating(dataById.auth_id)
     loading.value = false
     return
   }
@@ -102,7 +109,18 @@ async function fetchProfile(identifier) {
       : [tutorPost.value]
     : []
   await checkBlockStatus(data.auth_id)
+  if (data.account_type === 'tutor') await loadTeacherRating(data.auth_id)
   loading.value = false
+}
+
+async function loadTeacherRating(tutorAuthId) {
+  if (!tutorAuthId) return
+  const [avg, my] = await Promise.all([
+    getAverageRating(tutorAuthId),
+    getMyRatingForTutor(tutorAuthId),
+  ])
+  teacherRating.value = avg || { average: 0, count: 0 }
+  myTeacherRating.value = my
 }
 
 async function checkBlockStatus(targetAuthId) {

@@ -37,6 +37,23 @@ function getOrCreateLocalClientId() {
   }
 }
 
+function readLocal() {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_RATING_STORAGE_KEY)
+    return new Map(raw ? JSON.parse(raw) : [])
+  } catch {
+    return new Map()
+  }
+}
+
+function writeLocal(map) {
+  try {
+    window.localStorage.setItem(LOCAL_RATING_STORAGE_KEY, JSON.stringify([...map.entries()]))
+  } catch {
+    // ignore
+  }
+}
+
 function coerceEntry(raw) {
   if (!raw) return null
   try {
