@@ -13,7 +13,6 @@ const emit = defineEmits(['city-select'])
 const mapContainer = ref(null)
 let map = null
 let markerLayer = null
-let boundaryLayer = null
 let resizeObserver = null
 
 function initMap() {
@@ -33,7 +32,6 @@ function initMap() {
     .addTo(map)
 
   markerLayer = L.layerGroup().addTo(map)
-  boundaryLayer = L.layerGroup().addTo(map)
 
   map.on('click', clearSelection)
 }
@@ -65,7 +63,6 @@ function clearSelection() {
   if (selectedMarker) {
     resetMarkerStyle(selectedMarker)
     selectedMarker = null
-    boundaryLayer?.clearLayers()
   }
 }
 
@@ -91,7 +88,6 @@ function addMarker(city) {
 function updateMarkers() {
   if (!markerLayer || !map) return
   markerLayer.clearLayers()
-  boundaryLayer.clearLayers()
   selectedMarker = null
 
   const filtered = getFilteredCities()
@@ -113,50 +109,22 @@ function updateMarkers() {
   }
 }
 
-async function handleMarkerClick(city, marker) {
+function handleMarkerClick(city, marker) {
   if (selectedMarker === marker) {
     clearSelection()
     return
   }
 
   clearSelection()
-  boundaryLayer.clearLayers()
 
   marker.setStyle({
     radius: 9,
-    fillColor: '#ff6b4a',
+    fillColor: '#ff8c00',
     color: '#fff',
     weight: 3,
     fillOpacity: 1,
   })
   selectedMarker = marker
-
-  try {
-    const params = new URLSearchParams({
-      city: city.Name,
-      state: city.Province,
-      countrycodes: 'pl',
-      format: 'jsonv2',
-      polygon_geojson: 1,
-      addressdetails: 0,
-      extratags: 0,
-      namedetails: 0,
-      limit: 1,
-    })
-    const res = await fetch(`/nominatim/search?${params}`)
-    const data = await res.json()
-
-    if (data && data.length > 0 && data[0].geojson) {
-      L.geoJSON(data[0].geojson, {
-        style: { color: '#ff6b4a', weight: 3, fillOpacity: 0.12 },
-      }).addTo(boundaryLayer)
-    } else {
-      console.warn('No boundary data from Nominatim for', city.Name, data)
-    }
-  } catch (err) {
-    console.error('Failed to fetch city boundary for', city.Name, err)
-  }
-
   emit('city-select', city)
 }
 

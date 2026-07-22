@@ -1,13 +1,15 @@
 ﻿<script setup>
-import { reactive, ref, watch, computed } from 'vue'
+import { reactive, ref, watch, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { upsertProfile } from '@/services/profileService.js'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { translateAuthError } from '@/utils/authErrors.js'
 import { compressImage } from '@/utils/imageCompress.js'
+import { useCityCache } from '@/composables/useCityCache.js'
 import LoadingBox from '@/components/LoadingBox.vue'
 import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
+import CityMap from '@/components/CityMap.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -65,6 +67,7 @@ const weeklyDayLabels = [
   'Niedziela',
 ]
 const saving = ref(false)
+const autoSaving = ref(false)
 const loading = ref(true)
 const saveError = ref('')
 const pendingAvatarFile = ref(null)
@@ -141,6 +144,15 @@ function applySavedTutorPost(data) {
   }))
 }
 
+// Student city — declared before profile watch because it reads draft.city
+const citySearchInput = ref('')
+const cityFilterQuery = ref('')
+const showCitySuggestionsStudent = ref(false)
+const showCityMapStudent = ref(false)
+let cityFilterTimer = null
+let clearCityTimer = null
+let suppressCityFilter = false
+
 watch(
   [profileData, profileLoading],
   ([data, busy]) => {
@@ -157,11 +169,56 @@ watch(
     }
     originalProfilePicture = profile.profile_picture
     Object.assign(draft, profile)
+    suppressCityFilter = true
+    citySearchInput.value = draft.city || ''
     applySavedTutorPost(profileData.value)
     loading.value = false
   },
   { immediate: true },
 )
+
+async function triggerAutoSave() {
+  if (saving.value || autoSaving.value) return
+  if (!draft.accountType) return
+  if (draft.accountType === 'tutor' && tutorOffers.value.length === 0) return
+
+  Object.assign(profile, draft)
+  autoSaving.value = true
+  try {
+    let tutorPost = null
+    if (draft.accountType === 'tutor') {
+      tutorPost = tutorOffers.value.map((o) => ({
+        subject: o.subject || '',
+        level: o.level || 'Liceum',
+        price: Number(o.price) || null,
+        description: o.description || '',
+        photo: o.photo || null,
+        teachingFormats: [...o.teachingFormats],
+        city: o.city || '',
+        street: o.street || '',
+        homeNumber: o.homeNumber || '',
+        flatNumber: o.flatNumber || '',
+        weeklyAvailability: Object.fromEntries(
+          weeklyDayLabels.map((d) => [d, [...(o.weeklyAvailability?.[d] || [])]]),
+        ),
+        avail_hours: weeklyDayLabels.map((d) =>
+          (o.weeklyAvailability?.[d] || []).reduce((mask, slot) => {
+            const h = parseInt(slot.split(':')[0], 10)
+            return mask | (1 << h)
+          }, 0),
+        ),
+      }))
+    }
+    const result = await upsertProfile(toDb(), user.value?.id, tutorPost)
+    if (result) {
+      profileData.value = { ...result }
+    }
+  } catch (err) {
+    console.error('Auto-save failed:', err)
+  } finally {
+    autoSaving.value = false
+  }
+}
 
 async function saveProfile() {
   saveError.value = ''
@@ -338,6 +395,106 @@ const offerNeedsAddress = computed(() => {
   )
 })
 
+const { cities, loadCities } = useCityCache()
+
+function formatCityProvince(city) {
+  const prov = (city.Province || '').charAt(0).toUpperCase() + (city.Province || '').slice(1)
+  return prov ? `${city.Name}, ${prov}` : city.Name
+}
+
+// Student city
+watch(citySearchInput, (val) => {
+  if (!suppressCityFilter) {
+    clearTimeout(cityFilterTimer)
+    cityFilterTimer = setTimeout(() => {
+      cityFilterQuery.value = val
+    }, 300)
+  }
+  suppressCityFilter = false
+
+  clearTimeout(clearCityTimer)
+  if (!val && draft.city) {
+    draft.city = ''
+    clearCityTimer = setTimeout(triggerAutoSave, 500)
+  }
+})
+
+const citySuggestions = computed(() => {
+  const query = (citySearchInput.value || '').trim().toLowerCase()
+  const filtered = !query
+    ? cities.value.filter((c) => c.Type === 'city')
+    : cities.value.filter((c) => c.Name.toLowerCase().includes(query))
+  return filtered.sort((a, b) => a.Name.localeCompare(b.Name))
+})
+
+function selectCity(city) {
+  draft.city = city.Name
+  suppressCityFilter = true
+  citySearchInput.value = city.Name
+  showCitySuggestionsStudent.value = false
+  document.activeElement?.blur()
+  triggerAutoSave()
+}
+
+function onCityMapSelect(city) {
+  clearTimeout(cityFilterTimer)
+  draft.city = city.Name
+  suppressCityFilter = true
+  citySearchInput.value = city.Name
+  clearTimeout(cityFilterTimer)
+  triggerAutoSave()
+}
+
+function toggleCityMapStudent() {
+  showCityMapStudent.value = !showCityMapStudent.value
+}
+
+// Tutor offer city
+const offerCityFilterQuery = ref('')
+const offerCitySearchInput = ref('')
+const showCitySuggestions = ref(false)
+const showCityMap = ref(false)
+let offerCityFilterTimer = null
+
+watch(offerCitySearchInput, (val) => {
+  clearTimeout(offerCityFilterTimer)
+  offerCityFilterTimer = setTimeout(() => {
+    offerCityFilterQuery.value = val
+  }, 300)
+
+  if (!val && offerDraft.city) {
+    offerDraft.city = ''
+  }
+})
+
+const offerCitySuggestions = computed(() => {
+  const query = (offerCitySearchInput.value || '').trim().toLowerCase()
+  const filtered = !query
+    ? cities.value.filter((c) => c.Type === 'city')
+    : cities.value.filter((c) => c.Name.toLowerCase().includes(query))
+  return filtered.sort((a, b) => a.Name.localeCompare(b.Name))
+})
+
+function selectOfferCity(city) {
+  offerDraft.city = city.Name
+  offerCitySearchInput.value = city.Name
+  showCitySuggestions.value = false
+  document.activeElement?.blur()
+  triggerAutoSave()
+}
+
+function onOfferCityMapSelect(city) {
+  clearTimeout(offerCityFilterTimer)
+  offerDraft.city = city.Name
+  offerCitySearchInput.value = city.Name
+  clearTimeout(offerCityFilterTimer)
+  triggerAutoSave()
+}
+
+function toggleCityMap() {
+  showCityMap.value = !showCityMap.value
+}
+
 function toggleOfferFormat(fmt) {
   const idx = offerDraft.teachingFormats.indexOf(fmt)
   if (idx > -1) {
@@ -360,7 +517,14 @@ function resetOfferDraft() {
   offerDraft.flatNumber = ''
   offerDraft.weeklyAvailability = {}
   pendingOfferPhotoFile.value = null
+  showCityMap.value = false
+  showCitySuggestions.value = false
+  offerCitySearchInput.value = ''
 }
+
+onMounted(() => {
+  loadCities()
+})
 
 function openNewOffer() {
   resetOfferDraft()
@@ -383,6 +547,7 @@ function openEditOffer(index) {
       ? [getOfferLessonPlace(offer)]
       : []
   offerDraft.city = offer.city
+  offerCitySearchInput.value = offer.city || ''
   offerDraft.street = offer.street
   offerDraft.homeNumber = offer.homeNumber
   offerDraft.flatNumber = offer.flatNumber
@@ -498,6 +663,7 @@ async function saveOffer() {
       tutorOffers.value[editingOfferIndex.value] = offer
     }
     showOfferEditor.value = false
+    triggerAutoSave()
   } catch (err) {
     offerSaveError.value = translateAuthError(err)
   } finally {
@@ -513,6 +679,7 @@ function executeDeleteOffer() {
   if (confirmingDeleteOfferIndex.value !== null) {
     tutorOffers.value.splice(confirmingDeleteOfferIndex.value, 1)
     confirmingDeleteOfferIndex.value = null
+    triggerAutoSave()
   }
 }
 
@@ -658,22 +825,54 @@ async function pickAndCompressOfferPhoto(file) {
             </div>
           </div>
         </template>
-        <label class="field-row" v-if="draft.accountType !== 'tutor'">
-          <span class="field-label">Miasto<span class="req">*</span></span>
-          <input v-model="draft.city" placeholder="Warszawa" :maxlength="LIMITS.city" />
-        </label>
-        <label class="field-row">
+        <div class="field-row" v-if="draft.accountType !== 'tutor'">
+          <span class="field-label">Miasto</span>
+          <div class="city-search-wrapper">
+            <input
+              v-model="citySearchInput"
+              type="text"
+              placeholder="Wyszukaj miasto"
+              autocomplete="off"
+              @focus="showCitySuggestionsStudent = true"
+              @blur="showCitySuggestionsStudent = false"
+            />
+            <ul
+              v-if="showCitySuggestionsStudent && citySuggestions.length"
+              class="city-suggestions"
+            >
+              <li
+                v-for="city in citySuggestions"
+                :key="city.Id"
+                @mousedown.prevent="selectCity(city)"
+              >
+                {{ formatCityProvince(city) }}
+              </li>
+            </ul>
+          </div>
+          <button type="button" class="city-map-toggle" @click="toggleCityMapStudent">
+            {{ showCityMapStudent ? 'Ukryj mapę' : 'Wybierz z mapy' }}
+          </button>
+          <CityMap
+            v-if="showCityMapStudent"
+            :cities="cities"
+            :filter-query="cityFilterQuery"
+            @city-select="onCityMapSelect"
+          />
+          <div v-if="draft.city" class="city-selected">Wybrano: {{ draft.city }}</div>
+        </div>
+        <div class="field-row">
           <span class="field-label">Płeć</span>
           <select v-model="draft.gender">
             <option value="" disabled>Wybierz płeć</option>
             <option value="male">Mężczyzna</option>
             <option value="female">Kobieta</option>
           </select>
-        </label>
+        </div>
 
         <div v-if="saveError" class="error-box">{{ saveError }}</div>
 
         <div class="actions">
+          <span v-if="autoSaving" class="save-indicator">Zapisywanie…</span>
           <button class="btn btn-primary" :disabled="saving" @click="saveProfile">
             <span v-if="saving" class="btn-spinner"></span>
             {{ saving ? 'Zapisywanie...' : 'Zapisz' }}
@@ -739,10 +938,43 @@ async function pickAndCompressOfferPhoto(file) {
               </div>
             </label>
             <template v-if="offerNeedsAddress">
-              <label class="field-row">
+              <div class="field-row">
                 <span class="field-label">Miasto<span class="req">*</span></span>
-                <input v-model="offerDraft.city" placeholder="Warszawa" :maxlength="LIMITS.city" />
-              </label>
+                <div class="city-search-wrapper">
+                  <input
+                    v-model="offerCitySearchInput"
+                    type="text"
+                    placeholder="Wyszukaj miasto"
+                    autocomplete="off"
+                    @focus="showCitySuggestions = true"
+                    @blur="showCitySuggestions = false"
+                  />
+                  <ul
+                    v-if="showCitySuggestions && offerCitySuggestions.length"
+                    class="city-suggestions"
+                  >
+                    <li
+                      v-for="city in offerCitySuggestions"
+                      :key="city.Id"
+                      @mousedown.prevent="selectOfferCity(city)"
+                    >
+                      {{ formatCityProvince(city) }}
+                    </li>
+                  </ul>
+                </div>
+                <button type="button" class="city-map-toggle" @click="toggleCityMap">
+                  {{ showCityMap ? 'Ukryj mapę' : 'Wybierz z mapy' }}
+                </button>
+                <CityMap
+                  v-if="showCityMap"
+                  :cities="cities"
+                  :filter-query="offerCityFilterQuery"
+                  @city-select="onOfferCityMapSelect"
+                />
+                <div v-if="offerDraft.city" class="city-selected">
+                  Wybrano: {{ offerDraft.city }}
+                </div>
+              </div>
               <template v-if="offerDraft.teachingFormats.includes('Stacjonarnie')">
                 <label class="field-row">
                   <span class="field-label">Ulica<span class="req">*</span></span>
@@ -1183,7 +1415,9 @@ async function pickAndCompressOfferPhoto(file) {
 }
 
 .actions {
+  position: relative;
   display: flex;
+  align-items: center;
   gap: 10px;
   margin-top: 8px;
 }
@@ -1403,5 +1637,118 @@ async function pickAndCompressOfferPhoto(file) {
   padding: 16px 24px;
   border-top: 1px solid var(--border);
   flex-shrink: 0;
+}
+
+.city-search-wrapper {
+  position: relative;
+}
+
+.city-search-wrapper input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  background: var(--surface);
+  color: var(--text);
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.city-search-wrapper input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(79, 117, 199, 0.12);
+}
+
+.city-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  z-index: 1100;
+}
+
+.city-suggestions li {
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.city-suggestions li:hover {
+  background: var(--surface-hover);
+}
+
+.city-map-toggle {
+  margin-top: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.city-map-toggle:hover {
+  background: var(--surface-hover);
+}
+
+.city-selected {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--primary-color, #4f75c7);
+  font-weight: 600;
+  text-align: center;
+}
+
+.save-indicator {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+</style>
+
+<style>
+:root[data-theme='dark'] .city-map .leaflet-tile-pane {
+  filter: invert(0.9) hue-rotate(180deg);
+}
+
+:root[data-theme='dark'] .city-map .leaflet-control-attribution {
+  background: rgba(0, 0, 0, 0.7) !important;
+  color: #ccc !important;
+}
+
+:root[data-theme='dark'] .city-map .leaflet-control-attribution a {
+  color: #8ab !important;
+}
+
+:root[data-theme='dark'] .city-map {
+  border-color: var(--border);
+}
+
+:root[data-theme='dark'] .city-map .leaflet-container {
+  background: #1a1a2e;
 }
 </style>

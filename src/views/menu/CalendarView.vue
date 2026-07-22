@@ -191,6 +191,7 @@ async function confirmCancelLesson() {
   if (error) {
     console.error('Failed to cancel lesson:', error)
     showCancelConfirm.value = false
+    alert('Nie udało się anulować lekcji. Spróbuj ponownie później.')
     return
   }
   lessonRequests.value = lessonRequests.value.filter((r) => r.id !== request.id)
