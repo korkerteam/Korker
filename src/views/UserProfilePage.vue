@@ -122,12 +122,13 @@ async function fetchProfile(identifier) {
 
 async function loadTeacherRating(tutorAuthId) {
   if (!tutorAuthId) return
-  const [avg, my] = await Promise.all([
-    getAverageRating(tutorAuthId),
-    getMyRatingForTutor(tutorAuthId),
-  ])
+  const avg = await getAverageRating(tutorAuthId)
   teacherRating.value = avg || { average: 0, count: 0 }
-  myTeacherRating.value = my
+  if (canRateTeacher.value) {
+    myTeacherRating.value = await getMyRatingForTutor(tutorAuthId)
+  } else {
+    myTeacherRating.value = null
+  }
 }
 
 async function checkBlockStatus(targetAuthId) {
@@ -183,13 +184,20 @@ const isLiked = computed(() => {
   })
 })
 
+const viewerType = computed(() => `${myProfile.value?.account_type || ''}`.toLowerCase())
+const profileType = computed(() => `${profile.value?.account_type || ''}`.toLowerCase())
+const viewerIsTutor = computed(() => viewerType.value.includes('tutor'))
+const profileIsTutor = computed(() => profileType.value.includes('tutor'))
 const canAddTeacher = computed(() => {
   if (!profile.value || !user.value) return false
-  const viewerType = `${myProfile.value?.account_type || ''}`.toLowerCase()
-  const profileType = `${profile.value.account_type || ''}`.toLowerCase()
-  const viewerIsTutor = viewerType.includes('tutor')
-  const profileIsTutor = profileType.includes('tutor')
-  return viewerIsTutor !== profileIsTutor
+  return viewerIsTutor.value !== profileIsTutor.value
+})
+const canRateTeacher = computed(() => {
+  if (!profile.value || !user.value) return false
+  if (user.value.id === profile.value.auth_id) return false
+  if (blockedByMe.value || blockingMe.value) return false
+  if (!profileIsTutor.value) return false
+  return !viewerIsTutor.value
 })
 
 function toggleLike() {
@@ -259,7 +267,7 @@ function toggleRatingEditor() {
 }
 
 async function submitTeacherRating() {
-  if (!profile.value?.auth_id) return
+  if (!profile.value?.auth_id || !canRateTeacher.value) return
   ratingSaving.value = true
   try {
     await submitRating(profile.value.auth_id, Number(ratingDraft.value))
@@ -377,14 +385,14 @@ function getStarFill(rating, index) {
               Twoja ocena: {{ myTeacherRating }}/5
             </div>
             <button
-              v-if="profile && user?.id !== profile.auth_id && !blockedByMe && !blockingMe"
+              v-if="canRateTeacher"
               class="btn btn-secondary rating-action"
               type="button"
               @click="toggleRatingEditor"
             >
               {{ showRatingEditor ? 'Zamknij' : myTeacherRating != null ? 'Zmień ocenę' : 'Oceń' }}
             </button>
-            <div v-if="showRatingEditor" class="rating-editor">
+            <div v-if="canRateTeacher && showRatingEditor" class="rating-editor">
               <div class="rating-options-wrapper">
                 <div class="rating-options" role="radiogroup" aria-label="Wybierz ocenę">
                   <div v-for="index in 5" :key="index" class="rating-star">

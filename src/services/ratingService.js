@@ -144,9 +144,28 @@ export async function getMyRatingForTutor(tutorAuthId) {
   return null
 }
 
+async function userIsTutor(userId) {
+  try {
+    const { data, error } = await supabase.from('users').select('account_type').eq('auth_id', userId).maybeSingle()
+    if (error || !data) return false
+    return `${data.account_type || ''}`.toLowerCase().includes('tutor')
+  } catch {
+    return false
+  }
+}
+
 export async function submitRating(tutorAuthId, rating) {
   const userId = (await getCurrentUserId()) || getOrCreateLocalClientId()
   if (!userId) throw new Error('No user id available')
+
+  if (userId.startsWith('local-')) {
+    // anonymous local ratings are still allowed, but only for non-tutor views
+  } else {
+    const isTutor = await userIsTutor(userId)
+    if (isTutor) {
+      throw new Error('Tutor accounts are not allowed to rate teachers')
+    }
+  }
 
   const normalized = normalizeToFive(rating)
   const map = readLocal()
