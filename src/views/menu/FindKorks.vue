@@ -114,7 +114,7 @@ function getTutorTags(tutorPost = {}) {
     tutorPost?.tag ? [tutorPost.tag] : [],
   ]
 
-  return candidates.flat().filter(Boolean)
+  return candidates.flat().filter(Boolean).sort()
 }
 
 function emitFilterState() {
@@ -173,7 +173,7 @@ async function loadTutors() {
           city: tp.city || '',
           lessonPlace: tp.lessonPlace || tp.lesson_place || '',
           teachingFormats: Array.isArray(tp.teachingFormats)
-            ? tp.teachingFormats
+            ? [...tp.teachingFormats].sort()
             : tp.teachingFormat
               ? [tp.teachingFormat]
               : [],
@@ -664,8 +664,8 @@ function goToMyTeachers() {
                   <p class="tutor-meta">
                     {{ currentTutor.subject || currentTutor.lessonSubject || 'Korepetycje' }} •
                     {{ currentTutor.level || currentTutor.lessonLevel || 'Liceum' }}
-                    <span v-if="currentTutor.city"> • {{ currentTutor.city }}</span>
                   </p>
+                  <p v-if="currentTutor.city" class="tutor-meta">{{ currentTutor.city }}</p>
                 </div>
                 <div class="tutor-summary-card tutor-summary-price">
                   <p class="tutor-price">{{ currentTutor.price }} zł/h</p>

@@ -252,7 +252,8 @@ function getTeachingFormats(offer) {
   if (!tp) return []
   const place = typeof tp.lessonPlace === 'string' && tp.lessonPlace.trim() ? tp.lessonPlace : ''
   if (place) return [place]
-  if (Array.isArray(tp.teachingFormats) && tp.teachingFormats.length) return tp.teachingFormats
+  if (Array.isArray(tp.teachingFormats) && tp.teachingFormats.length)
+    return [...tp.teachingFormats].sort()
   if (tp.teachingFormat) return [tp.teachingFormat]
   return []
 }
