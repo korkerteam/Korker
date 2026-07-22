@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth.js'
 import { translateAuthError } from '@/utils/authErrors.js'
+import { upsertProfile } from '@/services/profileService.js'
 
 const LIMITS = { name: 30, surname: 30 }
 
@@ -36,6 +37,11 @@ async function handleSubmit() {
     return
   }
 
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.value)) {
+    error.value = 'Podaj poprawny adres email (np. nazwa@domena.pl)'
+    return
+  }
+
   if (!isLogin.value && (!name.value || !surname.value)) {
     error.value = 'Wypełnij wszystkie pola'
     return
@@ -65,6 +71,13 @@ async function handleSubmit() {
       const data = await signUp(email.value, password.value, {
         data: { name: name.value, surname: surname.value },
       })
+      if (data?.user?.id) {
+        try {
+          await upsertProfile({ name: name.value, surname: surname.value }, data.user.id)
+        } catch {
+          /* profile row may not exist yet if email confirmation required */
+        }
+      }
       if (data?.session) {
         emit('close')
         router.push({ path: '/', query: { panel: 'profile' } })
@@ -347,5 +360,9 @@ async function handleSubmit() {
 
 .toggle-link:hover {
   color: var(--primary-color-hover);
+}
+
+input#password::placeholder {
+  color: gray;
 }
 </style>

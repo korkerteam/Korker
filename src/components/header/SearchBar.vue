@@ -126,7 +126,6 @@ onBeforeUnmount(() => {
 
 <template>
   <form class="searchbar" role="search" @submit.prevent="onSubmit">
-    <!-- Desktop Search -->
     <template v-if="isDesktop">
       <label class="search-input" aria-label="Szukaj użytkowników">
         <svg
@@ -259,8 +258,8 @@ onBeforeUnmount(() => {
         <svg
           class="icon"
           viewBox="0 0 24 24"
-          width="14"
-          height="14"
+          width="16"
+          height="16"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -353,7 +352,7 @@ onBeforeUnmount(() => {
 
 @media (min-width: 769px) {
   .searchbar {
-    flex: 0 1 240px; /* Limits searchbar width so it doesn't push adjacent navbar items */
+    flex: 0 1 240px;
     min-width: 180px;
   }
 }
@@ -410,7 +409,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   padding: 0 10px;
-  height: 40px;
+  height: 45px;
   background: var(--surface-strong);
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -428,12 +427,13 @@ onBeforeUnmount(() => {
 .search-input input {
   border: none;
   outline: none;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   padding: 0;
   width: 100%;
   height: 100%;
   background: transparent;
   color: var(--text);
+  position: relative;
 }
 
 .search-input input::-webkit-search-cancel-button,
@@ -593,5 +593,10 @@ onBeforeUnmount(() => {
     left: 50%;
     transform: translateX(-50%);
   }
+}
+
+form.searchbar {
+  background: transparent !important;
+  box-shadow: none !important;
 }
 </style>

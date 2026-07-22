@@ -192,7 +192,6 @@ body::before {
 :root[data-theme='dark'] .search-input input,
 :root[data-theme='dark'] .field input,
 :root[data-theme='dark'] .field textarea {
-  background: var(--surface-soft);
   color: var(--text);
   border-color: var(--border);
 }
