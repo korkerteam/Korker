@@ -403,6 +403,8 @@ function formatCityProvince(city) {
 }
 
 // Student city
+let citySuggestTimer = null
+
 watch(citySearchInput, (val) => {
   if (!suppressCityFilter) {
     clearTimeout(cityFilterTimer)
@@ -417,10 +419,17 @@ watch(citySearchInput, (val) => {
     draft.city = ''
     clearCityTimer = setTimeout(triggerAutoSave, 500)
   }
+
+  clearTimeout(citySuggestTimer)
+  citySuggestTimer = setTimeout(() => {
+    citySearchFiltered.value = val
+  }, 700)
 })
 
+const citySearchFiltered = ref('')
+
 const citySuggestions = computed(() => {
-  const query = (citySearchInput.value || '').trim().toLowerCase()
+  const query = (citySearchFiltered.value || '').trim().toLowerCase()
   const filtered = !query
     ? cities.value.filter((c) => c.Type === 'city')
     : cities.value.filter((c) => c.Name.toLowerCase().includes(query))
@@ -455,6 +464,7 @@ const offerCitySearchInput = ref('')
 const showCitySuggestions = ref(false)
 const showCityMap = ref(false)
 let offerCityFilterTimer = null
+let offerCitySuggestTimer = null
 
 watch(offerCitySearchInput, (val) => {
   clearTimeout(offerCityFilterTimer)
@@ -465,10 +475,17 @@ watch(offerCitySearchInput, (val) => {
   if (!val && offerDraft.city) {
     offerDraft.city = ''
   }
+
+  clearTimeout(offerCitySuggestTimer)
+  offerCitySuggestTimer = setTimeout(() => {
+    offerCitySearchFiltered.value = val
+  }, 700)
 })
 
+const offerCitySearchFiltered = ref('')
+
 const offerCitySuggestions = computed(() => {
-  const query = (offerCitySearchInput.value || '').trim().toLowerCase()
+  const query = (offerCitySearchFiltered.value || '').trim().toLowerCase()
   const filtered = !query
     ? cities.value.filter((c) => c.Type === 'city')
     : cities.value.filter((c) => c.Name.toLowerCase().includes(query))
