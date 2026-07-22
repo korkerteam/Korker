@@ -32,6 +32,7 @@ const selectedSlots = ref(new Set())
 const requestedSlots = ref(new Set())
 const busySlots = ref(new Set())
 const submitting = ref(false)
+const deleting = ref(null)
 const feedbackMessage = ref('')
 const dayKeys = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
 const dayAbbr = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd']
@@ -321,9 +322,18 @@ function onShow(teacher) {
   }
 }
 
+let removeTimer = null
+
 function onRemove(teacher) {
-  emit('remove-teacher', teacher)
-  selectedTeacher.value = null
+  const pid = teacher.auth_id || teacher.id
+  if (!pid || deleting.value) return
+  deleting.value = pid
+  clearTimeout(removeTimer)
+  removeTimer = setTimeout(() => {
+    emit('remove-teacher', teacher)
+    selectedTeacher.value = null
+    deleting.value = null
+  }, 600)
 }
 
 function goBack() {
@@ -402,7 +412,17 @@ function openChat(teacher) {
               >
                 Plan
               </button>
-              <button class="btn small ghost" @click="onRemove(teacher)">Usuń</button>
+              <button
+                class="btn small ghost dziendobry"
+                :disabled="deleting === (teacher.auth_id || teacher.id)"
+                @click="onRemove(teacher)"
+              >
+                <span
+                  v-if="deleting === (teacher.auth_id || teacher.id)"
+                  class="del-spinner"
+                ></span>
+                <span v-else>Usuń</span>
+              </button>
             </div>
           </div>
         </template>
@@ -454,7 +474,17 @@ function openChat(teacher) {
             </div>
           </div>
 
-          <button class="remove-button" @click="onRemove(selectedTeacher)">Usuń z listy</button>
+          <button
+            class="remove-button"
+            :disabled="deleting === (selectedTeacher.auth_id || selectedTeacher.id)"
+            @click="onRemove(selectedTeacher)"
+          >
+            <span
+              v-if="deleting === (selectedTeacher.auth_id || selectedTeacher.id)"
+              class="del-spinner"
+            ></span>
+            <span v-else>Usuń z listy</span>
+          </button>
         </div>
       </div>
     </template>
@@ -741,6 +771,10 @@ function openChat(teacher) {
   border: 1px solid var(--border);
   color: var(--text);
 }
+.btn.ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .btn.accent {
   background: var(--accent-strong);
   color: white;
@@ -911,6 +945,13 @@ function openChat(teacher) {
 
 .remove-button:active {
   transform: translateY(0);
+}
+
+.remove-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .plan-layout {
@@ -1141,5 +1182,26 @@ function openChat(teacher) {
   color: #ef4444;
   font-weight: 600;
   text-align: center;
+}
+
+.del-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: delSpin 0.6s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes delSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dziendobry {
+  width: 55px;
 }
 </style>
