@@ -564,23 +564,26 @@ function goToMyTeachers() {
       class="tutors-content"
       :class="{ 'empty-results-layout': isAuthenticated && !filteredTutors.length }"
     >
-      <div v-if="filteredTutors.length && currentTutor" class="tt-section">
-        <div class="tt-section-header">Plan lekcji</div>
-        <div class="tt-grid-wrap">
-          <div class="tt-grid">
-            <div class="tt-corner"></div>
-            <div v-for="d in dayAbbr" :key="d" class="tt-day-h">{{ d }}</div>
-            <template v-for="hour in gridHours" :key="hour">
-              <div class="tt-time-l">{{ String(hour).padStart(2, '0') }}:00</div>
-              <div
-                v-for="day in weekdayLabels"
-                :key="`${day}-${hour}`"
-                class="tt-c"
-                :class="{ on: hasSlot(currentTutor?.weeklyAvailability, day, hour) }"
-              ></div>
-            </template>
+      <div class="tt-col">
+        <div v-if="filteredTutors.length && currentTutor" class="tt-section">
+          <div class="tt-section-header">Plan lekcji</div>
+          <div class="tt-grid-wrap">
+            <div class="tt-grid">
+              <div class="tt-corner"></div>
+              <div v-for="d in dayAbbr" :key="d" class="tt-day-h">{{ d }}</div>
+              <template v-for="hour in gridHours" :key="hour">
+                <div class="tt-time-l">{{ String(hour).padStart(2, '0') }}:00</div>
+                <div
+                  v-for="day in weekdayLabels"
+                  :key="`${day}-${hour}`"
+                  class="tt-c"
+                  :class="{ on: hasSlot(currentTutor?.weeklyAvailability, day, hour) }"
+                ></div>
+              </template>
+            </div>
           </div>
         </div>
+
         <div v-if="currentTutor.bio || currentTutor.lessonDescription" class="bio-box">
           <p>{{ currentTutor.bio || currentTutor.lessonDescription }}</p>
         </div>
@@ -947,6 +950,22 @@ function goToMyTeachers() {
   position: sticky;
   top: 24px;
   z-index: 9;
+}
+
+.bio-box {
+  margin-top: 16px;
+  padding: 16px 20px;
+  border-radius: 24px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+}
+
+.bio-box p {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .tt-section-header {
