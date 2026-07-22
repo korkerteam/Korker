@@ -94,6 +94,7 @@ onMounted(async () => {
           ...entry,
           rating: ratings[entry.auth_id] || { average: 0, count: 0 },
         }))
+        .filter((entry) => entry.rating.count > 0)
         .sort((a, b) => {
           if (b.rating.average !== a.rating.average) {
             return b.rating.average - a.rating.average
@@ -146,11 +147,11 @@ function openTeacher(entry) {
           <div class="rank-content">
             <span class="name">{{ entry.name }}</span>
             <span class="meta">{{ entry.subject }}</span>
-            <div v-if="index < 3" class="featured-meta">
+            <div class="featured-meta">
               <span class="featured-rating">
                 Ocena: {{ entry.rating.average ? entry.rating.average.toFixed(1) : 'Brak' }} / 5
               </span>
-              <span class="featured-city">{{ entry.city || 'Miasto nieznane' }}</span>
+              <span v-if="entry.city" class="featured-city">{{ entry.city }}</span>
             </div>
           </div>
           <span class="subject-chip">{{ entry.subject }}</span>
