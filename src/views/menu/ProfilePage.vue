@@ -130,7 +130,7 @@ function applySavedTutorPost(data) {
     price: String(o.price ?? ''),
     description: o.description || '',
     photo: o.photo || '',
-    teachingFormats: Array.isArray(o.teachingFormats) ? [...o.teachingFormats] : [],
+    teachingFormats: Array.isArray(o.teachingFormats) ? [...o.teachingFormats].sort() : [],
     city: o.city || '',
     street: o.street || '',
     homeNumber: o.homeNumber || '',
@@ -519,6 +519,7 @@ function toggleOfferFormat(fmt) {
   } else {
     offerDraft.teachingFormats.push(fmt)
   }
+  offerDraft.teachingFormats.sort()
 }
 
 function resetOfferDraft() {
