@@ -1556,6 +1556,10 @@ function goToMyTeachers() {
     justify-content: flex-start;
   }
 
+  .tt-col {
+    align-self: start;
+  }
+
   .tt-section {
     order: 2;
   }

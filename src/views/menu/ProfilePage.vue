@@ -413,6 +413,11 @@ async function saveOffer() {
     offerSaveError.value = 'Podaj stawkę za lekcję'
     return
   }
+  const priceNum = Number(offerDraft.lessonPrice)
+  if (isNaN(priceNum) || priceNum < 1 || priceNum > 999) {
+    offerSaveError.value = 'Stawka musi być liczbą od 1 do 999'
+    return
+  }
   if (!offerDraft.teachingFormats.length) {
     offerSaveError.value = 'Wybierz miejsce lekcji'
     return
@@ -710,7 +715,13 @@ async function pickAndCompressOfferPhoto(file) {
             </label>
             <label class="field-row">
               <span class="field-label">Stawka za lekcję (zł/h)<span class="req">*</span></span>
-              <input v-model="offerDraft.lessonPrice" type="number" min="10" placeholder="50" />
+              <input
+                v-model="offerDraft.lessonPrice"
+                type="number"
+                min="1"
+                max="999"
+                placeholder="50"
+              />
             </label>
             <label class="field-row">
               <span class="field-label">Miejsce lekcji<span class="req">*</span></span>
