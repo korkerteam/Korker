@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { getBlockedIds, getBlockingMeIds } from '@/services/blockService.js'
@@ -23,6 +24,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'like-teacher', 'update:selected-filters'])
+const router = useRouter()
 const { isAuthenticated, openAuthModal } = useAuth()
 const tutors = ref([])
 const loading = ref(true)
@@ -217,63 +219,76 @@ onUnmounted(() => {
     window.removeEventListener('korker-rating-changed', onRatingChanged)
   }
 })
+
+function matchesTutorFilters(tutor) {
+  const activeSubjects = [
+    ...(Array.isArray(props.filters?.subjects) ? props.filters.subjects : []),
+    ...selectedSubjects.value,
+  ]
+  const activeLevels = [
+    ...(Array.isArray(props.filters?.levels) ? props.filters.levels : []),
+    ...selectedLevels.value,
+  ]
+  const activeTags = [
+    ...(Array.isArray(props.filters?.tags) ? props.filters.tags : []),
+    ...selectedTags.value,
+  ]
+  const activeLessonPlaces = [
+    ...(Array.isArray(props.filters?.lessonPlaces) ? props.filters.lessonPlaces : []),
+    ...selectedLessonPlaces.value,
+  ]
+
+  const normalizedSubjects = normalizeChoiceList(activeSubjects)
+  const normalizedLevels = normalizeChoiceList(activeLevels)
+  const normalizedTags = normalizeChoiceList(activeTags)
+  const normalizedLessonPlaces = normalizeChoiceList(activeLessonPlaces)
+
+  const matchesSubject =
+    normalizedSubjects.length === 0 ||
+    normalizedSubjects.some(
+      (subject) => normalizeChoice(tutor.subject) === normalizeChoice(subject),
+    )
+  const matchesLevel =
+    normalizedLevels.length === 0 ||
+    normalizedLevels.some((level) => normalizeChoice(tutor.level) === normalizeChoice(level))
+  const matchesTags =
+    normalizedTags.length === 0 ||
+    normalizedTags.some((tag) => normalizeChoiceList(tutor.tags).includes(tag))
+  const normalizedTutorLessonPlaces = normalizeChoiceList([
+    tutor.lessonPlace || tutor.lesson_place || '',
+    ...(Array.isArray(tutor.teachingFormats) ? tutor.teachingFormats : []),
+  ])
+  const matchesLessonPlaces =
+    normalizedLessonPlaces.length === 0 ||
+    normalizedLessonPlaces.some((place) => normalizedTutorLessonPlaces.includes(place))
+  const cityQuery = `${selectedCity.value || props.filters?.city || ''}`.trim().toLowerCase()
+  const matchesCity = !cityQuery || (tutor.city || '').toLowerCase().includes(cityQuery)
+
+  return matchesSubject && matchesLevel && matchesTags && matchesLessonPlaces && matchesCity
+}
+
+const filteredTutorsByFilter = computed(() => tutors.value.filter(matchesTutorFilters))
+
 const filteredTutors = computed(() => {
-  return tutors.value.filter((tutor) => {
+  return filteredTutorsByFilter.value.filter((tutor) => {
     const tutorKey = getTutorKey(tutor)
     if (!props.isTutorAccount && tutorKey && decisions.value[tutorKey]) {
       return false
     }
-
-    const activeSubjects = [
-      ...(Array.isArray(props.filters?.subjects) ? props.filters.subjects : []),
-      ...selectedSubjects.value,
-    ]
-    const activeLevels = [
-      ...(Array.isArray(props.filters?.levels) ? props.filters.levels : []),
-      ...selectedLevels.value,
-    ]
-    const activeTags = [
-      ...(Array.isArray(props.filters?.tags) ? props.filters.tags : []),
-      ...selectedTags.value,
-    ]
-    const activeLessonPlaces = [
-      ...(Array.isArray(props.filters?.lessonPlaces) ? props.filters.lessonPlaces : []),
-      ...selectedLessonPlaces.value,
-    ]
-
-    const normalizedSubjects = normalizeChoiceList(activeSubjects)
-    const normalizedLevels = normalizeChoiceList(activeLevels)
-    const normalizedTags = normalizeChoiceList(activeTags)
-    const normalizedLessonPlaces = normalizeChoiceList(activeLessonPlaces)
-
-    const matchesSubject =
-      normalizedSubjects.length === 0 ||
-      normalizedSubjects.some(
-        (subject) => normalizeChoice(tutor.subject) === normalizeChoice(subject),
-      )
-    const matchesLevel =
-      normalizedLevels.length === 0 ||
-      normalizedLevels.some((level) => normalizeChoice(tutor.level) === normalizeChoice(level))
-    const matchesTags =
-      normalizedTags.length === 0 ||
-      normalizedTags.some((tag) => normalizeChoiceList(tutor.tags).includes(tag))
-    const normalizedTutorLessonPlaces = normalizeChoiceList([
-      tutor.lessonPlace || tutor.lesson_place || '',
-      ...(Array.isArray(tutor.teachingFormats) ? tutor.teachingFormats : []),
-    ])
-    const matchesLessonPlaces =
-      normalizedLessonPlaces.length === 0 ||
-      normalizedLessonPlaces.some((place) => normalizedTutorLessonPlaces.includes(place))
-    const cityQuery = `${selectedCity.value || props.filters?.city || ''}`.trim().toLowerCase()
-    const matchesCity = !cityQuery || (tutor.city || '').toLowerCase().includes(cityQuery)
-
-    return matchesSubject && matchesLevel && matchesTags && matchesLessonPlaces && matchesCity
+    return true
   })
 })
 
-const allDecided = computed(
-  () => tutors.value.length > 0 && tutors.value.every((t) => decisions.value[t.id]),
-)
+const skippedTutorsExist = computed(() => {
+  return filteredTutorsByFilter.value.some((tutor) => {
+    const tutorKey = getTutorKey(tutor)
+    return tutorKey && decisions.value[tutorKey] === 'bad'
+  })
+})
+
+const allDecided = computed(() => {
+  return filteredTutorsByFilter.value.length > 0 && filteredTutors.value.length === 0
+})
 
 const currentTutor = computed(() => {
   const list = filteredTutors.value
@@ -462,7 +477,8 @@ function dislikeTutor() {
   const tutor = currentTutor.value
   if (!tutor) return
 
-  decisions.value[String(tutor.id)] = 'bad'
+  const tutorKey = getTutorKey(tutor)
+  if (tutorKey) decisions.value[tutorKey] = 'bad'
   nextTutor()
 }
 
@@ -519,11 +535,33 @@ function toggleSelection(category, value) {
   resetSwipe()
   emitFilterState()
 }
+
+function restoreSkippedTutors() {
+  const nextDecisions = { ...decisions.value }
+  filteredTutorsByFilter.value.forEach((tutor) => {
+    const tutorKey = getTutorKey(tutor)
+    if (tutorKey && nextDecisions[tutorKey] === 'bad') {
+      delete nextDecisions[tutorKey]
+    }
+  })
+  decisions.value = nextDecisions
+  currentIndex.value = 0
+  resetSwipe()
+}
+
+function goToMyTeachers() {
+  router.push({ path: '/', query: { panel: 'teachers' } })
+}
 </script>
 
 <template>
   <div class="find-korks-panel" :class="{ 'guest-state': !isAuthenticated }">
+    <div v-if="loading" class="loading-screen">
+      <div class="loading-spinner"></div>
+      <span class="loading-text">Ładowanie...</span>
+    </div>
     <div
+      v-else
       class="tutors-content"
       :class="{ 'empty-results-layout': isAuthenticated && !filteredTutors.length }"
     >
@@ -657,19 +695,25 @@ function toggleSelection(category, value) {
           <template v-if="allDecided">
             <h3>Dotarłeś do końca</h3>
             <p>Przejrzałeś już wszystkich dostępnych korepetytorów.</p>
+            <button
+              v-if="skippedTutorsExist"
+              class="btn-secondary clear-filters-btn"
+              type="button"
+              @click="restoreSkippedTutors"
+            >
+              Pokaż ponownie odrzuconych
+            </button>
+            <button class="btn-primary clear-filters-btn" type="button" @click="goToMyTeachers">
+              Przejdź do Moich nauczycieli
+            </button>
           </template>
           <template v-else>
             <h3>Brak nauczycieli</h3>
             <p>Nie ma wyników dla tych filtrów. Zmień kryteria albo wyczyść filtry.</p>
+            <button class="btn-secondary clear-filters-btn" type="button" @click="clearFilters">
+              Wyczyść filtry
+            </button>
           </template>
-          <button
-            v-if="!allDecided"
-            class="btn-secondary clear-filters-btn"
-            type="button"
-            @click="clearFilters"
-          >
-            Wyczyść filtry
-          </button>
         </div>
 
         <div
@@ -799,7 +843,8 @@ function toggleSelection(category, value) {
 .find-korks-panel {
   width: 100%;
   max-width: 100%;
-  min-height: 0;
+  min-height: 560px;
+  height: 100%;
   max-height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
@@ -812,6 +857,47 @@ function toggleSelection(category, value) {
   border: 1px solid var(--border);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
   box-sizing: border-box;
+}
+
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
+  min-height: 560px;
+  height: 100%;
+  max-height: calc(100vh - 160px);
+  gap: 16px;
+  padding: 24px;
+  border-radius: 24px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  box-sizing: border-box;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--border);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--muted);
 }
 
 .tutors-content {
