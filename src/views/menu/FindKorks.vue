@@ -584,7 +584,10 @@ function goToMyTeachers() {
           </div>
         </div>
 
-        <div v-if="currentTutor.bio || currentTutor.lessonDescription" class="bio-box">
+        <div
+          v-if="currentTutor && (currentTutor.bio || currentTutor.lessonDescription)"
+          class="bio-box"
+        >
           <p>{{ currentTutor.bio || currentTutor.lessonDescription }}</p>
         </div>
       </div>

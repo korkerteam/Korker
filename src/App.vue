@@ -174,7 +174,6 @@ async function removeLikedTeacher(teacher) {
   if (authId) {
     try {
       await removeSavedTutor(authId)
-      await loadSavedTutors()
     } catch (error) {
       console.error('Failed to remove saved tutor:', error)
     }

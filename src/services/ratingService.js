@@ -146,7 +146,11 @@ export async function getMyRatingForTutor(tutorAuthId) {
 
 async function userIsTutor(userId) {
   try {
-    const { data, error } = await supabase.from('users').select('account_type').eq('auth_id', userId).maybeSingle()
+    const { data, error } = await supabase
+      .from('users')
+      .select('account_type')
+      .eq('auth_id', userId)
+      .maybeSingle()
     if (error || !data) return false
     return `${data.account_type || ''}`.toLowerCase().includes('tutor')
   } catch {
