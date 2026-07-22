@@ -8,6 +8,37 @@ const router = useRouter()
 const loading = ref(true)
 const rankingData = ref([])
 
+async function loadTutorRatings(authIds) {
+  if (!authIds.length) return {}
+  const { data, error } = await supabase
+    .from('ratings')
+    .select('tutor_auth_id, rating')
+    .in('tutor_auth_id', authIds)
+
+  if (error || !data) return {}
+
+  const summary = data.reduce((acc, entry) => {
+    const tutorId = entry.tutor_auth_id
+    if (!tutorId) return acc
+    if (!acc[tutorId]) {
+      acc[tutorId] = { total: 0, count: 0 }
+    }
+    acc[tutorId].total += Number(entry.rating) || 0
+    acc[tutorId].count += 1
+    return acc
+  }, {})
+
+  return Object.fromEntries(
+    Object.entries(summary).map(([tutorAuthId, stats]) => [
+      tutorAuthId,
+      {
+        average: stats.count ? stats.total / stats.count : 0,
+        count: stats.count,
+      },
+    ]),
+  )
+}
+
 onMounted(async () => {
   try {
     const { data: rows, error } = await supabase
@@ -17,11 +48,22 @@ onMounted(async () => {
       .not('tutor_post', 'is', null)
 
     if (!error && rows) {
-      rankingData.value = rows
+      const tutors = rows
         .filter((row) => row.tutor_post)
         .map((row, index) => {
           const raw = row.tutor_post || {}
-          const tutorPost = Array.isArray(raw) ? raw[0] || {} : raw
+          const offers = Array.isArray(raw) ? raw : raw ? [raw] : []
+          const subjects = Array.from(
+            new Set(
+              offers.map((offer) => offer.subject || offer.lessonSubject || '').filter(Boolean),
+            ),
+          )
+          const levels = Array.from(
+            new Set(offers.map((offer) => offer.level || offer.lessonLevel || '').filter(Boolean)),
+          )
+          const subjectLabel = subjects.length ? subjects.join(', ') : 'Brak danych'
+          const levelLabel = levels.length ? levels.join(', ') : 'Brak danych'
+          const tutorPost = offers[0] || {}
           const renderedName = [row.name, row.surname].filter(Boolean).join(' ') || 'Korepetytor'
 
           return {
@@ -29,18 +71,34 @@ onMounted(async () => {
             auth_id: row.auth_id || null,
             nickname: row.nickname || null,
             name: renderedName,
-            subject: tutorPost.subject || 'Brak danych',
-            level: tutorPost.level || 'Brak danych',
+            subject: subjectLabel,
+            subjects,
+            level: levelLabel,
             bio: tutorPost.description || '',
             price: tutorPost.price || null,
             city: tutorPost.city || '',
             lessonPlace: tutorPost.lessonPlace || '',
-            tags: tutorPost.teachingFormats || [],
+            tags: offers.flatMap((offer) => offer.teachingFormats || []).filter(Boolean),
             image: tutorPost.photo || row.profile_picture || null,
             profile_picture: row.profile_picture || null,
             tutor_post: tutorPost || null,
             account_type: 'tutor',
           }
+        })
+
+      const authIds = tutors.map((entry) => entry.auth_id).filter(Boolean)
+      const ratings = await loadTutorRatings(authIds)
+
+      rankingData.value = tutors
+        .map((entry) => ({
+          ...entry,
+          rating: ratings[entry.auth_id] || { average: 0, count: 0 },
+        }))
+        .sort((a, b) => {
+          if (b.rating.average !== a.rating.average) {
+            return b.rating.average - a.rating.average
+          }
+          return b.rating.count - a.rating.count
         })
         .slice(0, 10)
     }
@@ -66,7 +124,7 @@ function openTeacher(entry) {
       <div class="header-badge">🏆 TOP 10</div>
       <div>
         <h3>Top nauczycieli</h3>
-        <p>Skarbimierzyce · aktualna klasyfikacja</p>
+        <p>Aktualna klasyfikacja</p>
       </div>
     </div>
 
@@ -88,6 +146,12 @@ function openTeacher(entry) {
           <div class="rank-content">
             <span class="name">{{ entry.name }}</span>
             <span class="meta">{{ entry.subject }}</span>
+            <div v-if="index < 3" class="featured-meta">
+              <span class="featured-rating">
+                Ocena: {{ entry.rating.average ? entry.rating.average.toFixed(1) : 'Brak' }} / 5
+              </span>
+              <span class="featured-city">{{ entry.city || 'Miasto nieznane' }}</span>
+            </div>
           </div>
           <span class="subject-chip">{{ entry.subject }}</span>
         </li>
@@ -153,6 +217,7 @@ function openTeacher(entry) {
 .ranks-body {
   padding: 18px 20px 24px 20px;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .ranks-body::-webkit-scrollbar {
@@ -248,8 +313,25 @@ function openTeacher(entry) {
 .rank-content {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
   min-width: 0;
+}
+
+.featured-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.featured-rating,
+.featured-city {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .name {
