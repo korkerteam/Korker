@@ -184,6 +184,41 @@ async function submitLessonRequest() {
   submitting.value = true
   feedbackMessage.value = ''
 
+  const { data: existingRequests } = await supabase
+    .from('lesson_requests')
+    .select('requested_slots')
+    .eq('student_id', user.value.id)
+    .in('status', ['pending', 'approved'])
+
+  if (existingRequests?.length) {
+    const bookedSlots = new Set()
+    for (const req of existingRequests) {
+      const masks = req.requested_slots
+      if (Array.isArray(masks)) {
+        for (let dayIdx = 0; dayIdx < masks.length; dayIdx++) {
+          const mask = masks[dayIdx]
+          if (typeof mask === 'number' && mask > 0) {
+            for (let h = 0; h < 24; h++) {
+              if (mask & (1 << h)) {
+                bookedSlots.add(slotKey(dayKeys[dayIdx], h))
+              }
+            }
+          }
+        }
+      }
+    }
+    for (const key of selectedSlots.value) {
+      if (bookedSlots.has(key)) {
+        const dashIdx = key.lastIndexOf('-')
+        const day = key.slice(0, dashIdx)
+        const hour = key.slice(dashIdx + 1)
+        feedbackMessage.value = `Masz już zaplanowaną lekcję w ${day} o ${hour}:00. Wybierz inny termin.`
+        submitting.value = false
+        return
+      }
+    }
+  }
+
   const masks = dayKeys.map(() => 0)
   for (const key of selectedSlots.value) {
     const dashIdx = key.lastIndexOf('-')
