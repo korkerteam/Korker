@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 
 const props = defineProps({
   availability: { type: Object, default: () => ({}) },
@@ -11,15 +11,11 @@ const emit = defineEmits(['update:availability'])
 const dayKeys = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
 const dayAbbr = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd']
 
-const showAllHours = ref(false)
 const mirrorWeekdays = ref(false)
 const isDragging = ref(false)
 const dragMode = ref(null)
 
-const visibleHours = computed(() => {
-  if (showAllHours.value) return Array.from({ length: 24 }, (_, h) => h)
-  return [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
-})
+const visibleHours = Array.from({ length: 24 }, (_, h) => h)
 
 function getSlotLabel(hour) {
   return `${String(hour).padStart(2, '0')}:00-${String((hour + 1) % 24).padStart(2, '0')}:00`
@@ -104,17 +100,13 @@ function onCellKeydown(e, day, hour) {
   const el = document.querySelector(`[data-cell="${dayKeys[nextDay]}-${nextHour}"]`)
   el?.focus()
 }
-
-function toggleShowAllHours() {
-  showAllHours.value = !showAllHours.value
-}
 </script>
 
 <template>
   <div class="availability-section">
-    <div class="av-header-row">
-      <span class="field-label">{{ readonly ? 'Dostępność' : 'Dostępne godziny w tygodniu' }}</span>
-      <label v-if="!readonly" class="mirror-toggle">
+    <div v-if="!readonly" class="av-header-row">
+      <span class="field-label">Dostępne godziny w tygodniu</span>
+      <label class="mirror-toggle">
         <input type="checkbox" v-model="mirrorWeekdays" />
         <span class="mirror-label">Lustro (Pn–Pt)</span>
       </label>
@@ -152,18 +144,7 @@ function toggleShowAllHours() {
       <button type="button" class="btn btn-text av-action-btn" @click="clearAvailability">
         Wyczyść
       </button>
-      <button type="button" class="btn btn-text av-action-btn" @click="toggleShowAllHours">
-        {{ showAllHours ? 'Pokaż mniej' : 'Pokaż więcej godzin' }}
-      </button>
     </div>
-    <button
-      v-else
-      type="button"
-      class="av-action-btn av-action-btn-single"
-      @click="toggleShowAllHours"
-    >
-      {{ showAllHours ? 'Pokaż mniej' : 'Pokaż więcej godzin' }}
-    </button>
   </div>
 </template>
 

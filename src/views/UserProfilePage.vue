@@ -1,5 +1,5 @@
 <script setup>
-import { ref, inject, computed, onMounted, watch } from 'vue'
+import { ref, inject, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
@@ -36,6 +36,19 @@ const myTeacherRating = ref(null)
 const showRatingEditor = ref(false)
 const ratingDraft = ref(0)
 const ratingSaving = ref(false)
+const expandedTimetables = ref(new Set())
+
+function toggleTimetable(index) {
+  if (expandedTimetables.value.has(index)) {
+    expandedTimetables.value.delete(index)
+  } else {
+    expandedTimetables.value.add(index)
+    nextTick(() => {
+      const el = document.querySelectorAll('.timetable-toggle-wrap')[index]
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
+  }
+}
 
 const formattedDraftRating = computed(() => {
   if (!ratingDraft.value) return 'Wybierz ocenę'
@@ -477,20 +490,6 @@ function getStarFill(rating, index) {
             >
               Edytuj profil
             </button>
-            <button
-              v-if="
-                profile &&
-                user?.id === profile.auth_id &&
-                profile?.account_type === 'tutor' &&
-                tutorOffers.length > 0 &&
-                tutorOffers[0]?.weeklyAvailability &&
-                Object.keys(tutorOffers[0].weeklyAvailability).length
-              "
-              class="btn btn-secondary message-btn"
-              @click="router.push({ path: '/', query: { panel: 'profile', edit: '1' } })"
-            >
-              Edytuj dostępność
-            </button>
           </div>
         </div>
 
@@ -498,12 +497,10 @@ function getStarFill(rating, index) {
           <template v-if="profile?.account_type === 'tutor'">
             <template v-if="tutorOffers.length">
               <div v-for="(offer, index) in tutorOffers" :key="index" class="tutor-offer-view">
-                <h4>Oferta korepetytora{{ tutorOffers.length > 1 ? ' ' + (index + 1) : '' }}</h4>
+                <h4>
+                  {{ offer.subject || 'Korepetycje' }}
+                </h4>
 
-                <div v-if="offer.subject" class="offer-row">
-                  <span class="offer-label">Przedmiot</span>
-                  <span class="offer-value">{{ offer.subject }}</span>
-                </div>
                 <div v-if="offer.level" class="offer-row">
                   <span class="offer-label">Poziom</span>
                   <span class="offer-value">{{ offer.level }}</span>
@@ -526,8 +523,20 @@ function getStarFill(rating, index) {
 
                 <div
                   v-if="offer.weeklyAvailability && Object.keys(offer.weeklyAvailability).length"
+                  class="timetable-toggle-wrap"
                 >
-                  <AvailabilityGrid :availability="offer.weeklyAvailability" readonly />
+                  <button
+                    type="button"
+                    class="timetable-toggle-btn"
+                    @click="toggleTimetable(index)"
+                  >
+                    {{ expandedTimetables.has(index) ? ' Ukryj plan' : ' Pokaż plan' }}
+                  </button>
+                  <AvailabilityGrid
+                    v-if="expandedTimetables.has(index)"
+                    :availability="offer.weeklyAvailability"
+                    readonly
+                  />
                 </div>
               </div>
             </template>
@@ -894,13 +903,33 @@ function getStarFill(rating, index) {
   border-top: 1px solid var(--border);
 }
 
+.timetable-toggle-wrap {
+  margin-top: 10px;
+}
+
+.timetable-toggle-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.timetable-toggle-btn:hover {
+  background: var(--surface-soft);
+}
+
 .desc-text {
   text-align: left;
   white-space: pre-wrap;
   font-size: 15px;
   line-height: 1.6;
-  max-height: 150px;
-  overflow-y: auto;
+  max-width: 70ch;
+  overflow-wrap: anywhere;
 }
 
 .offer-photo-preview {
@@ -1154,7 +1183,6 @@ function getStarFill(rating, index) {
 
   .desc-text {
     font-size: 14px;
-    max-height: 120px;
   }
 
   .offer-photo-preview {

@@ -979,6 +979,9 @@ function goToMyTeachers() {
   background: var(--surface-strong);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-soft);
+  max-width: 70ch;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .bio-box p {
@@ -1601,6 +1604,12 @@ function goToMyTeachers() {
   }
 
   .tt-col {
+    align-self: start;
+  }
+
+  .tt-col {
+    min-width: 0;
+    max-width: 100%;
     align-self: start;
   }
 
