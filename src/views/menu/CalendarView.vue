@@ -204,7 +204,7 @@ function dismissCancelConfirm() {
 
 function openProfile(request) {
   const otherId = props.isTutorAccount ? request.student_id : request.tutor_id
-  window.open('/user/' + otherId, '_blank')
+  router.push('/user/' + otherId)
 }
 
 async function fetchLessonRequests() {
