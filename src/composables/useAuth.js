@@ -15,13 +15,17 @@ const profileData = ref(null)
 const profileLoading = ref(true)
 
 let loadProfilePromise = null
+let lastProfileFetch = 0
 
 async function loadProfile() {
+  const now = Date.now()
+  if (profileData.value && now - lastProfileFetch < 5 * 60 * 1000) return
   if (loadProfilePromise) return loadProfilePromise
   loadProfilePromise = (async () => {
     try {
       const profile = await fetchProfile(user.value?.id)
       profileData.value = profile
+      lastProfileFetch = Date.now()
       if (profile?.nickname || profile?.name) {
         const display =
           [profile.name, profile.surname].filter(Boolean).join(' ') || profile.nickname

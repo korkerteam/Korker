@@ -370,7 +370,12 @@ function getStarFill(rating, index) {
               >
             </div>
             <div class="rating-meta">
-              <span v-if="teacherRating.count">{{ teacherRating.count }} ocen</span>
+              <span v-if="teacherRating.count"
+                >{{ teacherRating.count }}
+                {{
+                  teacherRating.count === 0 ? 'ocen' : teacherRating.count === 1 ? 'ocena' : 'oceny'
+                }}</span
+              >
               <span v-else>Brak ocen</span>
             </div>
             <div v-if="myTeacherRating != null" class="rating-my">

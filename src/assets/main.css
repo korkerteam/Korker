@@ -307,3 +307,11 @@ button {
 .fade-leave-to {
   opacity: 0;
 }
+
+path.leaflet-interactive:focus {
+  outline: none;
+}
+
+.city-map[data-theme='dark'] {
+  background-color: #000000;
+}

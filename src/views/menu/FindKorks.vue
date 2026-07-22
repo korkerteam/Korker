@@ -761,7 +761,23 @@ function goToMyTeachers() {
                 type="text"
                 placeholder="Wyszukaj miasto"
                 autocomplete="off"
+                autocorrect="off"
               />
+              <button
+                v-if="citySearchInput"
+                class="clear-city-btn"
+                type="button"
+                @click="citySearchInput = ''"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M18 6L6 18M6 6l12 12"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
             </label>
             <p
               v-if="citySearchInput.trim().length > 0 && citySearchInput.trim().length < 3"
@@ -1458,19 +1474,46 @@ function goToMyTeachers() {
 }
 
 .city-select-label {
+  position: relative;
   display: block;
   width: 100%;
 }
 
 .city-select-label input {
   width: 100%;
-  padding: 12px 14px;
+  padding: 12px 40px 12px 14px;
   border-radius: 16px;
   border: 1px solid var(--border);
   background: var(--surface-strong);
   color: var(--text);
   font-size: 14px;
   box-sizing: border-box;
+}
+
+.clear-city-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.clear-city-btn:hover {
+  background: rgba(138, 180, 255, 0.16);
+  color: var(--text);
 }
 
 .city-hint {
