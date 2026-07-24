@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase.js'
 import LoadingBox from '@/components/LoadingBox.vue'
 import { useAuth } from '@/composables/useAuth.js'
+import { sendEmailNotification, buildLessonRequestEmailHtml } from '@/services/emailService.js'
 
 const emit = defineEmits(['show-teacher', 'remove-teacher'])
 const props = defineProps({
@@ -243,10 +244,30 @@ async function submitLessonRequest() {
     feedbackMessage.value = 'Nie udało się wysłać prośby. Spróbuj ponownie.'
   } else {
     feedbackMessage.value = 'Prośba o lekcje została wysłana!'
-    for (const key of selectedSlots.value) {
+    const sentSlots = [...selectedSlots.value]
+    for (const key of sentSlots) {
       requestedSlots.value.add(key)
     }
     selectedSlots.value = new Set()
+
+    const tutorId = selectedTeacher.value.auth_id || selectedTeacher.value.id
+    const { data: tutorEmail } = await supabase.rpc('get_user_email', { target_id: tutorId })
+    if (tutorEmail) {
+      const slotStr = sentSlots
+        .map((key) => {
+          const dashIdx = key.lastIndexOf('-')
+          const day = key.slice(0, dashIdx)
+          const hour = key.slice(dashIdx + 1)
+          return `${day} ${hour}:00`
+        })
+        .slice(0, 2)
+        .join(', ')
+      sendEmailNotification(
+        tutorEmail,
+        'Nowa prośba o lekcję — Korker',
+        buildLessonRequestEmailHtml(user.value?.email || 'Student', slotStr),
+      )
+    }
   }
 }
 

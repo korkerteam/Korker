@@ -2,6 +2,7 @@ import { ref, computed, watch } from 'vue'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from './useAuth.js'
 import { getBlockedIds, getBlockingMeIds, getBlockedPeriods } from '@/services/blockService.js'
+import { sendEmailNotification, buildChatEmailHtml } from '@/services/emailService.js'
 
 const ATTACHMENT_BUCKET = 'profile_pictures'
 const DELETED_CONTENT = '[ Usunięto ]'
@@ -515,6 +516,14 @@ export function useMessaging() {
 
     if (!msg.id) {
       nextNotificationId.value += 1
+    }
+
+    if (user.value?.email) {
+      sendEmailNotification(
+        user.value.email,
+        `Nowa wiadomość od ${senderName} — Korker`,
+        buildChatEmailHtml(senderName, preview),
+      )
     }
   }
 
