@@ -175,7 +175,6 @@ onBeforeUnmount(() => {
         </button>
       </label>
 
-      <!-- Desktop Results Dropdown -->
       <div
         v-if="isOpen && (query.trim() || loading)"
         class="search-popup desktop-search"
@@ -219,7 +218,6 @@ onBeforeUnmount(() => {
       </div>
     </template>
 
-    <!-- Mobile Search Trigger -->
     <button
       v-if="!isDesktop"
       class="search-trigger"
@@ -252,7 +250,6 @@ onBeforeUnmount(() => {
       </svg>
     </button>
 
-    <!-- Mobile Search Popup -->
     <div v-if="!isDesktop && isSearchOpen" class="search-popup" @click.stop>
       <label class="search-input" aria-label="Szukaj użytkowników">
         <svg
@@ -584,8 +581,8 @@ onBeforeUnmount(() => {
   }
 
   .search-trigger {
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
   }
 
   .search-popup {

@@ -196,7 +196,6 @@ onMounted(() => {
 function onRatingChanged(e) {
   const tutorId = e?.detail?.tutorAuthId
   if (!tutorId) return
-  // refresh only that tutor
   getAverageRating(tutorId)
     .then((summary) => {
       teacherRatings.value = { ...teacherRatings.value, [tutorId]: summary }
@@ -1353,7 +1352,6 @@ function goToMyTeachers() {
   width: 50%;
 }
 
-/* inline tutor-rating stars */
 .tutor-rating {
   display: flex;
   align-items: center;

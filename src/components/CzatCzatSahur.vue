@@ -20,7 +20,6 @@ const {
   isBlockedByMe,
 } = useMessaging()
 
-// Wstrzykujemy globalny stan czatu zamiast tworzyć lokalny ref(false)
 const { showChatGlobal: showChat, chatTargetUserId } = inject('globalChat', {
   showChatGlobal: ref(false),
   chatTargetUserId: ref(null),
@@ -38,11 +37,9 @@ function onClickOutside(e) {
   }
 }
 
-// Obserwujemy, czy inny komponent zażądał otwarcia czatu z konkretnym użytkownikiem
 watch(chatTargetUserId, (userId) => {
   if (userId) {
     handleOpenChat(userId)
-    // Czyścimy flagę, aby można było kliknąć to samo powiadomienie ponownie
     chatTargetUserId.value = null
   }
 })

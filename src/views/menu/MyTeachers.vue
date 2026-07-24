@@ -4,7 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase.js'
 import LoadingBox from '@/components/LoadingBox.vue'
 import { useAuth } from '@/composables/useAuth.js'
-import { sendEmailNotification, buildLessonRequestEmailHtml } from '@/services/emailService.js'
+import { notifyLessonRequest } from '@/services/emailNotifications.js'
 
 const emit = defineEmits(['show-teacher', 'remove-teacher'])
 const props = defineProps({
@@ -262,11 +262,7 @@ async function submitLessonRequest() {
         })
         .slice(0, 2)
         .join(', ')
-      sendEmailNotification(
-        tutorEmail,
-        'Nowa prośba o lekcję — Korker',
-        buildLessonRequestEmailHtml(user.value?.email || 'Student', slotStr),
-      )
+      notifyLessonRequest(tutorEmail, user.value?.email || 'Student', slotStr)
     }
   }
 }
@@ -393,7 +389,6 @@ function openChat(teacher) {
       </div>
     </div>
 
-    <!-- Teacher List View -->
     <template v-else-if="!selectedTeacher">
       <div class="teacher-header">
         <div>
@@ -457,7 +452,6 @@ function openChat(teacher) {
       </div>
     </template>
 
-    <!-- Teacher Profile View -->
     <template v-else-if="selectedTeacher && !showTimetable">
       <div class="profile-header">
         <button class="back-button" @click="goBack">← Wróć</button>
@@ -510,7 +504,6 @@ function openChat(teacher) {
       </div>
     </template>
 
-    <!-- Timetable Page View (Plan) -->
     <template v-else-if="selectedTeacher && showTimetable">
       <div class="profile-header">
         <button class="back-button" @click="closeTimetable">← Wróć</button>

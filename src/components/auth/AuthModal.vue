@@ -74,9 +74,7 @@ async function handleSubmit() {
       if (data?.user?.id) {
         try {
           await upsertProfile({ name: name.value, surname: surname.value }, data.user.id)
-        } catch {
-          /* profile row may not exist yet if email confirmation required */
-        }
+        } catch {}
       }
       if (data?.session) {
         emit('close')

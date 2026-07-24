@@ -4,7 +4,6 @@ import { ref } from 'vue'
 const form = ref({ name: '', email: '', subject: '', message: '' })
 
 const handleSubmit = () => {
-  // Ta funkcja można rozszerzyć o logikę wysyłki formularza.
   alert('Wiadomość została wysłana!')
   form.name = ''
   form.email = ''
