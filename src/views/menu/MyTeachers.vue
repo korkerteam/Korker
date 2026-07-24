@@ -1100,18 +1100,19 @@ function openChat(teacher) {
 
 .tt-grid-wrap {
   width: 100%;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
+  background: var(--surface-strong);
 }
 
 .tt-grid {
   display: grid;
-  grid-template-columns: 44px repeat(7, 1fr);
+  grid-template-columns: 44px repeat(7, minmax(0, 1fr));
   grid-template-rows: 24px repeat(24, 22px);
   gap: 2px;
   padding: 4px;
-  background: #f3f4f6;
+  background: var(--surface-soft);
   width: 100%;
 }
 
@@ -1125,10 +1126,10 @@ function openChat(teacher) {
   justify-content: center;
   font-size: 9px;
   font-weight: 700;
-  color: #374151;
+  color: var(--text);
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  background: #f9fafb;
+  background: var(--surface-strong);
   border-radius: 3px;
   padding: 2px;
 }
@@ -1139,14 +1140,14 @@ function openChat(teacher) {
   justify-content: center;
   font-size: 9px;
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--muted);
   border-radius: 3px;
 }
 
 .tt-cell {
   border-radius: 3px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
   min-width: 0;
   min-height: 0;
   transition: background 0.08s;
