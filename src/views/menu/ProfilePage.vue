@@ -1,7 +1,7 @@
 ﻿<script setup>
 import { reactive, ref, watch, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { upsertProfile } from '@/services/profileService.js'
+import { upsertProfile, deleteProfile } from '@/services/profileService.js'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { translateAuthError } from '@/utils/authErrors.js'
@@ -13,7 +13,7 @@ import CityMap from '@/components/CityMap.vue'
 
 const route = useRoute()
 const router = useRouter()
-const { user, profileData, profileLoading, setProfileName, clearNeedsProfile } = useAuth()
+const { user, profileData, profileLoading, setProfileName, clearNeedsProfile, signOut } = useAuth()
 const profile = reactive({
   name: '',
   nickname: '',
@@ -28,6 +28,8 @@ const tutorOffers = ref([])
 const showOfferEditor = ref(false)
 const editingOfferIndex = ref(-1)
 const confirmingDeleteOfferIndex = ref(null)
+const showDeleteConfirm = ref(false)
+const deleting = ref(false)
 const pendingOfferPhotoFile = ref(null)
 const offerDraft = reactive({
   teachingFormats: [],
@@ -324,6 +326,30 @@ async function saveProfile() {
   } finally {
     saving.value = false
   }
+}
+
+async function deleteAccount() {
+  if (!showDeleteConfirm.value) return
+  deleting.value = true
+  try {
+    await deleteProfile(user.value?.id)
+    await signOut()
+    router.push('/')
+  } catch (err) {
+    console.error('Delete account failed:', err)
+    alert('Nie udało się usunąć konta: ' + (err?.message || 'Błąd nieznany'))
+  } finally {
+    deleting.value = false
+    showDeleteConfirm.value = false
+  }
+}
+
+function confirmDelete() {
+  showDeleteConfirm.value = true
+}
+
+function cancelDelete() {
+  showDeleteConfirm.value = false
 }
 
 function cancelEdit() {
@@ -887,6 +913,15 @@ async function pickAndCompressOfferPhoto(file) {
           </select>
         </div>
 
+        <button
+          type="button"
+          class="btn btn-danger"
+          :disabled="saving || deleting"
+          @click="confirmDelete"
+        >
+          Usuń konto
+        </button>
+
         <div v-if="saveError" class="error-box">{{ saveError }}</div>
 
         <div class="actions">
@@ -1080,6 +1115,25 @@ async function pickAndCompressOfferPhoto(file) {
             </button>
             <button class="btn btn-secondary" :disabled="offerSaving" @click="closeOfferEditor">
               Anuluj
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delete Account Confirmation -->
+      <div v-if="showDeleteConfirm" class="delete-confirm-backdrop" @click.self="cancelDelete">
+        <div class="delete-confirm-card">
+          <h3 class="delete-confirm-title">Usuń konto</h3>
+          <p class="delete-confirm-text">
+            Czy na pewno chcesz usunąć swoje konto? Tej operacji nie można cofnąć.
+          </p>
+          <div class="delete-confirm-actions">
+            <button class="btn btn-secondary" :disabled="deleting" @click="cancelDelete">
+              Anuluj
+            </button>
+            <button class="btn btn-danger" :disabled="deleting" @click="deleteAccount">
+              <span v-if="deleting" class="btn-spinner"></span>
+              {{ deleting ? 'Usuwanie...' : 'Tak, usuń konto' }}
             </button>
           </div>
         </div>
@@ -1574,6 +1628,49 @@ async function pickAndCompressOfferPhoto(file) {
 
 .add-offer-btn {
   align-self: flex-start;
+}
+
+.delete-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 20px;
+}
+
+.delete-confirm-card {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: min(92vw, 420px);
+  padding: 28px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.delete-confirm-title {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.delete-confirm-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.delete-confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 8px;
 }
 
 .delete-offer-confirm {

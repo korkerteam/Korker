@@ -3,6 +3,12 @@ import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { useRouter } from 'vue-router'
+import {
+  sendEmailNotification,
+  buildLessonRequestEmailHtml,
+  buildLessonApprovedEmailHtml,
+  buildLessonRejectedEmailHtml,
+} from '@/services/emailService.js'
 
 const props = defineProps({
   isTutorAccount: { type: Boolean, default: false },
@@ -137,6 +143,18 @@ function getOtherSubject(entry) {
   return offer?.subject || ''
 }
 
+async function getOtherEmail(authId) {
+  const { data } = await supabase.rpc('get_user_email', { target_id: authId })
+  return data || null
+}
+
+function getSlotStr(request) {
+  return slotLabelsFromMasks(request.requested_slots)
+    .slice(0, 2)
+    .map((s) => `${s.day} ${s.time}`)
+    .join(', ')
+}
+
 function getRequestSlots(entry) {
   return slotLabelsFromMasks(entry.requested_slots)
 }
@@ -162,6 +180,16 @@ async function acceptSlot() {
     .eq('id', request.id)
   request.status = 'approved'
   await fetchLessonRequests()
+
+  const studentEmail = await getOtherEmail(request.student_id)
+  const slotStr = getSlotStr(request)
+  if (studentEmail) {
+    sendEmailNotification(
+      studentEmail,
+      'Lekcja zaakceptowana — Korker',
+      buildLessonApprovedEmailHtml(user.value?.email || 'Tutor', slotStr),
+    )
+  }
 }
 
 async function rejectSlot() {
@@ -174,6 +202,15 @@ async function rejectSlot() {
   request.status = 'rejected'
   selectedSlot.value = null
   await fetchLessonRequests()
+
+  const studentEmail = await getOtherEmail(request.student_id)
+  if (studentEmail) {
+    sendEmailNotification(
+      studentEmail,
+      'Lekcja odrzucona — Korker',
+      buildLessonRejectedEmailHtml(user.value?.email || 'Tutor'),
+    )
+  }
 }
 
 async function cancelApprovedSlot() {
@@ -197,6 +234,16 @@ async function confirmCancelLesson() {
   lessonRequests.value = lessonRequests.value.filter((r) => r.id !== request.id)
   selectedSlot.value = null
   showCancelConfirm.value = false
+
+  const otherId = props.isTutorAccount ? request.student_id : request.tutor_id
+  const otherEmail = await getOtherEmail(otherId)
+  if (otherEmail) {
+    sendEmailNotification(
+      otherEmail,
+      'Lekcja anulowana — Korker',
+      buildLessonRejectedEmailHtml(user.value?.email || 'Korker'),
+    )
+  }
 }
 
 function dismissCancelConfirm() {

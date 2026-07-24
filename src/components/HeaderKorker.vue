@@ -27,7 +27,7 @@ function goHome() {
   color: var(--logo-color, var(--brand-blue, #4f75c7));
   background: var(--surface-strong);
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: 0 24px 24px 0;
   box-shadow: var(--shadow-soft);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition:
@@ -103,7 +103,7 @@ function goHome() {
     padding: 10px 12px;
     font-size: 1.25rem;
     gap: 8px;
-    border-radius: 16px;
+    border-radius: 0 16px 16px 0;
   }
 
   .logo-image {
