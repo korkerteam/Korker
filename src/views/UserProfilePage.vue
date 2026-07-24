@@ -153,9 +153,7 @@ async function checkBlockStatus(targetAuthId) {
     ])
     blockedByMe.value = byMe
     blockingMe.value = toMe
-  } catch {
-    // ignore — profile still loads
-  }
+  } catch {}
 }
 
 async function handleBlock() {

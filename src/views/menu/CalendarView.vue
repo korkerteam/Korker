@@ -4,11 +4,10 @@ import { supabase } from '@/lib/supabase.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { useRouter } from 'vue-router'
 import {
-  sendEmailNotification,
-  buildLessonRequestEmailHtml,
-  buildLessonApprovedEmailHtml,
-  buildLessonRejectedEmailHtml,
-} from '@/services/emailService.js'
+  notifyLessonApproved,
+  notifyLessonRejected,
+  notifyLessonCancelled,
+} from '@/services/emailNotifications.js'
 
 const props = defineProps({
   isTutorAccount: { type: Boolean, default: false },
@@ -184,11 +183,7 @@ async function acceptSlot() {
   const studentEmail = await getOtherEmail(request.student_id)
   const slotStr = getSlotStr(request)
   if (studentEmail) {
-    sendEmailNotification(
-      studentEmail,
-      'Lekcja zaakceptowana — Korker',
-      buildLessonApprovedEmailHtml(user.value?.email || 'Tutor', slotStr),
-    )
+    notifyLessonApproved(studentEmail, user.value?.email || 'Tutor', slotStr)
   }
 }
 
@@ -205,11 +200,7 @@ async function rejectSlot() {
 
   const studentEmail = await getOtherEmail(request.student_id)
   if (studentEmail) {
-    sendEmailNotification(
-      studentEmail,
-      'Lekcja odrzucona — Korker',
-      buildLessonRejectedEmailHtml(user.value?.email || 'Tutor'),
-    )
+    notifyLessonRejected(studentEmail, user.value?.email || 'Tutor')
   }
 }
 
@@ -238,11 +229,7 @@ async function confirmCancelLesson() {
   const otherId = props.isTutorAccount ? request.student_id : request.tutor_id
   const otherEmail = await getOtherEmail(otherId)
   if (otherEmail) {
-    sendEmailNotification(
-      otherEmail,
-      'Lekcja anulowana — Korker',
-      buildLessonRejectedEmailHtml(user.value?.email || 'Korker'),
-    )
+    notifyLessonCancelled(otherEmail, user.value?.email || 'Korker')
   }
 }
 

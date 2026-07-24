@@ -79,7 +79,6 @@ watch(isTutorAccount, () => {
   if (profileData.value) loadSavedTutors()
 })
 
-// --- GLOBALNY STAN CZATU (DO PRZEKAZYWANIA MIĘDZY KOMPONENTAMI) ---
 const chatTargetUserId = ref(null)
 
 provide('globalChat', {
@@ -484,11 +483,10 @@ onUnmounted(() => {
   flex-wrap: nowrap;
   flex: 0 1 auto;
   justify-content: flex-end;
-  min-width: 0;
-  max-width: min(100%, 280px);
   position: relative;
   z-index: 60;
   overflow: visible;
+  margin-right: 15px;
 }
 
 .mobile-menu-trigger {
@@ -668,10 +666,8 @@ onUnmounted(() => {
 
   .mobile-menu-trigger {
     display: inline-flex;
-    width: 52px;
-    height: 52px;
-    min-width: 52px;
-    min-height: 52px;
+    width: 40px;
+    height: 40px;
     aspect-ratio: 1 / 1;
   }
 

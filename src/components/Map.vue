@@ -27,17 +27,14 @@ const hideMap = () => {
   isMapVisible.value = false
 }
 
-// THIS METHOD DESTROYS THE MAP PROPERLY
 const destroyLeaflet = () => {
   if (map) {
-    map.remove() // LEAFLET METHOD TO REMOVE EVERYTHING FROM MEMORY
-    map = null // SET THE REFERENCE TO NULL
+    map.remove()
+    map = null
   }
 }
 
 const initLeaflet = () => {
-  // WE ALWAYS NEED TO RECREATE THE MAP HERE
-  // BECAUSE VUE DESTROYS THE ORIGINAL HTML ELEMENT
   if (!map && mapContainer.value) {
     map = L.map(mapContainer.value, {
       attributionControl: false,

@@ -146,7 +146,6 @@ function applySavedTutorPost(data) {
   }))
 }
 
-// Student city — declared before profile watch because it reads draft.city
 const citySearchInput = ref('')
 const cityFilterQuery = ref('')
 const showCitySuggestionsStudent = ref(false)
@@ -428,7 +427,6 @@ function formatCityProvince(city) {
   return prov ? `${city.Name}, ${prov}` : city.Name
 }
 
-// Student city
 let citySuggestTimer = null
 
 watch(citySearchInput, (val) => {
@@ -484,7 +482,6 @@ function toggleCityMapStudent() {
   showCityMapStudent.value = !showCityMapStudent.value
 }
 
-// Tutor offer city
 const offerCityFilterQuery = ref('')
 const offerCitySearchInput = ref('')
 const showCitySuggestions = ref(false)
@@ -934,7 +931,6 @@ async function pickAndCompressOfferPhoto(file) {
         </div>
       </div>
 
-      <!-- Offer Editor Overlay -->
       <div v-if="showOfferEditor" class="offer-editor-overlay" @click.self="closeOfferEditor">
         <div class="offer-editor-modal">
           <div class="offer-editor-header">
@@ -1120,7 +1116,6 @@ async function pickAndCompressOfferPhoto(file) {
         </div>
       </div>
 
-      <!-- Delete Account Confirmation -->
       <div v-if="showDeleteConfirm" class="delete-confirm-backdrop" @click.self="cancelDelete">
         <div class="delete-confirm-card">
           <h3 class="delete-confirm-title">Usuń konto</h3>
@@ -1412,7 +1407,6 @@ async function pickAndCompressOfferPhoto(file) {
   color: #1f2937;
 }
 
-/* Hover is managed via .hover class to avoid persistent :hover state when clicking blank areas */
 .format-option.hover {
   background: #e2e8f0;
 }

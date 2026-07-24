@@ -49,9 +49,7 @@ function readLocal() {
 function writeLocal(map) {
   try {
     window.localStorage.setItem(LOCAL_RATING_STORAGE_KEY, JSON.stringify([...map.entries()]))
-  } catch {
-    // ignore
-  }
+  } catch {}
 }
 
 function coerceEntry(raw) {
@@ -137,9 +135,7 @@ export async function getMyRatingForTutor(tutorAuthId) {
       .maybeSingle()
 
     if (!error && data) return normalizeToFive(data.rating)
-  } catch {
-    // ignore
-  }
+  } catch {}
 
   return null
 }
@@ -163,7 +159,6 @@ export async function submitRating(tutorAuthId, rating) {
   if (!userId) throw new Error('No user id available')
 
   if (userId.startsWith('local-')) {
-    // anonymous local ratings are still allowed, but only for non-tutor views
   } else {
     const isTutor = await userIsTutor(userId)
     if (isTutor) {
@@ -187,9 +182,7 @@ export async function submitRating(tutorAuthId, rating) {
     if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
       window.dispatchEvent(new CustomEvent('korker-rating-changed', { detail: { tutorAuthId } }))
     }
-  } catch {
-    // ignore
-  }
+  } catch {}
 
   try {
     const payload = { tutor_auth_id: tutorAuthId, rater_auth_id: userId, rating: normalized }
